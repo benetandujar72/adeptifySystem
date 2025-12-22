@@ -1,0 +1,7 @@
+{
+  "name": "ADEPTIFY - Consultor d'Eficiència Educativa",
+  "description": "Una eina dissenyada per rescatar docents i directius del caos burocràtic mitjançant diagnòstics ràpids i solucions automatitzades.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
