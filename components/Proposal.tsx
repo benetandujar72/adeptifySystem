@@ -13,7 +13,7 @@ interface ProposalProps {
 const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
   const proposalRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(data.subscriptionPlans.find(p => p.isRecommended)?.name || data.subscriptionPlans[0]?.name);
+  const [selectedPlan, setSelectedPlan] = useState(data.subscriptionPlans?.find(p => p.isRecommended)?.name || data.subscriptionPlans?.[0]?.name);
 
   const downloadPDF = async () => {
     if (!proposalRef.current) return;
@@ -81,7 +81,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
                 <p className="font-black text-lg md:text-xl text-slate-900 uppercase tracking-tighter">{data.miniAppSuggestion?.name}</p>
                 <p className="text-xs md:text-sm text-slate-600 font-medium leading-relaxed">{data.solution}</p>
                 <div className="flex flex-wrap gap-2 pt-2 md:pt-4">
-                  {data.miniAppSuggestion?.features.map((f, i) => (
+                  {data.miniAppSuggestion?.features?.map((f, i) => (
                     <span key={i} className="bg-white px-3 py-1.5 rounded-lg text-[8px] md:text-[10px] font-black text-indigo-600 border border-indigo-100 shadow-sm uppercase tracking-tight">{f}</span>
                   ))}
                 </div>
@@ -103,7 +103,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
                     {[1,2,3,4,5,6,7,8].map(n => <span key={n} className="w-12 text-center">Setm. {n}</span>)}
                  </div>
                  
-                 {data.phases.map((phase, i) => (
+                 {data.phases?.map((phase, i) => (
                   <div key={i} className="flex items-center group">
                     <div className="w-[200px] pr-6 md:pr-10 text-right">
                       <p className="font-black text-[10px] md:text-[11px] text-slate-800 uppercase tracking-tight leading-tight group-hover:text-indigo-600 transition-colors">{phase.name}</p>
@@ -112,8 +112,8 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
                       <div 
                         className="absolute h-full bg-indigo-600/10 border-l-[3px] border-indigo-600 flex items-center px-4 md:px-6"
                         style={{ 
-                          left: `${(phase.startWeek - 1) * 12.5}%`, 
-                          width: `${phase.durationWeeks * 12.5}%` 
+                          left: `${((phase.startWeek || 1) - 1) * 12.5}%`, 
+                          width: `${(phase.durationWeeks || 1) * 12.5}%` 
                         }}
                       >
                         <span className="text-[8px] md:text-[9px] font-bold text-indigo-800 uppercase tracking-tighter truncate">{phase.description}</span>
@@ -135,13 +135,13 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
               </h3>
               
               <div className="space-y-6 md:space-y-8 mb-10 md:mb-16">
-                {data.items.map((item, idx) => (
+                {data.items?.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-start py-4 md:py-6 border-b border-white/5 group">
                     <div className="max-w-[70%]">
                       <span className="text-xs md:text-[14px] font-black text-white block mb-1 md:mb-2 group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{item.concept}</span>
                       <span className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed line-clamp-2 md:line-clamp-none">{item.description}</span>
                     </div>
-                    <span className="font-brand italic text-lg md:text-2xl text-white ml-4">{item.price.toFixed(0)}€</span>
+                    <span className="font-brand italic text-lg md:text-2xl text-white ml-4">{(item.price || 0).toFixed(0)}€</span>
                   </div>
                 ))}
               </div>
@@ -149,11 +149,11 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
               <div className="pt-6 md:pt-8 space-y-3 md:space-y-4">
                 <div className="flex justify-between text-[9px] md:text-[11px] font-bold text-slate-500 uppercase tracking-widest">
                   <span>Subtotal Net</span>
-                  <span>{data.subtotal.toFixed(0)}€</span>
+                  <span>{(data.subtotal || 0).toFixed(0)}€</span>
                 </div>
                 <div className="flex justify-between items-baseline pt-6 md:pt-10 border-t border-white/10">
                   <span className="text-sm md:text-[16px] font-black uppercase text-slate-300 tracking-[0.1em] md:tracking-[0.2em]">Total Inicial</span>
-                  <span className="text-4xl md:text-6xl font-brand italic text-white tracking-tighter">{data.totalInitial.toFixed(0)}€</span>
+                  <span className="text-4xl md:text-6xl font-brand italic text-white tracking-tighter">{(data.totalInitial || 0).toFixed(0)}€</span>
                 </div>
               </div>
             </div>
@@ -161,7 +161,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
             {/* Subscriptions */}
             <div className="lg:col-span-5 space-y-6 md:space-y-8 order-2">
                <h3 className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-2 md:mb-4">Sostenibilitat Cloud</h3>
-               {data.subscriptionPlans.map((plan) => (
+               {data.subscriptionPlans?.map((plan) => (
                 <button
                   key={plan.name}
                   onClick={() => setSelectedPlan(plan.name)}
@@ -178,7 +178,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
                   <div className="space-y-4 md:space-y-6 mb-8 md:mb-10">
                     <div className="flex justify-between items-baseline">
                       <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quota Mensual</span>
-                      <span className="text-xl md:text-2xl font-brand italic text-slate-900">{plan.monthlySoftwarePrice + plan.monthlyServerPrice}€</span>
+                      <span className="text-xl md:text-2xl font-brand italic text-slate-900">{(plan.monthlySoftwarePrice || 0) + (plan.monthlyServerPrice || 0)}€</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 md:gap-3 pt-4 md:pt-6 border-t border-slate-100">
