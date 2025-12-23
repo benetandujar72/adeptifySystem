@@ -36,6 +36,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       if (isOpen) {
         const context = await getClientContext();
         chatRef.current = createAdeptifyChat(context, language);
+        // Carreguem historial previ
+        const history = await consultationService.getChatHistory(centerId);
+        if (history.length > 0) setMessages(history);
       }
     };
     initChat();
@@ -57,6 +60,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
+    // Guardem missatge d'usuari
+    await consultationService.saveChatMessage(centerId, userMsg);
+
     try {
       const result = await chatRef.current.sendMessage({ message: userText });
       const response = result as GenerateContentResponse;
@@ -66,6 +72,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
         timestamp: new Date().toISOString() 
       };
       setMessages(prev => [...prev, modelMsg]);
+      
+      // Guardem missatge del model
+      await consultationService.saveChatMessage(centerId, modelMsg);
     } catch (error) {
       const errorMsg: ChatMessage = { role: 'model', text: "Error de conexión.", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, errorMsg]);

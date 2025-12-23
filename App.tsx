@@ -25,7 +25,7 @@ const AppContent: React.FC = () => {
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Recuperem sessió d'admin si existeix (només durant la sessió actual)
+  // Recuperem sessió d'admin si existeix
   useEffect(() => {
     const sessionAuth = sessionStorage.getItem('adeptify_admin_auth');
     if (sessionAuth === 'true') setIsAuthenticated(true);
@@ -84,19 +84,19 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-[#FDFDFD]">
-      <header className="fixed top-0 w-full p-8 flex justify-between items-center z-50 glass border-b border-slate-100">
+      <header className="fixed top-0 w-full p-6 md:p-8 flex justify-between items-center z-50 glass border-b border-slate-100">
         <div 
           className="flex items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity" 
           onClick={() => { setPhase(Phase.LANDING); setProposal(null); }}
         >
-          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg">
             <div className="w-3 h-3 bg-indigo-500 rounded-sm" />
           </div>
-          <span className="text-sm font-bold uppercase tracking-[0.3em] text-slate-900">{t.appTitle}</span>
+          <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-slate-900 leading-none">{t.appTitle}</span>
         </div>
         
-        <div className="flex items-center gap-6">
-           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+        <div className="flex items-center gap-3 md:gap-6">
+           <div className="hidden md:flex bg-slate-100 p-1 rounded-xl gap-1">
              <button 
                onClick={() => setLanguage('ca')}
                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'ca' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -113,23 +113,31 @@ const AppContent: React.FC = () => {
            
            <button 
              onClick={() => setPhase(Phase.DOC_GENERATOR)}
-             className="text-[10px] font-bold uppercase tracking-widest text-slate-900 hover:text-indigo-600 transition-colors"
+             className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:text-indigo-600 transition-colors"
            >
              {t.navDocs}
            </button>
 
-           {isAuthenticated && (
+           {isAuthenticated ? (
              <button 
                onClick={handleLogout}
-               className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+               className="px-4 py-2 bg-red-50 text-red-600 text-[9px] font-black uppercase rounded-xl tracking-widest hover:bg-red-100 transition-all"
              >
                {t.logoutBtn}
+             </button>
+           ) : (
+             <button 
+               onClick={handleAdminAccess}
+               className="p-2.5 bg-slate-900 text-white rounded-xl shadow-lg hover:bg-indigo-600 transition-all group"
+               title={t.navAdmin}
+             >
+               <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
              </button>
            )}
         </div>
       </header>
 
-      <main className={`w-full px-6 md:px-12 mt-32 ${[Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.ADMIN, Phase.LOGIN].includes(phase) ? 'max-w-7xl' : 'max-w-4xl'}`}>
+      <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
         {phase === Phase.LANDING && <SelectionScreen onChoice={handleProductChoice} />}
 
         {phase === Phase.DYNAMIC_DIAGNOSIS && (
@@ -147,8 +155,8 @@ const AppContent: React.FC = () => {
         {phase === Phase.PROPOSAL && proposal && (
           <div className="space-y-12 fade-up">
             <div className="text-center space-y-4 max-w-2xl mx-auto">
-              <span className="inline-block px-4 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-widest">{t.proposalBadge}</span>
-              <h1 className="text-5xl font-serif text-slate-900 italic">{t.proposalTitle}</h1>
+              <span className="inline-block px-4 py-1 bg-green-50 text-green-700 text-[10px] font-black rounded-full uppercase tracking-widest">{t.proposalBadge}</span>
+              <h1 className="text-5xl font-serif text-slate-900 italic leading-tight">{t.proposalTitle}</h1>
             </div>
             <Proposal 
               data={proposal} 
@@ -159,19 +167,15 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      <footer className="w-full p-12 mt-auto border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-60 hover:opacity-100 transition-opacity">
-         <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">{t.footerText}</p>
-         <button 
-           onClick={handleAdminAccess} 
-           className="group flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200 shadow-sm"
-           title={t.navAdmin}
-         >
-           <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-indigo-600 transition-colors">Admin Access</span>
-           <svg className="w-5 h-5 text-slate-900 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-           </svg>
-         </button>
-      </footer>
+      {phase !== Phase.ADMIN && (
+        <footer className="w-full p-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
+           <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.footerText}</p>
+           <div className="flex gap-8">
+             <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest">AES-256 Protocol</span>
+             <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest">ISO 27001 Cloud</span>
+           </div>
+        </footer>
+      )}
 
       <AdeptifyChat centerId={diagnosis.centerName || 'general'} />
     </div>

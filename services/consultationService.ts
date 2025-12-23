@@ -38,17 +38,11 @@ export const consultationService = {
         return newConsultation;
       }
       
-      // Detallem l'error per evitar el [object Object]
-      console.error("ERROR SUPABASE:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
+      console.error("ERROR SUPABASE:", error.message);
       console.warn("Activant redundància local per fallada de sincronització.");
     }
 
-    // Fallback a LocalStorage si no hi ha Supabase o hi ha hagut un error d'inserció
+    // Fallback a LocalStorage
     try {
       const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
       existing.push(newConsultation);
@@ -116,12 +110,15 @@ export const consultationService = {
   },
 
   saveChatMessage: async (centerId: string, message: ChatMessage) => {
+    // Normalitzem centerId per evitar errors de referència
+    const id = centerId || 'general';
+
     if (supabase) {
       try {
         const { error } = await supabase
           .from('chat_messages')
           .insert([{
-            center_id: centerId,
+            center_id: id,
             role: message.role,
             content: message.text
           }]);
@@ -134,8 +131,8 @@ export const consultationService = {
     }
 
     const localChats = JSON.parse(localStorage.getItem(LOCAL_CHAT_KEY) || '{}');
-    if (!localChats[centerId]) localChats[centerId] = [];
-    localChats[centerId].push(message);
+    if (!localChats[id]) localChats[id] = [];
+    localChats[id].push(message);
     localStorage.setItem(LOCAL_CHAT_KEY, JSON.stringify(localChats));
   }
 };
