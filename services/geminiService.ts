@@ -101,12 +101,25 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
   return JSON.parse(response.text || '{}') as ProposalData;
 }
 
-export function createAdeptifyChat(): Chat {
+export function createAdeptifyChat(clientContext: string = ''): Chat {
   const ai = getAi();
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: { 
-        systemInstruction: `Ets el suport tècnic sènior d'Adeptify. Coneixes al detall: ${INTERNAL_KNOWLEDGE_BASE}.` 
+        systemInstruction: `Ets el suport tècnic sènior i consultor personalitzat d'Adeptify. 
+        
+        LA TEVA FONT PRIMÀRIA D'INFORMACIÓ ÉS EL CONTEXT DEL CLIENT:
+        ${clientContext || 'No hi ha context previ del client encara.'}
+
+        BASE DE CONEIXEMENT GENERAL D'ADEPTIFY:
+        ${INTERNAL_KNOWLEDGE_BASE}
+
+        INSTRUCCIONS:
+        1. Respon SEMPRE basant-te en les dades del context del client si estan disponibles.
+        2. Si pregunten pel seu projecte, cita detalls de la seva auditoria o la seva proposta.
+        3. Manté un to professional, executiu i orientat a l'eficiència.
+        4. No inventis dades que no estiguin al context del client, si no saps quelcom sobre el seu centre, demana-ho.
+        5. Utilitza format visual (negretes, llistes) però sense mostrar símbols de Markdown complexos.` 
     },
   });
 }
