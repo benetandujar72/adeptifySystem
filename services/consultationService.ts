@@ -1,62 +1,110 @@
 
 import { Consultation, DiagnosisState, ProposalData, ChatMessage } from '../types';
+import { supabase } from './supabaseClient';
 
-const STORAGE_KEY = 'adeptify_consultations_v1';
-const CHAT_STORAGE_KEY = 'adeptify_chat_history_v1';
+const LOCAL_STORAGE_KEY = 'adeptify_fallback_consultations';
+const LOCAL_CHAT_KEY = 'adeptify_fallback_chats';
 
+/**
+ * CONSULTATION SERVICE - HÍBRID (Supabase + LocalStorage Fallback)
+ */
 export const consultationService = {
-  saveConsultation: (diagnosis: DiagnosisState, proposal: ProposalData): Consultation => {
-    const consultations = consultationService.getAll();
+  
+  saveConsultation: async (diagnosis: DiagnosisState, proposal: ProposalData): Promise<Consultation> => {
+    const consultationId = `CONS-${Date.now()}`;
     const newConsultation: Consultation = {
       ...diagnosis,
-      id: `CONS-${Date.now()}`,
+      id: consultationId,
       date: new Date().toISOString(),
       proposal
     };
-    consultations.push(newConsultation);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
+
+    if (supabase) {
+      const { error } = await supabase
+        .from('consultations')
+        .insert([
+          {
+            id: consultationId,
+            center_name: diagnosis.centerName,
+            contact_email: diagnosis.contactEmail,
+            product_type: diagnosis.selectedProduct,
+            audit_history: diagnosis.consultationHistory,
+            proposal_data: proposal
+          }
+        ]);
+
+      if (!error) return newConsultation;
+      console.error("Error guardant a Supabase, usant backup local:", error);
+    }
+
+    // Fallback a LocalStorage
+    const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+    existing.push(newConsultation);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existing));
     return newConsultation;
   },
 
-  updateConsultation: (id: string, updates: Partial<Consultation>): Consultation | null => {
-    const consultations = consultationService.getAll();
-    const index = consultations.findIndex(c => c.id === id);
-    if (index === -1) return null;
-    
-    const updated = { ...consultations[index], ...updates };
-    consultations[index] = updated;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
-    return updated;
+  getAll: async (): Promise<Consultation[]> => {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('consultations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map(dbItem => ({
+          id: dbItem.id,
+          centerName: dbItem.center_name,
+          contactEmail: dbItem.contact_email,
+          selectedProduct: dbItem.product_type,
+          consultationHistory: dbItem.audit_history,
+          proposal: dbItem.proposal_data,
+          date: dbItem.created_at
+        }));
+      }
+    }
+
+    // Fallback LocalStorage
+    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
   },
 
-  getAll: (): Consultation[] => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+  getChatHistory: async (centerId: string): Promise<ChatMessage[]> => {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('center_id', centerId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        return data.map(msg => ({
+          role: msg.role as 'user' | 'model',
+          text: msg.content,
+          timestamp: msg.created_at
+        }));
+      }
+    }
+
+    const localChats = JSON.parse(localStorage.getItem(LOCAL_CHAT_KEY) || '{}');
+    return localChats[centerId] || [];
   },
 
-  delete: (id: string) => {
-    const consultations = consultationService.getAll().filter(c => c.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consultations));
-  },
+  saveChatMessage: async (centerId: string, message: ChatMessage) => {
+    if (supabase) {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert([{
+          center_id: centerId,
+          role: message.role,
+          content: message.text
+        }]);
+      
+      if (!error) return;
+    }
 
-  // Serveis de Xat Persistent per Usuari/Centre
-  saveChatMessage: (centerId: string, message: ChatMessage) => {
-    const allChats = consultationService.getAllChats();
-    // Normalitzem l'ID per evitar problemes amb caràcters especials
-    const key = centerId.toLowerCase().replace(/\s+/g, '_');
-    if (!allChats[key]) allChats[key] = [];
-    allChats[key].push(message);
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(allChats));
-  },
-
-  getChatHistory: (centerId: string): ChatMessage[] => {
-    const allChats = consultationService.getAllChats();
-    const key = centerId.toLowerCase().replace(/\s+/g, '_');
-    return allChats[key] || [];
-  },
-
-  getAllChats: (): Record<string, ChatMessage[]> => {
-    const data = localStorage.getItem(CHAT_STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
+    const localChats = JSON.parse(localStorage.getItem(LOCAL_CHAT_KEY) || '{}');
+    if (!localChats[centerId]) localChats[centerId] = [];
+    localChats[centerId].push(message);
+    localStorage.setItem(LOCAL_CHAT_KEY, JSON.stringify(localChats));
   }
 };

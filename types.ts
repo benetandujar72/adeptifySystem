@@ -12,7 +12,23 @@ export enum Phase {
 
 export type ProductType = 'LMS' | 'AUDIT' | 'VISION' | 'DEEP_AUDIT';
 
-// Interfaz para el flujo de preguntas de la auditoría
+// Estructura optimizada para Tablas SQL
+export interface DB_Center {
+  id: string; // UUID
+  name: string;
+  email: string;
+  created_at: string;
+}
+
+export interface DB_Project {
+  id: string;
+  center_id: string;
+  product_type: ProductType;
+  status: 'draft' | 'active' | 'completed';
+  audit_context: any; // Datos JSONB de la auditoría
+  proposal_data: ProposalData; // Datos JSONB de la propuesta final
+}
+
 export interface Question {
   id: number;
   text: string;
@@ -20,14 +36,6 @@ export interface Question {
   isMultiSelect?: boolean;
   options?: { label: string; value: string }[];
   placeholder?: string;
-}
-
-// Interfaz para las preferencias de notificación del usuario
-export interface NotificationPrefs {
-  push: boolean;
-  email: boolean;
-  dailySummary: boolean;
-  weeklySummary: boolean;
 }
 
 export interface DiagnosisState {
@@ -48,13 +56,6 @@ export interface BudgetItem {
   concept: string;
   description: string;
   price: number;
-}
-
-export interface SubscriptionPlan {
-  name: string;
-  monthlySoftwarePrice: number;
-  monthlyServerPrice: number;
-  features: string[];
 }
 
 export interface ImplementationPhase {
@@ -87,4 +88,12 @@ export interface Task {
   assignee: string;
   deadline: string;
   status: 'pendent' | 'en_proces' | 'completada';
+}
+
+// Se añade esta interfaz para corregir el error: Module '"../types"' has no exported member 'NotificationPrefs'.
+export interface NotificationPrefs {
+  push: boolean;
+  email: boolean;
+  dailySummary: boolean;
+  weeklySummary: boolean;
 }
