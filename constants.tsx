@@ -4,15 +4,35 @@ import { Question } from './types';
 export const QUESTIONS_FLOW: Question[] = [
   {
     id: 1,
-    text: "Quina tasca et fa sentir que perds més el temps al centre?",
+    text: "Quina és la barrera principal que impedeix el creixement del vostre centre avui?",
     type: 'select',
     isMultiSelect: true,
     options: [
-      { label: "Gestió d'aula (passar llista, posar notes, fer rúbriques)", value: "aula" },
-      { label: "Paperassa administrativa (informes de final de trimestre, memòries)", value: "burocracia" },
-      { label: "Reunions i coordinació (actes de reunió que ningú llegeix)", value: "reunions" },
-      { label: "Comunicació amb famílies (avisos, circulars, cites de tutoria)", value: "familia" },
-      { label: "Control d'instal·lacions (inventaris, manteniment, neteja)", value: "manteniment" }
+      { label: "Burocràcia asfixiant (Informes, memòries, circulars)", value: "burocracia" },
+      { label: "Desconnexió amb les famílies (Cites, avisos, satisfacció)", value: "familia" },
+      { label: "Caos en la gestió acadèmica (Notes, rúbriques, horaris)", value: "aula" },
+      { label: "Manteniment d'instal·lacions (Incidències, inventari)", value: "manteniment" }
+    ]
+  },
+  {
+    id: 2,
+    text: "Quants docents i alumnes gestiona el centre actualment?",
+    type: 'select',
+    options: [
+      { label: "Petit (Menys de 30 docents / 300 alumnes)", value: "small" },
+      { label: "Mitjà (30-80 docents / 300-800 alumnes)", value: "medium" },
+      { label: "Gran (Més de 80 docents / +800 alumnes)", value: "large" }
+    ]
+  },
+  {
+    id: 3,
+    text: "Quina és la inversió anual estimada que destineu a programari de gestió?",
+    type: 'select',
+    options: [
+      { label: "Molt baixa (Menys de 2.000€/any)", value: "low" },
+      { label: "Estàndard (2.000€ - 8.000€/any)", value: "mid" },
+      { label: "Alta (Més de 8.000€/any)", value: "high" },
+      { label: "Volem finançament 100% NextGen", value: "nextgen_target" }
     ]
   },
   {
@@ -23,9 +43,9 @@ export const QUESTIONS_FLOW: Question[] = [
   },
   {
     id: 8,
-    text: "A quin correu t'enviem l'informe de millora i la guia de fons NextGen?",
+    text: "A quin correu oficial t'enviem l'estratègia i el certificat de seguretat?",
     type: 'email',
-    placeholder: "la-teva-direccio@centre.com"
+    placeholder: "direccio@centre.com"
   }
 ];
 
@@ -37,20 +57,13 @@ export const SYMPTOM_OPTIONS: Record<string, { label: string; value: string }[]>
   burocracia: [
     { label: "Fer els informes trimestrals és un malson que m'emporto a casa", value: "informes" },
     { label: "La gestió de matrícules i papers em col·lapsa", value: "docs" }
-  ],
-  reunions: [
-    { label: "Fem moltes reunions però no sabem mai què ha quedat pendent", value: "tracabilitat" },
-    { label: "No tenim un lloc central per veure les tasques del curs", value: "tasques" }
-  ],
-  familia: [
-    { label: "Perdo hores quadrant cites de tutoria amb pares i mares", value: "cites" },
-    { label: "Enviar circulars i no saber si tothom les ha llegit", value: "newsletter" }
   ]
 };
 
 export const ADEPTIFY_INFO = {
-  name: "Adeptify SLU",
+  name: "Adeptify Systems SLU",
   nif: "B46605585",
   address: "C/ Independència 3, 08290 Cerdanyola del Vallès, Barcelona",
+  phone: "+34 690831770",
   taxRate: 0.21
 };
