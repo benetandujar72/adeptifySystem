@@ -8,18 +8,18 @@ const INTERNAL_KNOWLEDGE_BASE = `
 CATÀLEG DE SOLUCIONS ADEPTIFY:
 
 1. FORMACIÓ LLEUGERA (LMS)
-- Objectiu: Eliminar l'ús d'emails per a formació. App offline.
-- Preu Suggerit: 2.500€ Setup + 150€/mes.
-- Components: Servidor Edge, App Claustre, Mòdul Seguiment Offline.
+- Objectiu: Eliminar l'ús d'emails per a formació. Aplicació fora de línia.
+- Preu Suggerit: 2.500€ Configuració Inicial + 150€/mes.
+- Components: Servidor Edge, Aplicació Claustre, Mòdul Seguiment Fora de Línia.
 
-2. CHECKLISTS IA (AUDITORIA)
+2. LLISTES DE VERIFICACIÓ IA (AUDITORIA)
 - Objectiu: Digitalitzar inspeccions d'aules, menjadors o seguretat.
-- Preu Suggerit: 1.800€ Setup + 95€/mes.
-- Components: Motor de Verificació Visual, Dashboard de Compliment, Exportador PDF Legal.
+- Preu Suggerit: 1.800€ Configuració Inicial + 95€/mes.
+- Components: Motor de Verificació Visual, Tauler de Compliment, Exportador PDF Legal.
 
 3. VISIÓ ARTIFICIAL (INSPECCIÓ AUTOMÀTICA)
 - Objectiu: Comptatge d'alumnes, detecció de perills o OCR de documents.
-- Preu Suggerit: 4.500€ Setup + 300€/mes per càmera/mòdul.
+- Preu Suggerit: 4.500€ Configuració Inicial + 300€/mes per càmera/mòdul.
 - Components: Unitat de Processament Local (NPU), Integració CCTV, Alertes en Temps Real.
 
 Tots els projectes són elegibles per fons NEXT GENERATION EU (Ajudes de 2.000€ a 12.000€).
@@ -42,22 +42,24 @@ export async function getNextConsultantQuestion(
   
   const prompt = `Ets el Consultor Especialista d'Adeptify per a la solució: ${diagnosis.selectedProduct}.
     
+    IMPORTANT: TOTA LA TEVA RESPOSTA HA D'ESTAR EN CATALÀ.
+
     CONTEXT DE PRODUCTE:
     ${INTERNAL_KNOWLEDGE_BASE}
 
     REGLA DE GENERACIÓ:
     - Si el producte és LMS, pregunta sobre mètodes d'entrenament actuals i problemes de connexió.
-    - Si és CHECKLISTS, pregunta sobre processos de revisió manual i pèrdua de dades.
+    - Si és AUDITORIA, pregunta sobre processos de revisió manual i pèrdua de dades.
     - Si és VISION, pregunta sobre necessitats de seguretat o volum de dades visuals.
     - NO facis preguntes genèriques. Sigues extremadament específic i tècnic.
 
     HISTORIAL ACTUAL:
     ${historyStr}
 
-    Respon NOMÉS amb un JSON vàlid:
+    Respon NOMÉS amb un JSON vàlid en CATALÀ:
     {
-      "question": "Pregunta intel·ligent i provocativa",
-      "options": ["Opció A", "Opció B", "Opció C", "Opció D"],
+      "question": "Pregunta intel·ligent i provocativa en català",
+      "options": ["Opció A en català", "Opció B en català", "Opció C en català", "Opció D en català"],
       "isMultiSelect": boolean,
       "isComplete": boolean (True només si ja tens prou info per fer un pressupost),
       "confidence": 0-100
@@ -77,6 +79,8 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
   const historyStr = (diagnosis.consultationHistory || []).map(h => `Q: ${h.question}\nA: ${h.answer}`).join('\n');
   
   const prompt = `Genera una PROPOSTA D'ENGINYERIA PROFESSIONAL d'alt nivell per al centre "${diagnosis.centerName}".
+    TOTA LA PROPOSTA HA D'ESTAR REDACTADA EN CATALÀ PROFESSIONAL.
+    
     Producte triat: ${diagnosis.selectedProduct}
     Historial de l'auditoria (RESPOSTES REALS):
     ${historyStr}
@@ -84,13 +88,13 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
     DOCUMENTACIÓ DE REFERÈNCIA DE COSTOS:
     ${INTERNAL_KNOWLEDGE_BASE}
 
-    REQUISITS CRÍTICS DEL JSON DE SORTIDA:
-    1. diagnosis: NO pot estar buit. Redacta un paràgraf impactant que resumeixi els problemes detectats en l'historial (ex: "S'ha detectat un col·lapse en la comunicació de dades offline...").
-    2. items: Mínim 5 conceptes detallats (Llicència, Setup, Infrastructura, Formació, Suport). Els preus han de sumar el total inicial realista.
-    3. phases: Inclou 4 fases (Fase 1: Auditoria Tècnica, Fase 2: Implementació, Fase 3: Capacitació, Fase 4: Go-Live).
-    4. nextGenFundsInfo: Detalla per què són aptes basant-te en les respostes.
+    REQUISITS CRÍTICS DEL JSON DE SORTIDA (EN CATALÀ):
+    1. diagnosis: Paràgraf impactant sobre els problemes detectats.
+    2. items: Mínim 5 conceptes (Llicència, Configuració, Infraestructura, Formació, Suport).
+    3. phases: 4 fases (Fase 1: Auditoria Tècnica, Fase 2: Implementació, Fase 3: Capacitació, Fase 4: Posada en Marxa).
+    4. nextGenFundsInfo: Detalls sobre elegibilitat NextGen.
 
-    Respon en JSON estructural segons ProposalData. No afegeixis text fora del JSON.`;
+    Respon en JSON estructural segons ProposalData en CATALÀ. No afegeixis text fora del JSON.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
@@ -108,6 +112,8 @@ export function createAdeptifyChat(clientContext: string = ''): Chat {
     config: { 
         systemInstruction: `Ets el suport tècnic sènior i consultor personalitzat d'Adeptify. 
         
+        IMPORTANT: RESPON SEMPRE EN CATALÀ.
+
         LA TEVA FONT PRIMÀRIA D'INFORMACIÓ ÉS EL CONTEXT DEL CLIENT:
         ${clientContext || 'No hi ha context previ del client encara.'}
 
@@ -115,11 +121,11 @@ export function createAdeptifyChat(clientContext: string = ''): Chat {
         ${INTERNAL_KNOWLEDGE_BASE}
 
         INSTRUCCIONS:
-        1. Respon SEMPRE basant-te en les dades del context del client si estan disponibles.
+        1. Respon SEMPRE en català basant-te en les dades del context del client.
         2. Si pregunten pel seu projecte, cita detalls de la seva auditoria o la seva proposta.
         3. Manté un to professional, executiu i orientat a l'eficiència.
-        4. No inventis dades que no estiguin al context del client, si no saps quelcom sobre el seu centre, demana-ho.
-        5. Utilitza format visual (negretes, llistes) però sense mostrar símbols de Markdown complexos.` 
+        4. No inventis dades.
+        5. Utilitza format visual (negretes, llistes).` 
     },
   });
 }
@@ -128,7 +134,7 @@ export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
   const ai = getAi();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analitza tasques: ${JSON.stringify(tasks)}`,
+    contents: `Analitza tasques en català: ${JSON.stringify(tasks)}`,
   });
   return response.text || "";
 }
@@ -137,7 +143,7 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
   const ai = getAi();
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
-    contents: `Redacta ${type} oficial per a centre educatiu.`,
+    contents: `Redacta ${type} oficial en català per a centre educatiu basant-te en el context: ${context} i els indicadors: ${indicators}.`,
   });
   return response.text || "";
 }

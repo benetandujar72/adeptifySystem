@@ -10,87 +10,85 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({ onChoice }) => {
   const products = [
     {
       id: 'LMS' as ProductType,
-      title: 'Formació Lleugera (LMS)',
-      desc: 'Elimina el caos de l\'email. App offline per a claustre i alumnat.',
+      title: 'Sistema Acadèmic',
+      desc: 'Infraestructura d\'aprenentatge fora de línia d\'alta disponibilitat.',
       icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       ),
-      color: "bg-indigo-50",
-      textColor: "text-indigo-600"
+      accent: "border-indigo-100"
     },
     {
       id: 'AUDIT' as ProductType,
-      title: 'Checklists IA',
-      desc: 'Digitalitza auditories de menjador, aules i seguretat amb evidència IA.',
+      title: 'Motor d\'Auditoria',
+      desc: 'Digitalització de processos crítics i compliment normatiu.',
       icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      color: "bg-orange-50",
-      textColor: "text-orange-600"
+      accent: "border-slate-100"
     },
     {
       id: 'VISION' as ProductType,
-      title: 'Visió Artificial',
-      desc: 'Comptatge automàtic, OCR i detecció de perills mitjançant càmeres IA.',
+      title: 'Intel·ligència Visual',
+      desc: 'Sistemes avançats de monitorització i anàlisi visual.',
       icon: (
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
       ),
-      color: "bg-teal-50",
-      textColor: "text-teal-600"
+      accent: "border-slate-100"
     }
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center py-6 px-4 animate-in fade-in duration-700">
-      <div className="text-center mb-12 max-w-4xl w-full">
-        <h1 className="text-4xl md:text-7xl font-brand text-slate-900 tracking-tighter mb-6 leading-none uppercase">
-          Deixa de sobreviure,<br/><span className="text-indigo-600 italic">comença a educar.</span>
+    <div className="flex flex-col items-center justify-center py-12 px-4 fade-up">
+      <div className="text-center mb-16 max-w-3xl">
+        <h1 className="text-5xl md:text-7xl font-serif text-slate-900 mb-6 leading-tight">
+          L'eficiència és una <br/><span className="italic text-indigo-700 font-normal">decisió estratègica.</span>
         </h1>
-        <p className="text-slate-500 font-bold text-xl max-w-2xl mx-auto leading-relaxed">
-          "Allibera el teu centre de la dictadura del paper. Selecciona una solució i inicia l'auditoria dinàmica ara."
+        <p className="text-slate-500 font-medium text-lg max-w-xl mx-auto leading-relaxed">
+          Seleccioni l'àrea d'intervenció per iniciar el diagnòstic d'enginyeria per al seu centre.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl mb-20">
         {products.map((product) => (
           <div 
             key={product.id} 
             onClick={() => onChoice(product.id)}
-            className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all cursor-pointer flex flex-col items-center text-center gap-5"
+            className="group bg-white p-10 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] hover:border-indigo-200 transition-all duration-500 cursor-pointer flex flex-col items-start text-left gap-6"
           >
-            <div className={`w-16 h-16 ${product.color} ${product.textColor} rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:scale-110`}>
+            <div className="w-12 h-12 bg-slate-50 text-slate-900 rounded-xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
               {product.icon}
             </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">{product.title}</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">{product.desc}</p>
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">{product.title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed font-medium">{product.desc}</p>
             </div>
-            <button className="mt-4 text-[9px] font-black uppercase tracking-widest text-indigo-600 border-b border-indigo-200 pb-1 group-hover:border-indigo-600 transition-all">
-              Configurar Solució →
-            </button>
+            <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-indigo-600 group-hover:translate-x-2 transition-transform">
+              Iniciar Auditoria
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="w-full max-w-4xl bg-indigo-600 rounded-[3rem] p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="space-y-3 relative z-10 text-center md:text-left">
-          <h2 className="text-3xl font-brand uppercase italic">Auditoria Integral</h2>
-          <p className="text-indigo-100 text-sm font-medium opacity-80 max-w-md">No saps per on començar? Fes una auditoria de 360º del teu centre.</p>
+      <div className="w-full max-w-5xl bg-slate-950 rounded-2xl p-12 text-white flex flex-col md:flex-row items-center justify-between gap-10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] -mr-40 -mt-40" />
+        <div className="space-y-4 relative z-10 max-w-lg">
+          <h2 className="text-3xl font-serif italic">Auditoria Integral 360º</h2>
+          <p className="text-slate-400 text-sm leading-relaxed font-medium">
+            Una anàlisi profunda de tots els vectors operatius del centre. Recomanat per a equips directius que busquen una transformació total.
+          </p>
         </div>
         <button 
           onClick={() => onChoice('DEEP_AUDIT')}
-          className="bg-white text-indigo-600 px-12 py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] hover:bg-slate-50 hover:scale-105 active:scale-95 transition-all shadow-xl shrink-0 relative z-10"
+          className="bg-white text-slate-900 px-10 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all shadow-xl shrink-0 relative z-10 btn-premium"
         >
-          Anàlisi Global →
+          Anàlisi Global d'Estructura
         </button>
       </div>
     </div>
