@@ -26,18 +26,42 @@ function Invoke-GCloud {
   }
 }
 
+function Invoke-GCloudCapture {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Args
+  )
+
+  $output = & gcloud @Args 2>&1
+  if ($LASTEXITCODE -ne 0) {
+    $joined = ($output | Out-String).TrimEnd()
+    throw "gcloud failed (exit $LASTEXITCODE): gcloud $($Args -join ' ')`n$joined"
+  }
+  return ($output | Out-String).TrimEnd()
+}
+
+function Test-GCloud {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$Args
+  )
+
+  & gcloud @Args | Out-Null
+  return ($LASTEXITCODE -eq 0)
+}
+
 Write-Host "Project: $ProjectId"
 Write-Host "Region: $Region"
 Write-Host "Artifact Repo: $ArtifactRepo"
 Write-Host "Cloud Run Service: $CloudRunService"
 
 try {
-  gcloud --version | Out-Null
+  Invoke-GCloud -Args @('--version')
 } catch {
   throw "gcloud not found. Install Google Cloud SDK and restart your terminal."
 }
 
-$auth = (gcloud auth list --format="value(account)")
+$auth = (Invoke-GCloudCapture -Args @('auth', 'list', '--format=value(account)'))
 if (-not $auth) {
   Write-Host "No gcloud account is logged in. Running: gcloud auth login"
   Write-Host "(This will open a browser window.)"
@@ -49,7 +73,7 @@ Invoke-GCloud -Args @('config', 'set', 'project', $ProjectId)
 Write-Host "Enabling APIs (this may take a minute)..."
 Invoke-GCloud -Args @('services','enable','artifactregistry.googleapis.com','run.googleapis.com','cloudbuild.googleapis.com')
 
-$projectNumber = (gcloud projects describe $ProjectId --format="value(projectNumber)")
+$projectNumber = (Invoke-GCloudCapture -Args @('projects', 'describe', $ProjectId, '--format=value(projectNumber)'))
 if (-not $projectNumber) { throw "Could not determine projectNumber for $ProjectId" }
 
 $cloudBuildSa = "$projectNumber@cloudbuild.gserviceaccount.com"
@@ -60,8 +84,7 @@ Write-Host "Cloud Build SA: $cloudBuildSa"
 Write-Host "Cloud Run Agent: $cloudRunAgent"
 
 Write-Host "Creating Artifact Registry repo (if it does not exist)..."
-& gcloud @('artifacts', 'repositories', 'describe', $ArtifactRepo, '--location', $Region) | Out-Null
-if ($LASTEXITCODE -ne 0) {
+if (-not (Test-GCloud -Args @('artifacts', 'repositories', 'describe', $ArtifactRepo, '--location', $Region))) {
   Invoke-GCloud -Args @('artifacts','repositories','create',$ArtifactRepo,'--repository-format','docker','--location',$Region,'--description',"Docker images for $CloudRunService")
 }
 
