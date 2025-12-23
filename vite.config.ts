@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
     const geminiApiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
     const supabaseUrl = process.env.SUPABASE_URL || env.SUPABASE_URL;
     const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
+  const sbPublishableKey = process.env.SB_PUBLISHABLE_KEY || env.SB_PUBLISHABLE_KEY;
     return {
       server: {
         port: 3000,
@@ -23,6 +24,7 @@ export default defineConfig(({ mode }) => {
           GEMINI_API_KEY: geminiApiKey,
           SUPABASE_URL: supabaseUrl,
           SUPABASE_ANON_KEY: supabaseAnonKey,
+          SB_PUBLISHABLE_KEY: sbPublishableKey,
         }),
       },
       resolve: {
