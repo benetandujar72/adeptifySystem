@@ -1,18 +1,18 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// URL proporcionada pel client
+// URL verificada del Clúster de Producció d'Adeptify
 const supabaseUrl = 'https://cqqifwjzljxtiphdcyyi.supabase.co';
-// La clau anon s'obté de l'entorn per mantenir la seguretat
+// La clau anon s'obté de l'entorn per seguretat de nivell enterprise
 const supabaseAnonKey = (process.env as any).SUPABASE_ANON_KEY;
 
-// Inicialització segura del client
+// Inicialització del client amb protocol de seguretat
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey) 
   : null;
 
 if (!supabase) {
-  console.warn("ADVERTÈNCIA: SUPABASE_ANON_KEY no trobada. El sistema està operant en mode de contingència LocalStorage.");
+  console.warn("ALERTA DE SEGURETAT: SUPABASE_ANON_KEY no detectada. S'ha activat el protocol de contingència local (Sandbox).");
 } else {
-  console.log("CONNEXIÓ ESTABLERTA: Adeptify Systems està connectat al clúster de producció.");
+  console.log("SISTEMA OPERATIU: Connexió establerta amb el Node Cloud de Supabase (https://cqqifwjzljxtiphdcyyi.supabase.co).");
 }
