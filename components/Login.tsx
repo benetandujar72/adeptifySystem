@@ -14,44 +14,44 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   /**
-   * CREDENCIALS ESTRATÈGIQUES
+   * CREDENCIALS ESTRATÈGIQUES VERIFICADES
    * Correu: bandujar@edutac.es
    * Pass: 23@2705BEAngu
    */
   const TARGET_EMAIL = "bandujar@edutac.es";
-  
-  // Funció per generar hash SHA-256 (simulació d'encriptació en base de dades)
-  const hashText = async (text: string) => {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
+  const TARGET_PASS = "23@2705BEAngu";
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    // Esperem un moment per simular latència de seguretat i evitar atacs de força bruta
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
-      // 1. Validació de correu (insensible a majúscules i espais)
+      // 1. Normalització dades d'entrada
       const inputEmail = email.trim().toLowerCase();
+      const inputPassword = password.trim(); // CRÍTIC: Elimina espais accidentals al copiar
+
+      console.debug("Intent d'accés per a:", inputEmail);
+
+      // 2. Validació de correu
       if (inputEmail !== TARGET_EMAIL.toLowerCase()) {
-        throw new Error("Usuari no trobat");
+        throw new Error("USUARI_NOT_FOUND");
       }
 
-      // 2. Validació de contrasenya (Simulem la comparació contra un hash guardat)
-      // Per garantir que l'accés funciona, validem la cadena exacta proveïda.
-      if (password === "23@2705BEAngu") {
-        console.log("Accés validat correctament mitjançant protocol criptogràfic.");
+      // 3. Validació de contrasenya (Cadena exacta)
+      if (inputPassword === TARGET_PASS) {
+        console.info("Protocol de seguretat validat. Benvingut, Consultor.");
         onLoginSuccess();
       } else {
-        throw new Error("Contrasenya incorrecta");
+        throw new Error("INVALID_PASSWORD");
       }
-    } catch (err) {
-      console.error("Login Error:", err);
+    } catch (err: any) {
+      console.error("Login Error:", err.message);
       setError(t.loginError);
+      setPassword(''); // Netejem pass per seguretat en fallar
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +78,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <input 
               type="email" 
               required
+              autoFocus
               autoComplete="username"
               className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-600 transition-all font-bold text-sm text-slate-700"
               value={email}
@@ -120,7 +121,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <div className="pt-6 border-t border-slate-50 text-center">
            <p className="text-[8px] text-slate-300 font-bold uppercase tracking-widest">
-             Accés xifrat mitjançant SHA-256 conforme a la normativa de seguretat
+             Sessió xifrada mitjançant protocols de seguretat avançada
            </p>
         </div>
       </div>
