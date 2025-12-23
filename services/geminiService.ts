@@ -1,12 +1,10 @@
 
-// Implementación del servicio de Gemini para Adeptify
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ProposalData, DiagnosisState, Task, ProductType } from "../types";
+import { Language } from "../translations";
 
-// Inicialización del cliente de GenAI usando la variable de entorno API_KEY
 const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// Se define la interfaz DynamicQuestion para el flujo del consultor dinámico
 export interface DynamicQuestion {
   question: string;
   options: string[];
@@ -15,54 +13,33 @@ export interface DynamicQuestion {
   confidence: number;
 }
 
-const INTERNAL_KNOWLEDGE_BASE = `
-CATÁLOGO DE AYUDA ADEPTIFY:
-
-1. ORGANIZADOR ESCOLAR (LMS)
-- Para qué sirve: Que los profesores no pierdan horas buscando materiales o apuntando notas en mil sitios.
-- Precio: 2.500€ Inicio + 150€/mes.
-- Tiempo ganado: 15h al mes para que el profesor pueda estar con sus alumnos.
-
-2. ASISTENTE ANTI-PAPELEO (IA COMPLIANCE)
-- Para qué sirve: Redactar actas, memorias y documentos oficiales en minutos.
-- Precio: 1.800€ Inicio + 95€/mes.
-- Tiempo ganado: Reduce un 40% el tiempo que pasas sentado frente al ordenador haciendo informes.
-
-3. VIGILANTE AMIGO (AI VISION)
-- Para qué sirve: Ver quién entra al centro y avisar de cualquier imprevisto de seguridad sin complicaciones.
-- Precio: 4.500€ Inicio + 300€/mes.
-
-Ayudas: Estas soluciones pueden ser financiadas al 100% por los fondos NextGen (hasta 12.000€).
-`;
-
-// Se actualiza el tipo de retorno para usar la interfaz DynamicQuestion recién definida
 export async function getNextConsultantQuestion(
   history: { question: string; answer: string }[], 
-  diagnosis: DiagnosisState
+  diagnosis: DiagnosisState,
+  lang: Language = 'ca'
 ): Promise<DynamicQuestion> {
   const ai = getAi();
-  const historyStr = history.map(h => `Pregunta: ${h.question}\nRespuesta: ${h.answer}`).join('\n');
+  const historyStr = history.map(h => `Pregunta: ${h.question}\nResposta: ${h.answer}`).join('\n');
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   
-  const prompt = `ACTÚA COMO UN CONSULTOR AMABLE QUE QUIERE AYUDAR A UN DIRECTOR DE ESCUELA.
-    OBJETIVO: Entender dónde le duele el día a día para proponerle una solución de Adeptify.
+  const prompt = `ACTUA COM UN CONSULTOR SENIOR D'EFICIÈNCIA PER A ESCOLES.
+    OBJECTIU: Entendre on perd temps el claustre per proposar una solució de "vida fàcil".
 
-    REGLAS DE ORO:
-    - No uses lenguaje técnico. Prohibido hablar de "API", "JSON", "Mapeo", "Sincronización".
-    - Habla de "personas", "tiempo", "alumnos", "papeleo", "estrés".
-    - Usa ejemplos como: "el lío de las notas", "las circulares que nadie lee", "las actas de claustro eternas".
-    - Tus preguntas deben sonar como una charla de café entre dos profesionales que se respetan.
+    REGLES CRÍTIQUES:
+    - PARLA SEMPRE EN ${langName}.
+    - No facis servir llenguatge tècnic. Prohibit parlar de "API", "Base de dades", "Backend", "Workflow".
+    - Parla de "papeleo", "lladres de temps", "pau a la sala de profes", "seguiment d'alumnes".
+    - Fes servir exemples de l'escola: "reunions eternes", "correus de pares", "Excels compartits".
 
-    CONTESTA SIEMPRE EN CASTELLANO.
-
-    HISTORIAL DE LA CHARLA:
+    HISTORIAL:
     ${historyStr}
 
-    Responde en este formato JSON:
+    Respon en aquest format JSON:
     {
-      "question": "Tu pregunta amable aquí",
-      "options": ["Opción 1 sencilla", "Opción 2 sencilla", "...", "Otras..."],
+      "question": "Pregunta amable i humana en ${langName}",
+      "options": ["Opció 1 en ${langName}", "Opció 2", "Altres..."],
       "isMultiSelect": boolean,
-      "isComplete": boolean (pon true si ya has entendido qué les pasa),
+      "isComplete": boolean,
       "confidence": 0-100
     }`;
 
@@ -73,19 +50,18 @@ export async function getNextConsultantQuestion(
       config: { responseMimeType: "application/json", temperature: 0.4 }
     });
     
-    // Extracción del texto de la respuesta directamente de la propiedad .text
     const data = JSON.parse(response.text || '{}');
     return {
-      question: data.question || "¿Cómo podemos ayudarle a organizar mejor el tiempo de su claustro hoy?",
-      options: Array.isArray(data.options) ? data.options : ["Seguir hablando", "Otras..."],
+      question: data.question || (lang === 'ca' ? "Com podem ajudar?" : "¿Cómo podemos ayudar?"),
+      options: Array.isArray(data.options) ? data.options : ["Continuar", "Altres..."],
       isMultiSelect: !!data.isMultiSelect,
       isComplete: !!data.isComplete,
       confidence: data.confidence || 0
     };
   } catch (e) {
     return {
-      question: "Perdone, la conexión ha tenido un pequeño tropiezo. ¿En qué estábamos?",
-      options: ["Reintentar", "Otras..."],
+      question: lang === 'ca' ? "Hi ha un petit problema. Continuem?" : "Hay un pequeño problema. ¿Continuamos?",
+      options: ["Reintentar"],
       isMultiSelect: false,
       isComplete: false,
       confidence: 0
@@ -93,22 +69,22 @@ export async function getNextConsultantQuestion(
   }
 }
 
-// Generación de la propuesta educativa estructurada
-export async function generateEducationalProposal(diagnosis: DiagnosisState): Promise<ProposalData> {
+export async function generateEducationalProposal(diagnosis: DiagnosisState, lang: Language = 'ca'): Promise<ProposalData> {
   const ai = getAi();
-  const historyStr = (diagnosis.consultationHistory || []).map(h => `Pregunta: ${h.question}\nRespuesta: ${h.answer}`).join('\n');
+  const historyStr = (diagnosis.consultationHistory || []).map(h => `Pregunta: ${h.question}\nResposta: ${h.answer}`).join('\n');
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   
-  const prompt = `ERES UN CONSULTOR ESTRATÉGICO PARA COLEGIOS.
-    Dibuja un plan para ayudar al centro "${diagnosis.centerName}".
-    USA LENGUAJE HUMANO Y CERCANO.
+  const prompt = `ETS UN CONSULTOR ESTRATÈGIC PER A CENTRES EDUCATIUS.
+    Prepara un pla per a "${diagnosis.centerName}".
+    LLENGUATGE EN ${langName}, HUMÀ I PROPER.
 
-    Explícales:
-    1. Qué "ladrones de tiempo" has detectado en sus respuestas: ${historyStr}
-    2. Cómo les vamos a ayudar a que el tutor no se sienta solo ante el papeleo.
-    3. Cómo vamos a asegurar que si un padre manda un mensaje, se convierta en una tarea clara para el responsable.
-    4. Un presupuesto claro que un director pueda presentar a su consejo escolar.
+    Estructura la proposta:
+    1. Quins "lladres de temps" has detectat: ${historyStr}
+    2. Com farem que les reunions de claustre es converteixin en tasques automàtiques.
+    3. Com eliminarem la paperassa burocràtica.
+    4. Un pressupost clar en ${langName}.
 
-    CONTESTA SIEMPRE EN CASTELLANO en formato JSON ProposalData.`;
+    Respon en format JSON ProposalData.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -117,50 +93,55 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
       config: { responseMimeType: "application/json" }
     });
 
-    // Extracción del texto de la respuesta directamente de la propiedad .text
     const data = JSON.parse(response.text || '{}');
-    return {
-      diagnosis: data.diagnosis || "Hemos detectado que el papeleo les está quitando tiempo de calidad con los alumnos.",
-      solution: data.solution || "Proponemos un sistema que se encarga de los documentos por usted.",
-      items: Array.isArray(data.items) ? data.items : [],
-      totalInitial: Number(data.totalInitial) || 0,
-      nextGenFundsInfo: data.nextGenFundsInfo || "Este proyecto encaja perfectamente en las subvenciones europeas.",
-      implementationTime: data.implementationTime || "En pocas semanas",
-      roi: data.roi || "40% de tiempo recuperado",
-      phases: Array.isArray(data.phases) ? data.phases : []
-    };
+    return data;
   } catch (e) {
-    throw new Error("No hemos podido preparar el plan. Por favor, inténtelo de nuevo.");
+    throw new Error("Error generant la proposta.");
   }
 }
 
-// Creación de una sesión de chat para el asistente de Adeptify
-export function createAdeptifyChat(clientContext: string = ''): Chat {
+export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca'): Chat {
   const ai = getAi();
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: { 
-        systemInstruction: `Eres tu ayudante personal de Adeptify. No eres un ingeniero. Eres un facilitador. Hablas siempre en castellano. Eres educado, empático y vas directo a resolver problemas reales de las escuelas: papeleo, falta de comunicación, olvidos de tareas.` 
+        systemInstruction: `Ets l'ajudant personal d'Adeptify per a escoles. Parla sempre en ${langName}. Ets empàtic, educat i entens l'estrès d'un director escolar.` 
     },
   });
 }
 
-// Análisis inteligente de tareas pendientes
-export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
+export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean, lang: Language = 'ca'): Promise<string> {
   const ai = getAi();
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Como ayudante de Adeptify, mira esta lista de tareas y dime cómo podríamos hacerlas más rápido o delegarlas en castellano: ${JSON.stringify(tasks)}`,
-  });
-  return response.text || "Parece que tenéis mucho trabajo, vamos a ver cómo podemos simplificarlo.";
-}
-
-// Generación de borradores de documentos oficiales
-export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean): Promise<string> {
-  const ai = getAi();
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
-    contents: `Ayúdame a redactar un borrador de ${type} escolar en castellano. Que suene profesional pero natural. Contexto: ${context}. Datos: ${indicators}.`,
+    contents: `Ajuda'm a redactar un esborrany de ${type} escolar en ${langName}. Que soni oficial però fàcil de llegir. Context: ${context}. Dades: ${indicators}.`,
   });
-  return response.text || "Preparando el borrador del documento oficial...";
+  return response.text || "Generant...";
+}
+
+// Fix: Implementación de analyzeTasksIntelligence para TaskManager.tsx
+export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
+  const ai = getAi();
+  const tasksStr = tasks.map(t => `- [${t.status}] ${t.title} (Responsable: ${t.assignee}, Plazo: ${t.deadline})`).join('\n');
+  
+  const prompt = `ACTÚA COMO UN CONSULTOR DE EFICIENCIA ESCOLAR.
+    Analiza la siguiente lista de tareas y ofrece un consejo breve (máximo 20 palabras) para mejorar la productividad del claustro.
+    Sé directo y práctico. Responde siempre en Catalán como idioma principal, pero con un tono que cualquiera entienda.
+    
+    TAREAS:
+    ${tasksStr}
+    
+    Responde directamente con el consejo.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+    });
+    return response.text || "No hi ha suggeriments en aquest moment.";
+  } catch (e) {
+    return "Error analitzant les tasques.";
+  }
 }

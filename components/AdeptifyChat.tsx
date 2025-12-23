@@ -2,14 +2,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createAdeptifyChat } from '../services/geminiService';
 import { consultationService } from '../services/consultationService';
-import { GenerateContentResponse, GoogleGenAI } from '@google/genai';
-import { ChatMessage, Consultation } from '../types';
+import { GenerateContentResponse } from '@google/genai';
+import { ChatMessage } from '../types';
+import { useLanguage } from '../LanguageContext';
 
 interface AdeptifyChatProps {
   centerId?: string; 
 }
 
 const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => {
+  const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -21,25 +23,23 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     const consultations = await consultationService.getAll();
     const clientData = consultations.find(c => c.centerName === centerId) || consultations[0];
     
-    if (!clientData) return "Hablemos de cómo mejorar la vida en su escuela.";
+    if (!clientData) return language === 'ca' ? "Parlem d'ajudar l'escola." : "Hablemos de ayudar al colegio.";
 
     return `
       CENTRO: ${clientData.centerName}
-      LO QUE LES PREOCUPA: ${clientData.proposal?.diagnosis || 'Falta de tiempo'}
+      CONTEXTO: ${clientData.proposal?.diagnosis || 'Falta de tiempo'}
     `;
   };
 
   useEffect(() => {
     const initChat = async () => {
-      if (isOpen && !chatRef.current) {
+      if (isOpen) {
         const context = await getClientContext();
-        chatRef.current = createAdeptifyChat(context);
-        const history = await consultationService.getChatHistory(centerId);
-        if (history.length > 0) setMessages(history);
+        chatRef.current = createAdeptifyChat(context, language);
       }
     };
     initChat();
-  }, [isOpen, centerId]);
+  }, [isOpen, centerId, language]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,8 +55,6 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     
     setInput('');
     setMessages(prev => [...prev, userMsg]);
-    await consultationService.saveChatMessage(centerId, userMsg);
-    
     setIsTyping(true);
 
     try {
@@ -64,33 +62,16 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       const response = result as GenerateContentResponse;
       const modelMsg: ChatMessage = { 
         role: 'model', 
-        text: response.text || "Lo siento, me he despistado un momento. ¿Podemos retomar?", 
+        text: response.text || (language === 'ca' ? "Ho sento, em pots repetir?" : "Lo siento, ¿me puedes repetir?"), 
         timestamp: new Date().toISOString() 
       };
-      
       setMessages(prev => [...prev, modelMsg]);
-      await consultationService.saveChatMessage(centerId, modelMsg);
     } catch (error) {
-      const errorMsg: ChatMessage = { role: 'model', text: "Parece que hay un problemilla técnico. No se preocupe, intentemos de nuevo.", timestamp: new Date().toISOString() };
+      const errorMsg: ChatMessage = { role: 'model', text: "Error de conexión.", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
     }
-  };
-
-  const renderFormattedText = (text: string) => {
-    return text.split('\n').map((line, index) => {
-      let content: React.ReactNode = line;
-      let className = "mb-2 block";
-      if (line.startsWith('###')) {
-        content = line.replace(/#/g, '').trim();
-        className = "text-[14px] font-black uppercase text-indigo-600 mt-6 mb-3 border-l-4 border-indigo-600 pl-3";
-      } else if (line.includes('**')) {
-        const parts = line.split('**');
-        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-black text-slate-900">{part}</strong> : part);
-      }
-      return <span key={index} className={className}>{content}</span>;
-    });
   };
 
   return (
@@ -103,8 +84,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div>
-                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white">TU AYUDANTE ADEPTIFY</p>
-                <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">Siempre a tu lado</p>
+                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white">{t.chatTitle}</p>
+                <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">{t.chatSubtitle}</p>
               </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all">
@@ -113,26 +94,19 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
           </div>
           
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FDFDFD] custom-scrollbar">
-            {messages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30">
-                 <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                 <p className="text-xs font-black uppercase tracking-widest">Hablemos de su colegio. ¿Qué necesita hoy?</p>
-              </div>
-            )}
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                 <div className={`max-w-[90%] p-6 rounded-[2rem] text-[13px] shadow-sm ${
                   m.role === 'user' ? 'bg-slate-900 text-white font-bold rounded-tr-none' : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none font-medium'
                 }`}>
-                  {m.role === 'model' ? renderFormattedText(m.text) : m.text}
+                  {m.text}
                 </div>
               </div>
             ))}
             {isTyping && (
               <div className="flex justify-start px-6 animate-pulse">
                 <div className="text-[10px] text-indigo-600 font-black uppercase tracking-widest flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" />
-                   Pensando cómo ayudarle...
+                   {t.chatThinking}
                 </div>
               </div>
             )}
@@ -142,7 +116,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
             <div className="flex gap-3">
               <input
                 type="text"
-                placeholder="Escríbame aquí lo que necesite..."
+                placeholder={t.chatPlaceholder}
                 className="flex-1 text-[13px] font-bold p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-600 transition-all shadow-inner"
                 value={input}
                 onChange={e => setInput(e.target.value)}
@@ -156,7 +130,6 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
         </div>
       )}
       <button onClick={() => setIsOpen(!isOpen)} className="h-20 w-20 bg-slate-950 text-white rounded-[2rem] flex items-center justify-center shadow-2xl hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 border-4 border-white group relative">
-        <div className="absolute -top-1 -right-1 w-5 h-5 bg-indigo-500 rounded-full animate-pulse border-2 border-white" />
         <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
       </button>
     </div>
