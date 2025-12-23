@@ -159,10 +159,17 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      <footer className="w-full p-12 mt-auto border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
+      <footer className="w-full p-12 mt-auto border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-60 hover:opacity-100 transition-opacity">
          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">{t.footerText}</p>
-         <button onClick={handleAdminAccess} className="p-3 hover:bg-slate-100 rounded-full transition-all" title={t.navAdmin}>
-           <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+         <button 
+           onClick={handleAdminAccess} 
+           className="group flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl transition-all border border-slate-200 shadow-sm"
+           title={t.navAdmin}
+         >
+           <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-indigo-600 transition-colors">Admin Access</span>
+           <svg className="w-5 h-5 text-slate-900 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+           </svg>
          </button>
       </footer>
 
