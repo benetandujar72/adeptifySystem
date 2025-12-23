@@ -19,6 +19,25 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Helper para formatear texto Markdown a HTML básico de forma segura.
+   * Maneja negritas (**), listas (*), y saltos de línea.
+   */
+  const formatMessage = (text: string) => {
+    let formatted = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-slate-900">$1</strong>') // Negritas
+      .replace(/^\* (.*$)/gm, '<li class="ml-4 list-disc marker:text-indigo-500">$1</li>') // Listas
+      .replace(/\n/g, '<br />'); // Saltos de línea
+
+    if (formatted.includes('<li>')) {
+      formatted = `<ul class="space-y-1 my-2">${formatted}</ul>`;
+      // Limpiar BR innecesarios dentro de listas
+      formatted = formatted.replace(/<\/li><br \/>/g, '</li>');
+    }
+
+    return <div dangerouslySetInnerHTML={{ __html: formatted }} />;
+  };
+
   const getClientContext = async (): Promise<string> => {
     const consultations = await consultationService.getAll();
     const clientData = consultations.find(c => c.centerName === centerId) || consultations[0];
@@ -36,13 +55,26 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       if (isOpen) {
         const context = await getClientContext();
         chatRef.current = createAdeptifyChat(context, language);
-        // Carreguem historial previ
+        
+        // Cargar historial
         const history = await consultationService.getChatHistory(centerId);
-        if (history.length > 0) setMessages(history);
+        
+        if (history.length === 0) {
+          // Si no hay historial, insertar el mensaje de bienvenida oficial
+          const welcomeMsg: ChatMessage = {
+            role: 'model',
+            text: t.chatWelcome,
+            timestamp: new Date().toISOString()
+          };
+          setMessages([welcomeMsg]);
+          await consultationService.saveChatMessage(centerId, welcomeMsg);
+        } else {
+          setMessages(history);
+        }
       }
     };
     initChat();
-  }, [isOpen, centerId, language]);
+  }, [isOpen, centerId, language, t.chatWelcome]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -60,7 +92,6 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    // Guardem missatge d'usuari
     await consultationService.saveChatMessage(centerId, userMsg);
 
     try {
@@ -72,8 +103,6 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
         timestamp: new Date().toISOString() 
       };
       setMessages(prev => [...prev, modelMsg]);
-      
-      // Guardem missatge del model
       await consultationService.saveChatMessage(centerId, modelMsg);
     } catch (error) {
       const errorMsg: ChatMessage = { role: 'model', text: "Error de conexión.", timestamp: new Date().toISOString() };
@@ -93,7 +122,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div>
-                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white">{t.chatTitle}</p>
+                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white leading-tight">{t.chatTitle}</p>
                 <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">{t.chatSubtitle}</p>
               </div>
             </div>
@@ -105,16 +134,19 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#FDFDFD] custom-scrollbar">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                <div className={`max-w-[90%] p-6 rounded-[2rem] text-[13px] shadow-sm ${
-                  m.role === 'user' ? 'bg-slate-900 text-white font-bold rounded-tr-none' : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none font-medium'
+                <div className={`max-w-[90%] p-6 rounded-[2rem] text-[13px] shadow-sm leading-relaxed ${
+                  m.role === 'user' 
+                    ? 'bg-slate-900 text-white font-bold rounded-tr-none' 
+                    : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none font-medium'
                 }`}>
-                  {m.text}
+                  {m.role === 'model' ? formatMessage(m.text) : m.text}
                 </div>
               </div>
             ))}
             {isTyping && (
               <div className="flex justify-start px-6 animate-pulse">
                 <div className="text-[10px] text-indigo-600 font-black uppercase tracking-widest flex items-center gap-2">
+                   <span className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></span>
                    {t.chatThinking}
                 </div>
               </div>

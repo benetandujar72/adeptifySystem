@@ -56,10 +56,11 @@ export const translations = {
     contactConsultant: "Contactar Consultor",
 
     // Chat
-    chatTitle: "TU AYUDANTE ADEPTIFY",
+    chatTitle: "AL TEU ASSISTENT ADEPTIFY",
     chatSubtitle: "Sempre al teu costat",
     chatPlaceholder: "Escrigui'm aquí el que necessiti...",
     chatThinking: "Pensant com ajudar-lo...",
+    chatWelcome: "Bon dia. Entenc perfectament que, com a director o directora, el teu dia a dia és un trencaclosques constant: la gestió de l'equip docent, les demandes de les famílies, la burocràcia administrativa i, per sobre de tot, el benestar dels alumnes.\n\nSé que la pressió pot ser esgotadora i que sovint et falta temps per al que realment importa: el **projecte pedagògic**.\n\nSoc el teu ajudant personal d'**Adeptify** i estic aquí per alleugerir aquesta càrrega. Pensa en mi com el teu braç dret digital. Puc ajudar-te a:\n\n* Redactar comunicats o circulars.\n* Organitzar idees per al claustre.\n* Analitzar normatives oficials.\n* Buscar maneres d'implementar la IA a la teva escola de forma ètica.\n\nEn què et puc donar un cop de mà avui per fer que la teva jornada sigui una mica més senzilla?",
 
     // Doc Generator
     docGenTitle: "Redactor Estratègic",
@@ -125,10 +126,11 @@ export const translations = {
     contactConsultant: "Contactar Consultor",
 
     // Chat
-    chatTitle: "TU AYUDANTE ADEPTIFY",
+    chatTitle: "A TU ASISTENTE ADEPTIFY",
     chatSubtitle: "Siempre a tu lado",
     chatPlaceholder: "Escríbame aquí lo que necesite...",
     chatThinking: "Pensando cómo ayudarle...",
+    chatWelcome: "Buen día. Entiendo perfectamente que, como director o directora, tu día a día es un rompecabezas constante: la gestión del equipo docente, las demandas de las familias, la burocracia administrativa y, por sobre todo, el bienestar de los alumnos.\n\nSé que la presión puede ser agotadora y que a menudo te falta tiempo para lo que realmente importa: el **proyecto pedagógico**.\n\nSoy tu ayudante personal de **Adeptify** y estoy aquí para aliviar esa carga. Piensa en mí como tu brazo derecho digital. Puedo ayudarte a:\n\n* Redactar comunicados o circulares.\n* Organizar ideas para el claustro.\n* Analizar normativas oficiales.\n* Buscar maneras de implementar la IA en tu escuela de forma ética.\n\n¿En qué te puedo echar una mano hoy para hacer que tu jornada sea un poco más sencilla?",
 
     // Doc Generator
     docGenTitle: "Redactor Estratégico",
