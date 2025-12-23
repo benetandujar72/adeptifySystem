@@ -6,7 +6,7 @@ const LOCAL_STORAGE_KEY = 'adeptify_fallback_consultations';
 const LOCAL_CHAT_KEY = 'adeptify_fallback_chats';
 
 /**
- * CONSULTATION SERVICE - HÍBRID (Supabase + LocalStorage Fallback)
+ * CONSULTATION SERVICE - HÍBRID (Supabase Cloud + LocalStorage Redundancy)
  */
 export const consultationService = {
   
@@ -33,34 +33,56 @@ export const consultationService = {
           }
         ]);
 
-      if (!error) return newConsultation;
-      console.error("Error guardant a Supabase, usant backup local:", error);
+      if (!error) {
+        console.log(`ÈXIT: Consulta ${consultationId} persistida al núvol.`);
+        return newConsultation;
+      }
+      
+      // Detallem l'error per evitar el [object Object]
+      console.error("ERROR SUPABASE:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      console.warn("Activant redundància local per fallada de sincronització.");
     }
 
-    // Fallback a LocalStorage
-    const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
-    existing.push(newConsultation);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existing));
-    return newConsultation;
+    // Fallback a LocalStorage si no hi ha Supabase o hi ha hagut un error d'inserció
+    try {
+      const existing = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+      existing.push(newConsultation);
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existing));
+      return newConsultation;
+    } catch (localError) {
+      console.error("Error crític en el motor de persistència local:", localError);
+      return newConsultation;
+    }
   },
 
   getAll: async (): Promise<Consultation[]> => {
     if (supabase) {
-      const { data, error } = await supabase
-        .from('consultations')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('consultations')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        return data.map(dbItem => ({
-          id: dbItem.id,
-          centerName: dbItem.center_name,
-          contactEmail: dbItem.contact_email,
-          selectedProduct: dbItem.product_type,
-          consultationHistory: dbItem.audit_history,
-          proposal: dbItem.proposal_data,
-          date: dbItem.created_at
-        }));
+        if (!error && data) {
+          return data.map(dbItem => ({
+            id: dbItem.id,
+            centerName: dbItem.center_name,
+            contactEmail: dbItem.contact_email,
+            selectedProduct: dbItem.product_type,
+            consultationHistory: dbItem.audit_history,
+            proposal: dbItem.proposal_data,
+            date: dbItem.created_at
+          }));
+        } else if (error) {
+          console.error("ERROR EN RECUPERACIÓ NÚVOL:", error.message);
+        }
+      } catch (e) {
+        console.error("Error de xarxa en accedir a Supabase.");
       }
     }
 
@@ -70,18 +92,22 @@ export const consultationService = {
 
   getChatHistory: async (centerId: string): Promise<ChatMessage[]> => {
     if (supabase) {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('center_id', centerId)
-        .order('created_at', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('center_id', centerId)
+          .order('created_at', { ascending: true });
 
-      if (!error && data) {
-        return data.map(msg => ({
-          role: msg.role as 'user' | 'model',
-          text: msg.content,
-          timestamp: msg.created_at
-        }));
+        if (!error && data) {
+          return data.map(msg => ({
+            role: msg.role as 'user' | 'model',
+            text: msg.content,
+            timestamp: msg.created_at
+          }));
+        }
+      } catch (e) {
+        console.error("Error recuperant historial de xat del núvol.");
       }
     }
 
@@ -91,15 +117,20 @@ export const consultationService = {
 
   saveChatMessage: async (centerId: string, message: ChatMessage) => {
     if (supabase) {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert([{
-          center_id: centerId,
-          role: message.role,
-          content: message.text
-        }]);
-      
-      if (!error) return;
+      try {
+        const { error } = await supabase
+          .from('chat_messages')
+          .insert([{
+            center_id: centerId,
+            role: message.role,
+            content: message.text
+          }]);
+        
+        if (!error) return;
+        console.error("Error guardant missatge al núvol:", error.message);
+      } catch (e) {
+        console.error("Error de xarxa en guardar missatge.");
+      }
     }
 
     const localChats = JSON.parse(localStorage.getItem(LOCAL_CHAT_KEY) || '{}');

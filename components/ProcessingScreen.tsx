@@ -8,11 +8,11 @@ interface Phase {
 }
 
 const PHASES: Phase[] = [
-  { id: 1, label: "Analitzant dades del centre educatiu", duration: 800 },
-  { id: 2, label: "Mapejant fluxos operatius i de gestió", duration: 1000 },
-  { id: 3, label: "Arquitectura de sistemes personalitzada", duration: 1200 },
-  { id: 4, label: "Càlcul de ROI i projecció d'amortització", duration: 800 },
-  { id: 5, label: "Generant informe estratègic final", duration: 600 },
+  { id: 1, label: "Identificando dónde se pierde el tiempo en su centro", duration: 800 },
+  { id: 2, label: "Buscando formas de aliviar la carga de los profesores", duration: 1000 },
+  { id: 3, label: "Dibujando un plan para que nada se olvide en las reuniones", duration: 1200 },
+  { id: 4, label: "Calculando cuánto tiempo de vida vamos a regalarles", duration: 800 },
+  { id: 5, label: "Preparando su propuesta personalizada", duration: 600 },
 ];
 
 interface ProcessingScreenProps {
@@ -48,15 +48,15 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({ centerName, onCompl
       <div className="w-full max-w-lg space-y-12">
         <div className="text-center space-y-4">
           <div className="inline-block px-4 py-1.5 bg-indigo-50 rounded-full text-[10px] font-bold text-indigo-600 uppercase tracking-widest">
-            Audit Intelligence Core
+            Asistente Inteligente Adeptify
           </div>
-          <h3 className="text-4xl font-serif text-slate-900 italic">Processant dades...</h3>
-          <p className="text-slate-400 text-sm font-medium">L'enginyeria d'Adeptify està modelant la seva solució.</p>
+          <h3 className="text-4xl font-serif text-slate-900 italic">Preparando su calma...</h3>
+          <p className="text-slate-400 text-sm font-medium">Estamos analizando sus necesidades para devolverle el tiempo que se merece.</p>
         </div>
 
         <div className="relative pt-1">
           <div className="flex mb-4 items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Estat del processament</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Estado del análisis</span>
             <span className="text-sm font-bold text-slate-900">{Math.round(progress)}%</span>
           </div>
           <div className="overflow-hidden h-1 mb-10 text-xs flex rounded bg-slate-100">

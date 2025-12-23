@@ -4,66 +4,55 @@ import { Question } from './types';
 export const QUESTIONS_FLOW: Question[] = [
   {
     id: 1,
-    text: "Quina és la barrera principal que impedeix el creixement del vostre centre avui?",
+    text: "¿Cuál es esa tarea que más energía le roba a su equipo y que le gustaría hacer desaparecer?",
     type: 'select',
     isMultiSelect: true,
     options: [
-      { label: "Burocràcia asfixiant (Informes, memòries, circulars)", value: "burocracia" },
-      { label: "Desconnexió amb les famílies (Cites, avisos, satisfacció)", value: "familia" },
-      { label: "Caos en la gestió acadèmica (Notes, rúbriques, horaris)", value: "aula" },
-      { label: "Manteniment d'instal·lacions (Incidències, inventari)", value: "manteniment" }
+      { label: "Pasar horas redactando informes y actas de reuniones", value: "burocracia" },
+      { label: "Tener que perseguir a las familias para que respondan un mensaje", value: "familia" },
+      { label: "El caos de que se deciden cosas en las reuniones y luego nadie las hace", value: "seguimiento" },
+      { label: "Gestionar el día a día (comedor, ausencias, incidencias) con mil papeles", value: "gestion" }
     ]
   },
   {
     id: 2,
-    text: "Quants docents i alumnes gestiona el centre actualment?",
+    text: "Si pudiéramos regalarle 5 horas a la semana a cada docente, ¿en qué cree que se notarían más?",
     type: 'select',
     options: [
-      { label: "Petit (Menys de 30 docents / 300 alumnes)", value: "small" },
-      { label: "Mitjà (30-80 docents / 300-800 alumnes)", value: "medium" },
-      { label: "Gran (Més de 80 docents / +800 alumnes)", value: "large" }
+      { label: "En una atención más personalizada a los alumnos que les cuesta seguir el ritmo", value: "alumnos" },
+      { label: "En preparar proyectos educativos más creativos y motivadores", value: "creatividad" },
+      { label: "En reducir el estrés y mejorar el ambiente en la sala de profesores", value: "bienestar" }
     ]
   },
   {
     id: 3,
-    text: "Quina és la inversió anual estimada que destineu a programari de gestió?",
+    text: "¿Cómo gestionan hoy cuando un correo de un padre requiere una acción de un tutor?",
     type: 'select',
     options: [
-      { label: "Molt baixa (Menys de 2.000€/any)", value: "low" },
-      { label: "Estàndard (2.000€ - 8.000€/any)", value: "mid" },
-      { label: "Alta (Més de 8.000€/any)", value: "high" },
-      { label: "Volem finançament 100% NextGen", value: "nextgen_target" }
+      { label: "Confiamos en la memoria y en que el tutor lea el correo a tiempo", value: "memoria" },
+      { label: "Lo anotamos en libretas o post-its que a veces se pierden", value: "postit" },
+      { label: "Usamos Excel o herramientas que nos llevan más tiempo mantener que usar", value: "excel" },
+      { label: "Buscamos una solución que convierta el mensaje en tarea automáticamente", value: "automatizar" }
     ]
   },
   {
     id: 7,
-    text: "Com es diu el vostre centre educatiu?",
+    text: "¿Cómo se llama su escuela o instituto?",
     type: 'text',
-    placeholder: "Ex: Escola Els Pins o Institut Sant Jordi"
+    placeholder: "Ej: Colegio Nuestra Señora de la Esperanza"
   },
   {
     id: 8,
-    text: "A quin correu oficial t'enviem l'estratègia i el certificat de seguretat?",
+    text: "¿A qué correo podemos enviarle este plan personalizado para su equipo?",
     type: 'email',
-    placeholder: "direccio@centre.com"
+    placeholder: "direccion@colegio.com"
   }
 ];
 
-export const SYMPTOM_OPTIONS: Record<string, { label: string; value: string }[]> = {
-  aula: [
-    { label: "Escric les mateixes notes a tres llocs diferents", value: "sincro_notes" },
-    { label: "Tardo hores a fer les rúbriques de cada alumne", value: "rubriques" }
-  ],
-  burocracia: [
-    { label: "Fer els informes trimestrals és un malson que m'emporto a casa", value: "informes" },
-    { label: "La gestió de matrícules i papers em col·lapsa", value: "docs" }
-  ]
-};
-
 export const ADEPTIFY_INFO = {
-  name: "Adeptify Systems SLU",
+  name: "Adeptify - Tu Ayudante Digital",
   nif: "B46605585",
-  address: "C/ Independència 3, 08290 Cerdanyola del Vallès, Barcelona",
+  address: "C/ Independencia 3, 08290 Cerdanyola del Vallès, Barcelona",
   phone: "+34 690831770",
   taxRate: 0.21
 };

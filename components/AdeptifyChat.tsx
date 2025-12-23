@@ -21,19 +21,11 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     const consultations = await consultationService.getAll();
     const clientData = consultations.find(c => c.centerName === centerId) || consultations[0];
     
-    if (!clientData) return "PROTOCOLO: Client nou sense dades prèvies. Iniciant diagnòstic de zero.";
+    if (!clientData) return "Hablemos de cómo mejorar la vida en su escuela.";
 
     return `
-      CONTEXT ESTRATÈGIC DEL CENTRE:
-      - Centre: ${clientData.centerName}
-      - Email: ${clientData.contactEmail}
-      - Solució Objectiu: ${clientData.selectedProduct}
-      
-      ANÀLISI D'IA PRÈVIA:
-      ${clientData.proposal?.diagnosis || 'Pendent d\'anàlisi exhaustiu.'}
-      
-      ESTRUCTURA DE COSTOS:
-      ${clientData.proposal?.items?.map(i => `- ${i.concept}: ${i.price}€`).join('\n') || 'Pendent'}
+      CENTRO: ${clientData.centerName}
+      LO QUE LES PREOCUPA: ${clientData.proposal?.diagnosis || 'Falta de tiempo'}
     `;
   };
 
@@ -72,14 +64,14 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       const response = result as GenerateContentResponse;
       const modelMsg: ChatMessage = { 
         role: 'model', 
-        text: response.text || "PROTOCOL: Error de resposta. Recalibrant sistema...", 
+        text: response.text || "Lo siento, me he despistado un momento. ¿Podemos retomar?", 
         timestamp: new Date().toISOString() 
       };
       
       setMessages(prev => [...prev, modelMsg]);
       await consultationService.saveChatMessage(centerId, modelMsg);
     } catch (error) {
-      const errorMsg: ChatMessage = { role: 'model', text: "PROTOCOL: Error de connexió al Clúster de Supabase.", timestamp: new Date().toISOString() };
+      const errorMsg: ChatMessage = { role: 'model', text: "Parece que hay un problemilla técnico. No se preocupe, intentemos de nuevo.", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
@@ -111,8 +103,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div>
-                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white">CONSULTOR ADEPTIFY</p>
-                <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">Sincronització Cloud Enterprise</p>
+                <p className="font-black text-[11px] uppercase tracking-[0.3em] text-white">TU AYUDANTE ADEPTIFY</p>
+                <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">Siempre a tu lado</p>
               </div>
             </div>
             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all">
@@ -124,7 +116,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-30">
                  <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                 <p className="text-xs font-black uppercase tracking-widest">Iniciant Protocol d'Assistència Segura</p>
+                 <p className="text-xs font-black uppercase tracking-widest">Hablemos de su colegio. ¿Qué necesita hoy?</p>
               </div>
             )}
             {messages.map((m, i) => (
@@ -140,7 +132,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
               <div className="flex justify-start px-6 animate-pulse">
                 <div className="text-[10px] text-indigo-600 font-black uppercase tracking-widest flex items-center gap-2">
                    <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce" />
-                   Analitzant arquitectura del centre...
+                   Pensando cómo ayudarle...
                 </div>
               </div>
             )}
@@ -150,7 +142,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
             <div className="flex gap-3">
               <input
                 type="text"
-                placeholder="Escriviu la vostra consulta tècnica..."
+                placeholder="Escríbame aquí lo que necesite..."
                 className="flex-1 text-[13px] font-bold p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-600 transition-all shadow-inner"
                 value={input}
                 onChange={e => setInput(e.target.value)}
