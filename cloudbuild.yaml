@@ -1,5 +1,8 @@
 substitutions:
-  _REGION: europe-west1
+  # Region for Artifact Registry (image storage)
+  _AR_REGION: europe-west1
+  # Region for Cloud Run (service execution) - Madrid
+  _RUN_REGION: europe-southwest1
   _SERVICE: adeptify-systems
   _AR_REPO: adeptify
 
@@ -22,21 +25,21 @@ steps:
     args:
       - 'build'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
+      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
+      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
       - '.'
 
   # 2) Push to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
+      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
+      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
 
   # 3) Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -46,9 +49,9 @@ steps:
       - 'deploy'
       - '${_SERVICE}'
       - '--image'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
+      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
       - '--region'
-      - '${_REGION}'
+      - '${_RUN_REGION}'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -57,8 +60,8 @@ steps:
       - '--quiet'
 
 images:
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
-  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
+  - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
+  - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
 
 availableSecrets:
   secretManager:
