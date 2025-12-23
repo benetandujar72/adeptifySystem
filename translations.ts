@@ -43,6 +43,7 @@ export const translations = {
     totalInvestment: "Inversió Total Estimada",
     nextGenBadge: "Amb Subvenció NextGen",
     exportPdf: "Exportar Informe (PDF)",
+    sendEmail: "Enviar per correu",
     contactConsultant: "Contactar Consultor",
 
     // Chat
@@ -102,6 +103,7 @@ export const translations = {
     totalInvestment: "Inversión Total Estimada",
     nextGenBadge: "Con Subvención NextGen",
     exportPdf: "Exportar Informe (PDF)",
+    sendEmail: "Enviar por correo",
     contactConsultant: "Contactar Consultor",
 
     // Chat

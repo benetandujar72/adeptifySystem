@@ -33,7 +33,15 @@ const AppContent: React.FC = () => {
   };
 
   const handleAuditComplete = async (history: { question: string; answer: string }[]) => {
-    const finalDiagnosis = { ...diagnosis, consultationHistory: history };
+    // Extraiem el nom del centre si s'ha respost a la pregunta corresponent
+    const centerNameAnswer = history.find(h => h.question.toLowerCase().includes('escola') || h.question.toLowerCase().includes('institut') || h.question.toLowerCase().includes('colegio'))?.answer;
+    
+    const finalDiagnosis = { 
+      ...diagnosis, 
+      consultationHistory: history,
+      centerName: centerNameAnswer || diagnosis.centerName 
+    };
+    
     setDiagnosis(finalDiagnosis);
     setIsProcessing(true);
     try {
@@ -105,7 +113,11 @@ const AppContent: React.FC = () => {
               <span className="inline-block px-4 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-widest">{t.proposalBadge}</span>
               <h1 className="text-5xl font-serif text-slate-900 italic">{t.proposalTitle}</h1>
             </div>
-            <Proposal data={proposal} onAccept={() => {}} />
+            <Proposal 
+              data={proposal} 
+              centerName={diagnosis.centerName}
+              onAccept={() => {}} 
+            />
           </div>
         )}
       </main>

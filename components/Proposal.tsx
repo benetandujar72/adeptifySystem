@@ -4,15 +4,19 @@ import { ProposalData } from '../types';
 import { ADEPTIFY_INFO } from '../constants';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useLanguage } from '../LanguageContext';
 
 interface ProposalProps {
   data: ProposalData;
+  centerName?: string;
   onAccept: (planName: string) => void;
 }
 
-const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
+const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
+  const { t, language } = useLanguage();
   const proposalRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const proposalRefCode = useRef(`AD-${Math.random().toString(36).substring(7).toUpperCase()}`);
 
   const downloadPDF = async () => {
     if (!proposalRef.current) return;
@@ -25,12 +29,25 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Adeptify_Estrategia_Executiva.pdf`);
+      pdf.save(`Adeptify_Estrategia_${centerName || 'Escola'}.pdf`);
     } catch (error) {
-      alert("Error generant PDF.");
+      alert(language === 'ca' ? "Error generant PDF." : "Error generando PDF.");
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const sendByEmail = () => {
+    const subject = language === 'ca' 
+      ? `Proposta d'Eficiència Operativa - ${centerName || 'Adeptify Systems'}`
+      : `Propuesta de Eficiencia Operativa - ${centerName || 'Adeptify Systems'}`;
+
+    const body = language === 'ca'
+      ? `Hola,\n\nUs adjunto el resum de la proposta d'estratègia operativa per a ${centerName || 'el vostre centre'}.\n\nRESUM DEL DIAGNÒSTIC:\n"${data.diagnosis}"\n\nINVERSIÓ TOTAL ESTIMADA: ${data.totalInitial.toLocaleString()}€\n(Nota: Aquesta proposta pot ser finançada al 100% via fons NextGen).\n\nCONTACTE ADEPTIFY:\nTel: ${ADEPTIFY_INFO.phone}\nAdreça: ${ADEPTIFY_INFO.address}\n\n*Si us plau, recordeu adjuntar el PDF que heu descarregat prèviament des de l'aplicació per a veure el detall de les fases.*\n\nAtentament,\nL'equip d'Adeptify Systems`
+      : `Hola,\n\nOs adjunto el resumen de la propuesta de estrategia operativa para ${centerName || 'vuestro centro'}.\n\nRESUMEN DEL DIAGNÓSTICO:\n"${data.diagnosis}"\n\nINVERSIÓN TOTAL ESTIMADA: ${data.totalInitial.toLocaleString()}€\n(Nota: Esta propuesta puede ser financiada al 100% vía fondos NextGen).\n\nCONTACTO ADEPTIFY:\nTel: ${ADEPTIFY_INFO.phone}\nDirección: ${ADEPTIFY_INFO.address}\n\n*Por favor, recordad adjuntar el PDF que habéis descargado previamente desde la aplicación para ver el detalle de las fases.*\n\nAtentamente,\nEl equipo de Adeptify Systems`;
+
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
   };
 
   return (
@@ -43,21 +60,21 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
             <h2 className="text-2xl font-serif italic text-slate-900 tracking-tight">Adeptify<span className="text-indigo-600">.</span>Systems</h2>
             <div className="space-y-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">Informe de Consultoria Estratègica</p>
-              <h3 className="text-3xl font-bold text-slate-900">Proposta d'Eficiència Operativa</h3>
+              <h3 className="text-3xl font-bold text-slate-900">{centerName || 'Proposta Personalitzada'}</h3>
             </div>
           </div>
           <div className="text-right space-y-2">
              <span className="inline-block bg-slate-50 border border-slate-100 px-4 py-2 rounded text-[10px] font-bold text-slate-600 tracking-widest uppercase">
-               Ref: AD-{Math.random().toString(36).substring(7).toUpperCase()}
+               Ref: {proposalRefCode.current}
              </span>
-             <p className="text-[10px] text-slate-400 font-medium">Data d'emissió: {new Date().toLocaleDateString()}</p>
+             <p className="text-[10px] text-slate-400 font-medium">{t.dateEmit}: {new Date().toLocaleDateString()}</p>
           </div>
         </div>
         
         <div className="p-16 space-y-20">
           {/* Executive Summary */}
           <section className="max-w-3xl">
-            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">01 Resum Executiu</h4>
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">{t.summaryTitle}</h4>
             <div className="space-y-6">
               <p className="text-2xl font-serif text-slate-800 leading-snug italic border-l-4 border-indigo-600 pl-8">
                 "{data?.diagnosis || "Processant diagnòstic detallat..."}"
@@ -70,7 +87,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
 
           {/* Roadmap */}
           <section>
-            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">02 Implementació i Full de Ruta</h4>
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.roadmapTitle}</h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-slate-100 border border-slate-100 rounded-lg overflow-hidden">
               {(data?.phases || []).length > 0 ? data.phases.map((phase, idx) => (
                 <div key={idx} className="bg-white p-8 space-y-4">
@@ -89,7 +106,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
 
           {/* Budget Analysis */}
           <section className="bg-slate-50 p-12 rounded-xl">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-12">03 Estructura d'Inversió</h4>
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-12">{t.budgetTitle}</h4>
             <div className="space-y-4 mb-16">
               {(data?.items || []).length > 0 ? data.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center py-4 border-b border-slate-200/60">
@@ -108,12 +125,12 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
 
             <div className="flex flex-col md:flex-row justify-between items-end gap-10">
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Inversió Total Estimada</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{t.totalInvestment}</span>
                 <span className="text-6xl font-serif text-slate-900 tracking-tighter">{(data?.totalInitial || 0).toLocaleString()}€</span>
               </div>
               
               <div className="bg-indigo-600 text-white p-8 rounded-xl space-y-2 min-w-[300px] shadow-xl shadow-indigo-100">
-                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Amb Subvenció NextGen</p>
+                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{t.nextGenBadge}</p>
                  <p className="text-4xl font-serif italic">0,00€<span className="text-sm opacity-60 ml-2 font-sans font-normal">*</span></p>
                  <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">*Pendent de validació oficial per part d'Adeptify</p>
               </div>
@@ -130,19 +147,30 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto flex gap-4 no-print">
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 no-print px-4">
         <button 
           onClick={downloadPDF} 
           disabled={isExporting} 
           className="flex-1 bg-slate-900 text-white py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl btn-premium"
         >
-          {isExporting ? 'Processant...' : 'Exportar Informe (PDF)'}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          {isExporting ? (language === 'ca' ? 'Processant...' : 'Procesando...') : t.exportPdf}
         </button>
+        
+        <button 
+          onClick={sendByEmail}
+          className="flex-1 bg-indigo-600 text-white py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          {t.sendEmail}
+        </button>
+
         <button 
           onClick={() => window.open(`https://wa.me/34690831770`, '_blank')}
-          className="flex-1 bg-white border border-slate-200 text-slate-700 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:border-slate-400 transition-all"
+          className="flex-1 bg-white border border-slate-200 text-slate-700 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:border-slate-400 transition-all flex items-center justify-center gap-3"
         >
-          Contactar Consultor
+          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.63 1.438h.004c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          {t.contactConsultant}
         </button>
       </div>
     </div>
