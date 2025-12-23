@@ -14,28 +14,33 @@ export type DiagnosisMode = 'QUICK' | 'DEEP';
 
 export interface DiagnosisState {
   mode?: DiagnosisMode;
-  category: string; // Es manté com a string per compatibilitat, però guardarà una llista separada per comes
+  category: string;
   categories?: string[]; 
-  symptom: string;
-  volume: string;
-  platform: string;
-  wantsMiniApp: boolean;
   centerName: string;
   contactEmail: string;
-  specificDetails?: string;
-  pedagogicGoals?: string;
-  techStack?: string;
-  teamSize?: string;
-  digitalLevel?: string;
-  priorityArea?: string;
   consultationHistory?: { question: string; answer: string }[];
+  // Campos adicionales para coincidir con el estado en App.tsx y evitar errores de tipos
+  symptom?: string;
+  volume?: string;
+  platform?: string;
+  wantsMiniApp?: boolean;
+  specificDetails?: string;
 }
 
+// Interfaz para el historial de consultas
 export interface Consultation extends DiagnosisState {
   id: string;
   date: string;
-  proposal?: ProposalData;
+  proposal: ProposalData;
   selectedPlanName?: string;
+}
+
+// Interfaz para las preferencias de notificación
+export interface NotificationPrefs {
+  push: boolean;
+  email: boolean;
+  dailySummary: boolean;
+  weeklySummary: boolean;
 }
 
 export interface BudgetItem {
@@ -63,6 +68,7 @@ export interface ProposalData {
   diagnosis: string;
   solution: string;
   initialSetupFee: number;
+  nextGenFundsInfo: string;
   miniAppSuggestion?: {
     name: string;
     features: string[];
@@ -99,11 +105,4 @@ export interface Task {
   assignee: string;
   deadline: string;
   status: 'pendent' | 'en_proces' | 'completada';
-}
-
-export interface NotificationPrefs {
-  push: boolean;
-  email: boolean;
-  dailySummary: boolean;
-  weeklySummary: boolean;
 }

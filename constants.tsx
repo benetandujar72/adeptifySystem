@@ -4,46 +4,46 @@ import { Question } from './types';
 export const QUESTIONS_FLOW: Question[] = [
   {
     id: 1,
-    text: "En quina àrea detectes el major caos avui?",
+    text: "Quina part de la feina et treu més energia i temps actualment?",
     type: 'select',
     isMultiSelect: true,
     options: [
-      { label: "Gestió Acadèmica i Aula (Notes, Assistència)", value: "aula" },
-      { label: "Operacions del Centre (Informes, Burocràcia)", value: "burocracia" },
-      { label: "Eficiència en Reunions i Traçabilitat", value: "reunions" },
-      { label: "Relació amb Famílies (Comunicació, Cites)", value: "familia" }
+      { label: "Gestió d'aula (Notes, passar llista, rúbriques)", value: "aula" },
+      { label: "Paperassa administrativa (Informes trimestrals, memòries)", value: "burocracia" },
+      { label: "Coordinació (Reunions interminables, seguiment d'actes)", value: "reunions" },
+      { label: "Relació amb les famílies (Cites, correus, avisos)", value: "familia" }
     ]
   },
   {
     id: 7,
-    text: "Nom oficial del Centre Educatiu:",
+    text: "Com es diu el vostre centre educatiu?",
     type: 'text',
-    placeholder: "Ex: Escola Adeptify"
+    placeholder: "Ex: Escola Els Pins o Institut Sant Jordi"
   },
   {
     id: 8,
-    text: "Email corporatiu per a la Proposta:",
+    text: "A quin email t'enviem l'anàlisi de viabilitat?",
     type: 'email',
-    placeholder: "direccio@centre.com"
+    placeholder: "la-teva-direccio@centre.com"
   }
 ];
 
 export const SYMPTOM_OPTIONS: Record<string, { label: string; value: string }[]> = {
   aula: [
-    { label: "Sincronització manual de notes entre plataformes", value: "sincro_notes" },
-    { label: "Exclés de temps en creació de rúbriques i feedback", value: "rubriques" }
+    { label: "He de picar les notes a tres llocs diferents", value: "sincro_notes" },
+    { label: "Tardo hores a fer rúbriques personalitzades", value: "rubriques" }
   ],
   burocracia: [
-    { label: "Redacció manual d'informes trimestrals", value: "informes" },
-    { label: "Gestió documental de matrícules", value: "docs" }
+    { label: "Redactar els informes de final de trimestre és un malson", value: "informes" },
+    { label: "La gestió de matrícules i papers em col·lapsa", value: "docs" }
   ],
   reunions: [
-    { label: "Falta de traçabilitat en decisions", value: "tracabilitat" },
-    { label: "Gestió de tasques derivades", value: "tasques" }
+    { label: "Fem moltes reunions però no sabem mai què ha quedat pendent", value: "tracabilitat" },
+    { label: "No tenim un lloc clar on veure les tasques del curs", value: "tasques" }
   ],
   familia: [
-    { label: "Cites amb famílies i justificacions", value: "cites" },
-    { label: "Newsletter i comunicacions", value: "newsletter" }
+    { label: "Perdre el matí quadrant cites amb pares i mares", value: "cites" },
+    { label: "Enviar circulars i saber si tothom les ha llegit", value: "newsletter" }
   ]
 };
 
