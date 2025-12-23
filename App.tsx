@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Phase, DiagnosisState, ProposalData, ProductType } from './types';
 import SelectionScreen from './components/SelectionScreen';
 import DynamicConsultant from './components/DynamicConsultant';
@@ -8,6 +8,7 @@ import ProcessingScreen from './components/ProcessingScreen';
 import AdeptifyChat from './components/AdeptifyChat';
 import DocGenerator from './components/DocGenerator';
 import AdminRegistry from './components/AdminRegistry';
+import Login from './components/Login';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -15,6 +16,7 @@ import { LanguageProvider, useLanguage } from './LanguageContext';
 const AppContent: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
   const [phase, setPhase] = useState<Phase>(Phase.LANDING);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [diagnosis, setDiagnosis] = useState<DiagnosisState>({
     centerName: '',
     contactEmail: '',
@@ -22,6 +24,12 @@ const AppContent: React.FC = () => {
   });
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Recuperem sessió d'admin si existeix (només durant la sessió actual)
+  useEffect(() => {
+    const sessionAuth = sessionStorage.getItem('adeptify_admin_auth');
+    if (sessionAuth === 'true') setIsAuthenticated(true);
+  }, []);
 
   const handleProductChoice = (product: ProductType | 'DOCS') => {
     if (product === 'DOCS') {
@@ -33,7 +41,6 @@ const AppContent: React.FC = () => {
   };
 
   const handleAuditComplete = async (history: { question: string; answer: string }[]) => {
-    // Extraiem el nom del centre si s'ha respost a la pregunta corresponent
     const centerNameAnswer = history.find(h => h.question.toLowerCase().includes('escola') || h.question.toLowerCase().includes('institut') || h.question.toLowerCase().includes('colegio'))?.answer;
     
     const finalDiagnosis = { 
@@ -53,6 +60,26 @@ const AppContent: React.FC = () => {
       console.error(error);
       alert(language === 'ca' ? "Error de connexió." : "Error de conexión.");
     } finally { setIsProcessing(false); }
+  };
+
+  const handleAdminAccess = () => {
+    if (isAuthenticated) {
+      setPhase(Phase.ADMIN);
+    } else {
+      setPhase(Phase.LOGIN);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+    sessionStorage.setItem('adeptify_admin_auth', 'true');
+    setPhase(Phase.ADMIN);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('adeptify_admin_auth');
+    setPhase(Phase.LANDING);
   };
 
   return (
@@ -90,10 +117,19 @@ const AppContent: React.FC = () => {
            >
              {t.navDocs}
            </button>
+
+           {isAuthenticated && (
+             <button 
+               onClick={handleLogout}
+               className="text-[10px] font-bold uppercase tracking-widest text-red-500 hover:text-red-700 transition-colors"
+             >
+               {t.logoutBtn}
+             </button>
+           )}
         </div>
       </header>
 
-      <main className={`w-full px-6 md:px-12 mt-32 ${[Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.ADMIN].includes(phase) ? 'max-w-7xl' : 'max-w-4xl'}`}>
+      <main className={`w-full px-6 md:px-12 mt-32 ${[Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.ADMIN, Phase.LOGIN].includes(phase) ? 'max-w-7xl' : 'max-w-4xl'}`}>
         {phase === Phase.LANDING && <SelectionScreen onChoice={handleProductChoice} />}
 
         {phase === Phase.DYNAMIC_DIAGNOSIS && (
@@ -106,6 +142,7 @@ const AppContent: React.FC = () => {
 
         {phase === Phase.DOC_GENERATOR && <DocGenerator />}
         {phase === Phase.ADMIN && <AdminRegistry />}
+        {phase === Phase.LOGIN && <Login onLoginSuccess={handleLoginSuccess} />}
 
         {phase === Phase.PROPOSAL && proposal && (
           <div className="space-y-12 fade-up">
@@ -124,7 +161,7 @@ const AppContent: React.FC = () => {
 
       <footer className="w-full p-12 mt-auto border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
          <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">{t.footerText}</p>
-         <button onClick={() => setPhase(Phase.ADMIN)} className="p-3 hover:bg-slate-100 rounded-full transition-all" title={t.navAdmin}>
+         <button onClick={handleAdminAccess} className="p-3 hover:bg-slate-100 rounded-full transition-all" title={t.navAdmin}>
            <svg className="w-5 h-5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
          </button>
       </footer>

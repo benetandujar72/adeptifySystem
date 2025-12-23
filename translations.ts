@@ -8,6 +8,15 @@ export const translations = {
     navAdmin: "Accés Administració",
     footerText: "© 2025 ADEPTIFY SYSTEMS SLU • BARCELONA • INFRAESTRUCTURA AL NÚVOL",
     
+    // Login
+    loginTitle: "Accés Restringit",
+    loginSubtitle: "Identificació de Consultor",
+    loginEmail: "Correu Electrònic",
+    loginPass: "Contrasenya",
+    loginBtn: "Entrar al Sistema",
+    loginError: "Credencials no vàlides. Accés denegat.",
+    logoutBtn: "Sortir",
+
     // Selection Screen
     heroTitle: "Eduquin amb passió.",
     heroSubtitle: "Nosaltres ens encarreguem de la paperassa.",
@@ -68,6 +77,15 @@ export const translations = {
     navAdmin: "Acceso Administración",
     footerText: "© 2025 ADEPTIFY SYSTEMS SLU • BARCELONA • INFRAESTRUCTURA EN LA NUBE",
     
+    // Login
+    loginTitle: "Acceso Restringido",
+    loginSubtitle: "Identificación de Consultor",
+    loginEmail: "Correo Electrónico",
+    loginPass: "Contraseña",
+    loginBtn: "Entrar al Sistema",
+    loginError: "Credenciales no válidas. Acceso denegado.",
+    logoutBtn: "Salir",
+
     // Selection Screen
     heroTitle: "Eduquen con pasión.",
     heroSubtitle: "Nosotros nos encargamos del papeleo.",

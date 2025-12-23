@@ -7,14 +7,14 @@ export enum Phase {
   ACTION = 'ACTION',
   DASHBOARD = 'DASHBOARD',
   ADMIN = 'ADMIN',
+  LOGIN = 'LOGIN',
   DOC_GENERATOR = 'DOC_GENERATOR'
 }
 
 export type ProductType = 'LMS' | 'AUDIT' | 'VISION' | 'DEEP_AUDIT';
 
-// Estructura optimizada para Tablas SQL
 export interface DB_Center {
-  id: string; // UUID
+  id: string;
   name: string;
   email: string;
   created_at: string;
@@ -25,8 +25,8 @@ export interface DB_Project {
   center_id: string;
   product_type: ProductType;
   status: 'draft' | 'active' | 'completed';
-  audit_context: any; // Datos JSONB de la auditoría
-  proposal_data: ProposalData; // Datos JSONB de la propuesta final
+  audit_context: any;
+  proposal_data: ProposalData;
 }
 
 export interface Question {
@@ -90,7 +90,6 @@ export interface Task {
   status: 'pendent' | 'en_proces' | 'completada';
 }
 
-// Se añade esta interfaz para corregir el error: Module '"../types"' has no exported member 'NotificationPrefs'.
 export interface NotificationPrefs {
   push: boolean;
   email: boolean;
