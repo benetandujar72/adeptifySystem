@@ -9,18 +9,18 @@ CATÀLEG DE SOLUCIONS ADEPTIFY:
 
 1. FORMACIÓ LLEUGERA (LMS)
 - Objectiu: Eliminar l'ús d'emails per a formació. App offline.
-- Preu: 2.500€ Setup + 150€/mes.
-- Diferenciador: No requereix correu de l'alumne, ideal per a personal operatiu o alumnes joves.
+- Preu Suggerit: 2.500€ Setup + 150€/mes.
+- Components: Servidor Edge, App Claustre, Mòdul Seguiment Offline.
 
 2. CHECKLISTS IA (AUDITORIA)
 - Objectiu: Digitalitzar inspeccions d'aules, menjadors o seguretat.
-- Preu: 1.800€ Setup + 95€/mes.
-- Diferenciador: Geolocalització i evidència fotogràfica amb IA.
+- Preu Suggerit: 1.800€ Setup + 95€/mes.
+- Components: Motor de Verificació Visual, Dashboard de Compliment, Exportador PDF Legal.
 
 3. VISIÓ ARTIFICIAL (INSPECCIÓ AUTOMÀTICA)
 - Objectiu: Comptatge d'alumnes, detecció de perills o OCR de documents.
-- Preu: 4.500€ Setup + 300€/mes per càmera/mòdul.
-- Diferenciador: Reducció del 90% del temps d'inspecció manual.
+- Preu Suggerit: 4.500€ Setup + 300€/mes per càmera/mòdul.
+- Components: Unitat de Processament Local (NPU), Integració CCTV, Alertes en Temps Real.
 
 Tots els projectes són elegibles per fons NEXT GENERATION EU (Ajudes de 2.000€ a 12.000€).
 `;
@@ -76,17 +76,21 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
   const ai = getAi();
   const historyStr = (diagnosis.consultationHistory || []).map(h => `Q: ${h.question}\nA: ${h.answer}`).join('\n');
   
-  const prompt = `Genera una PROPOSTA D'ENGINYERIA PROFESSIONAL per a ${diagnosis.centerName}.
+  const prompt = `Genera una PROPOSTA D'ENGINYERIA PROFESSIONAL d'alt nivell per al centre "${diagnosis.centerName}".
     Producte triat: ${diagnosis.selectedProduct}
-    Historial de l'auditoria: ${historyStr}
+    Historial de l'auditoria (RESPOSTES REALS):
+    ${historyStr}
 
-    DOCUMENTACIÓ DE REFERÈNCIA:
+    DOCUMENTACIÓ DE REFERÈNCIA DE COSTOS:
     ${INTERNAL_KNOWLEDGE_BASE}
 
-    El pressupost ha de ser realista, sense zeros. Desglossa els conceptes tècnics.
-    Avalua la susceptibilitat de Fons NextGen basant-te en les respostes.
+    REQUISITS CRÍTICS DEL JSON DE SORTIDA:
+    1. diagnosis: NO pot estar buit. Redacta un paràgraf impactant que resumeixi els problemes detectats en l'historial (ex: "S'ha detectat un col·lapse en la comunicació de dades offline...").
+    2. items: Mínim 5 conceptes detallats (Llicència, Setup, Infrastructura, Formació, Suport). Els preus han de sumar el total inicial realista.
+    3. phases: Inclou 4 fases (Fase 1: Auditoria Tècnica, Fase 2: Implementació, Fase 3: Capacitació, Fase 4: Go-Live).
+    4. nextGenFundsInfo: Detalla per què són aptes basant-te en les respostes.
 
-    Respon en JSON estructural segons ProposalData.`;
+    Respon en JSON estructural segons ProposalData. No afegeixis text fora del JSON.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",

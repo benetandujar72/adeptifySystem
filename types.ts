@@ -72,6 +72,7 @@ export interface ProposalData {
   nextGenFundsInfo: string;
   implementationTime: string;
   roi: string;
+  phases: ImplementationPhase[];
 }
 
 export interface ChatMessage {

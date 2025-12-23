@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { ProposalData } from '../types';
+import { ProposalData, ImplementationPhase } from '../types';
 import { ADEPTIFY_INFO } from '../constants';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -57,59 +57,95 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
         
         <div className="p-8 md:p-16 space-y-16">
           {/* Diagnosis Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <section className="space-y-6">
-              <h3 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] border-b border-slate-100 pb-3 italic">Punts Crítics Detectats</h3>
-              <p className="text-xl md:text-2xl font-black text-slate-900 leading-tight italic">{data.diagnosis}</p>
-              <p className="text-sm text-slate-500 leading-relaxed font-medium bg-slate-50 p-6 rounded-3xl border border-slate-100">{data.solution}</p>
-            </section>
-            
-            {/* NextGen Susceptibility */}
-            <section className="bg-blue-600 p-8 md:p-10 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-              </div>
-              <h3 className="text-[10px] font-black text-blue-200 uppercase tracking-[0.4em] mb-4">Xec de Viabilitat NextGen</h3>
-              <div className="space-y-4 relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-green-300">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                  </div>
-                  <p className="text-sm font-black italic">Susceptibilitat d'ajudes: 100% (ALTA)</p>
-                </div>
-                <p className="text-xs text-blue-100 font-medium leading-relaxed opacity-90">
-                  {data.nextGenFundsInfo || "El vostre perfil compleix els requisits per a la digitalització del centre. El cost final per al centre pot ser de 0€ mitjançant la bonificació de fons europeus."}
+          <section className="space-y-8">
+            <div className="flex items-center gap-4">
+               <div className="h-8 w-1 bg-indigo-600" />
+               <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Anàlisi de Situació Actual</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 shadow-inner">
+                <p className="text-2xl font-black text-slate-900 leading-tight italic mb-6">
+                  {data.diagnosis || "No s'han pogut extreure punts crítics. Si us plau, revisa l'historial d'auditoria."}
+                </p>
+                <div className="h-px bg-slate-200 w-full mb-6" />
+                <p className="text-md text-slate-600 leading-relaxed font-medium">
+                  {data.solution}
                 </p>
               </div>
-            </section>
-          </div>
+            </div>
+          </section>
 
-          {/* Budget Table - NO MORE ZEROS */}
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl">
-            <h3 className="text-[10px] font-black text-indigo-400 uppercase mb-10 tracking-[0.4em]">Pressupost Tècnic d'Implementació</h3>
-            <div className="space-y-6 mb-12">
-              {(data.items && data.items.length > 0 ? data.items : [
-                { concept: "Setup & Auditoria Tècnica", description: "Configuració de servidors i mapeig de fluxos.", price: 1200 },
-                { concept: "Llicència Core Adeptify", description: "Nucli d'automatització IA (anual).", price: 2400 },
-                { concept: "Formació de Claustre", description: "Sessions de capacitació per a l'eficiència.", price: 900 }
-              ]).map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start py-6 border-b border-white/5">
-                  <div className="max-w-[70%]">
-                    <span className="text-lg font-black text-white block mb-1 uppercase tracking-tight italic">{item.concept}</span>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{item.description}</span>
+          {/* Roadmap / Deployment Phases */}
+          <section className="space-y-8">
+            <div className="flex items-center gap-4">
+               <div className="h-8 w-1 bg-indigo-600" />
+               <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Full de Ruta d'Implementació</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {(data.phases || [
+                { name: "Auditoria Tècnica", startWeek: 1, durationWeeks: 1, description: "Mapeig de fluxos de dades" },
+                { name: "Configuració Core", startWeek: 2, durationWeeks: 2, description: "Instal·lació de servidors" },
+                { name: "Formació Claustre", startWeek: 4, durationWeeks: 1, description: "Capacitació d'usuaris clau" },
+                { name: "Llançament", startWeek: 5, durationWeeks: 1, description: "Monitorització de sortida" }
+              ]).map((phase, idx) => (
+                <div key={idx} className="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-[9px] font-black text-indigo-600 mb-2 uppercase tracking-widest">Setmana {phase.startWeek}</div>
+                  <h4 className="text-sm font-black text-slate-800 uppercase mb-2 tracking-tight">{phase.name}</h4>
+                  <p className="text-[10px] text-slate-500 font-bold leading-relaxed mb-4">{phase.description}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                       <div className="h-full bg-indigo-500" style={{ width: '100%' }} />
+                    </div>
+                    <span className="text-[8px] font-black text-slate-400">{phase.durationWeeks} Set.</span>
                   </div>
-                  <span className="font-brand italic text-2xl text-white">{(item.price || 0).toLocaleString()}€</span>
                 </div>
               ))}
             </div>
-            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-baseline gap-4">
-              <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Projecte (Base + IVA)</span>
-                <span className="text-4xl md:text-7xl font-brand italic text-white tracking-tighter">{(data.totalInitial > 0 ? data.totalInitial : 5445).toLocaleString()}€</span>
+          </section>
+
+          {/* Detailed Budget Table */}
+          <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <svg className="w-64 h-64" fill="currentColor" viewBox="0 0 24 24"><path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.36 8-7.03 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-3.5h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"/></svg>
+            </div>
+            
+            <h3 className="text-[10px] font-black text-indigo-400 uppercase mb-10 tracking-[0.4em] relative z-10">Desglossament Pressupostari Detallat</h3>
+            
+            <div className="space-y-4 mb-12 relative z-10">
+              {(data.items && data.items.length > 0 ? data.items : [
+                { concept: "Llicència Anual de Plataforma", description: "Nucli d'intel·ligència artificial Adeptify v2.5", price: 2400 },
+                { concept: "Configuració i Setup Inicial", description: "Desplegament d'infraestructura i base de dades", price: 950 },
+                { concept: "Integració de Sistemes Previs", description: "Migració de dades i connexió amb CRM/ERP", price: 1200 },
+                { concept: "Pla de Formació Presencial", description: "3 sessions per a claustre i equip directiu", price: 850 },
+                { concept: "Suport Tècnic Prioritari", description: "Atenció 24/7 i monitorització de servidors", price: 600 }
+              ]).map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center py-5 border-b border-white/5 group hover:bg-white/5 transition-colors px-4 rounded-xl">
+                  <div className="max-w-[70%]">
+                    <span className="text-md font-black text-white block mb-0.5 uppercase tracking-tight italic">{item.concept}</span>
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{item.description}</span>
+                  </div>
+                  <span className="font-brand italic text-xl text-white">{(item.price || 0).toLocaleString()}€</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-end gap-6 relative z-10">
+              <div className="text-left">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Total Projecte d'Eficiència</span>
+                <span className="text-4xl md:text-7xl font-brand italic text-white tracking-tighter">{(data.totalInitial > 0 ? data.totalInitial : 6000).toLocaleString()}€</span>
               </div>
-              <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl">
-                 <p className="text-green-500 text-[9px] font-black uppercase tracking-widest">Cost net amb NextGen</p>
-                 <p className="text-2xl font-brand italic text-green-400">0,00€*</p>
+              
+              <div className="flex flex-col items-end gap-3">
+                 <div className="bg-green-500/10 border border-green-500/20 p-5 rounded-2xl flex items-center gap-4">
+                    <div className="h-10 w-10 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <div>
+                       <p className="text-green-500 text-[9px] font-black uppercase tracking-widest">Inversió Final amb NextGen</p>
+                       <p className="text-3xl font-brand italic text-green-400">0,00€*</p>
+                    </div>
+                 </div>
+                 <p className="text-[8px] text-slate-500 font-bold uppercase tracking-widest">*Subjecte a l'aprovació del Kit Digital / Fons Europeus</p>
               </div>
             </div>
           </div>
@@ -134,12 +170,14 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
 
       <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-6 no-print">
         <button onClick={downloadPDF} disabled={isExporting} className="flex-1 bg-white border border-slate-200 text-slate-600 py-6 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:border-slate-400 transition-all flex items-center justify-center gap-3 shadow-xl">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           {isExporting ? 'Processant...' : 'Descarregar Informe Executiu (PDF)'}
         </button>
       </div>
 
       {/* GDPR Badge */}
-      <p className="text-center text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+      <p className="text-center text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">
+        Adeptify Systems SLU • NIF {ADEPTIFY_INFO.nif} • {ADEPTIFY_INFO.address}<br/>
         Informació protegida per la Llei Orgànica de Protecció de Dades (LOPD). Tractament de dades en servidors europeus amb xifrat punt a punt.
       </p>
     </div>
