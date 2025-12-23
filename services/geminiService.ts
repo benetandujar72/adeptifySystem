@@ -3,8 +3,41 @@ import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ProposalData, DiagnosisState, Task } from "../types";
 import { ADEPTIFY_INFO } from "../constants";
 
-// Inicialización del cliente de IA usando la variable de entorno API_KEY
 const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+// BASE DE CONEIXEMENT INTERNA (SOURCE OF TRUTH)
+const INTERNAL_KNOWLEDGE_BASE = `
+DOCUMENTACIÓ OFICIAL ADEPTIFY SYSTEMS:
+
+1. PRODUCTE: CHECKLISTS IA (AUDITORIA OPERACIONAL)
+- Crea checklists amb intel·ligència artificial per auditar operacions.
+- Activitats amb escales personalitzables per a sucursals o individus.
+- Permet carregar imatges, comentaris, firmes i geolocalització precisa.
+- Facilita seguiment detallat de processos en temps real.
+
+2. PRODUCTE: VISIÓ COMPUTACIONAL (INSPECCIONS AUTOMATITZADES)
+- Automatització d'inspeccions mitjançant reconeixement d'imatges.
+- Extracció de text (OCR) i comptatge d'objectes automàticament.
+- Geolocalització per assegurar el control total de l'operació.
+
+3. PRODUCTE: FORMACIÓ (LMS LLEUGER & OFFLINE)
+- App lleugera que no requereix ús d'email.
+- Permet l'aprenentatge sense connexió a internet (offline).
+- Centralitza capacitació i avaluació virtual o presencial.
+- Integra resultats d'entrenament amb els checklists de control.
+
+4. PRODUCTE: VEU DEL CLIENT (ENQUESTES DE SATISFACCIÓ)
+- Creació d'enquestes de satisfacció i lealtat (NPS).
+- Visibilitat de factors clau per millorar l'atenció i el producte.
+
+5. PRODUCTE: DASHBOARD INTEGRAT
+- Unificació de mètriques d'entrenament, resultats de checklists i feedback de clients.
+- Tauler de control unificat per a la presa de decisions estratègiques.
+
+FINANÇAMENT:
+- Tots els projectes d'Adeptify són elegibles per als fons Next Generation EU de digitalització.
+- Ajudem als centres a tramitar la subvenció per a que el cost sigui zero.
+`;
 
 export interface DynamicQuestion {
   question: string;
@@ -18,21 +51,23 @@ export async function getNextConsultantQuestion(history: { question: string; ans
   const ai = getAi();
   const historyStr = history.map(h => `Q: ${h.question}\nA: ${h.answer}`).join('\n');
   
-  const prompt = `Ets el Consultor Senior d'Adeptify SLU. El teu objectiu és ajudar a docents a recuperar el seu temps.
+  const prompt = `Ets el Consultor Senior d'Adeptify SLU. El teu objectiu és rescatar docents del caos burocràtic.
     
-    Llenguatge: Proper, empàtic, sense tecnicismes buits. Usa exemples com "perdre el matí corregint", "picar notes al Drive", "reunions que podrien ser un mail".
+    LLENGUATGE: Molt simple, proper, com si parlessis amb un mestre cansat. Usa exemples com "picar dades a l'Excel", "perdre el matí quadrant horaris".
+    
+    TEMES A EXPLORAR:
+    ${INTERNAL_KNOWLEDGE_BASE}
+
+    RESTRICCIONS:
+    - Fes almenys 6-7 preguntes abans de finalitzar (isComplete: true).
+    - Pregunta si volen aprofitar els Fons Next Generation EU.
     
     HISTORIAL: ${historyStr}
-    CONTEXT: ${currentDiagnosis.centerName} | Àrees d'interès: ${currentDiagnosis.categories?.join(', ')}
-    
-    RESTRICCIONS:
-    1. Fes preguntes sobre eines reals (Moodle, Clickedu, Excel, Teams).
-    2. Sigues exhaustiu. No acabis fins que tinguis 4-5 interaccions.
-    3. Si el centre és públic o concertat, pregunta pel seu nivell de digitalització per als fons NextGen.
+    CONTEXT: ${currentDiagnosis.centerName}
     
     Respon en JSON:
     {
-      "question": "Pregunta clara amb exemple real",
+      "question": "Pregunta clara i propera",
       "options": ["Opció A", "Opció B", "Opció C", "Opció D"],
       "isMultiSelect": boolean,
       "isComplete": boolean,
@@ -43,17 +78,16 @@ export async function getNextConsultantQuestion(history: { question: string; ans
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
-      config: { responseMimeType: "application/json", temperature: 0.4 }
+      config: { responseMimeType: "application/json", temperature: 0.5 }
     });
-    // Acceso a .text como propiedad según las guías
     return JSON.parse(response.text || '{}') as DynamicQuestion;
   } catch (error) {
     return { 
-      question: "Per acabar, com gestioneu actualment la comunicació interna entre l'equip docent?", 
-      options: ["WhatsApp (caòtic)", "Email (col·lapsat)", "Teams / Slack", "Presencial / Post-its"], 
+      question: "Voleu que l'estratègia inclogui la gestió de fons NextGen per a que el cost del programari sigui subvencionat?", 
+      options: ["Sí, és prioritari", "Ja els tenim", "Informeu-nos-en"], 
       isMultiSelect: false, 
-      isComplete: history.length > 3, 
-      confidence: 85 
+      isComplete: history.length > 5, 
+      confidence: 90 
     };
   }
 }
@@ -62,24 +96,14 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
   const ai = getAi();
   const historyStr = (diagnosis.consultationHistory || []).map(h => `Q: ${h.question}\nA: ${h.answer}`).join('\n');
   
-  const prompt = `Genera una PROPOSTA D'EFICIÈNCIA TÈCNICA per al centre ${diagnosis.centerName}.
-    Dades: ${historyStr}
+  const prompt = `Genera una PROPOSTA D'ENGINYERIA per al centre ${diagnosis.centerName} basada exclusivament en els productes oficials.
+    
+    DOCUMENTACIÓ INTERNA:
+    ${INTERNAL_KNOWLEDGE_BASE}
 
-    IMPORTANT: Inclou una secció sobre FONS NEXT GENERATION EU (Estratègia Digital de Centre).
-    Distingeix si poden rebre subvencions per a software o equipament segons la seva realitat.
+    Dades del centre: ${historyStr}
 
-    JSON OBLIGATORI:
-    {
-      "diagnosis": "Resum de la situació actual (ex: saturació en informes trimestrals)",
-      "solution": "Què farem (ex: automatitzar el traspàs de dades a Alexia)",
-      "initialSetupFee": 2500,
-      "nextGenFundsInfo": "Explicació de com poden finançar això amb fons NextGen",
-      "items": [{"concept": "Configuració Automatització", "description": "Detall", "price": 1200}],
-      "subscriptionPlans": [{"name": "Professional", "monthlySoftwarePrice": 90, "monthlyServerPrice": 30, "features": ["Suport Premium", "Fons NextGen inclòs"]}],
-      "phases": [{"name": "Anàlisi", "startWeek": 1, "durationWeeks": 1, "description": "Audit dades"}],
-      "implementationTime": "3 setmanes",
-      "roi": "15 hores/mes estalviades per docent"
-    }`;
+    Respon amb un JSON que segueixi l'estructura de ProposalData.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -88,31 +112,24 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
       config: { responseMimeType: "application/json" }
     });
 
-    // Acceso a .text como propiedad
     const data = JSON.parse(response.text || '{}');
-    const subtotal = (data.items || []).reduce((acc: number, item: any) => acc + (Number(item.price) || 0), 0) || 1500;
+    const subtotal = (data.items || []).reduce((acc: number, item: any) => acc + (Number(item.price) || 0), 0);
     
     return {
       ...data,
       subtotal,
       iva: subtotal * ADEPTIFY_INFO.taxRate,
-      totalInitial: subtotal * (1 + ADEPTIFY_INFO.taxRate),
-      diagnosis: data.diagnosis || "Situació de col·lapse administratiu detectada.",
-      solution: data.solution || "Centralització intel·ligent de processos d'aula.",
-      nextGenFundsInfo: data.nextGenFundsInfo || "Aquest projecte és 100% elegible per a la línia de digitalització de centres dels fons Next Generation EU.",
-      items: data.items || [{ concept: "Setup Inicial", description: "Configuració de sistemes", price: subtotal }],
-      subscriptionPlans: data.subscriptionPlans || [{ name: "Standard", monthlySoftwarePrice: 150, monthlyServerPrice: 50, features: ["Dashboard", "Suport"] }],
-      phases: data.phases || [{ name: "Desplegament", startWeek: 1, durationWeeks: 4, description: "Execució" }]
+      totalInitial: subtotal * (1 + ADEPTIFY_INFO.taxRate)
     } as ProposalData;
   } catch (error) {
     return {
-      diagnosis: "Diagnòstic completat.",
-      solution: "Projecte d'eficiència operativa educatiu.",
+      diagnosis: "S'ha detectat una càrrega administrativa crítica.",
+      solution: "Implementació d'un nucli digital unificat.",
       initialSetupFee: 1500,
-      nextGenFundsInfo: "Possibilitat de subvenció via Fons NextGen fins al 100%.",
-      items: [{ concept: "Projecte Tècnic", description: "Configuració completa", price: 1500 }],
-      subscriptionPlans: [{ name: "Pla Educatiu", monthlySoftwarePrice: 150, monthlyServerPrice: 50, features: ["Suport", "Cloud"] }],
-      phases: [{ name: "Fase 1", startWeek: 1, durationWeeks: 4, description: "Implementació" }],
+      nextGenFundsInfo: "Elegible per fons NextGen.",
+      items: [{ concept: "Setup Inicial", description: "Configuració", price: 1500 }],
+      subscriptionPlans: [{ name: "Standard", monthlySoftwarePrice: 95, monthlyServerPrice: 35, features: ["Dashboard"] }],
+      phases: [{ name: "Execució", startWeek: 1, durationWeeks: 4, description: "Desplegament" }],
       subtotal: 1500,
       iva: 315,
       totalInitial: 1815,
@@ -122,40 +139,13 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
   }
 }
 
-// Analiza tareas escolares y proporciona recomendaciones de eficiencia
 export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
   const ai = getAi();
-  const tasksStr = tasks.map(t => `- ${t.title} (Responsable: ${t.assignee}, Estat: ${t.status})`).join('\n');
-  const prompt = `Analitza aquestes tasques de gestió escolar i dóna un consell d'eficiència breu i motivador per a l'equip:\n${tasksStr}`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-    });
-    return response.text || "L'organització és la base de la llibertat docent.";
-  } catch (error) {
-    return "Prioritza les tasques crítiques per optimitzar el rendiment del centre.";
-  }
-}
-
-// Genera documentos oficiales (PGA o Memoria) basados en el contexto del centro
-export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean): Promise<string> {
-  const ai = getAi();
-  const prompt = `Ets un expert en documentació educativa oficial. Genera un esborrany de ${type}.
-    Context Pedagògic: ${context}
-    Indicadors de Rendiment: ${indicators}
-    ${preview ? 'Genera només una previsualització professional resumida.' : 'Genera el document complet seguint l\'estructura normativa formal.'}`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: prompt,
-    });
-    return response.text || "Generant el document...";
-  } catch (error) {
-    return "No s'ha pogut generar el document oficial. Revisa les dades de context.";
-  }
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Analitza aquestes tasques basant-te en la nostra capacitat d'automatització: ${INTERNAL_KNOWLEDGE_BASE}. Tasques: ${JSON.stringify(tasks)}`,
+  });
+  return response.text || "";
 }
 
 export function createAdeptifyChat(): Chat {
@@ -163,7 +153,24 @@ export function createAdeptifyChat(): Chat {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: { 
-        systemInstruction: 'Ets el Consultor Senior d’Adeptify SLU. Parla com un col·lega expert que entén el dia a dia de l’escola. Ajuda al docent a sentir-se escoltat. No usis IA, usa "Sistemes intel·ligents".' 
+        systemInstruction: `Ets el Consultor Senior d’Adeptify SLU. La teva font de veritat absoluta és la DOCUMENTACIÓ INTERNA següent:
+        
+        ${INTERNAL_KNOWLEDGE_BASE}
+        
+        REGRLES DE RESPOSTA:
+        1. Si l'usuari pregunta per serveis, preus o funcionalitats, cerca PRIMER en la documentació interna anterior.
+        2. Respon de manera experta, propera i professional.
+        3. Si la informació NO és a la documentació interna, pots fer servir el teu coneixement general sobre gestió escolar, però comença la frase dient: "Com a complement al nostre sistema estàndard, també podries considerar..." o similar.
+        4. No inventis funcionalitats que no estiguin a la llista de productes oficials.` 
     },
   });
+}
+
+export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean): Promise<string> {
+  const ai = getAi();
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-pro-preview',
+    contents: `Redacta un document tipus ${type} basat en: ${context} i ${indicators}. Segueix la normativa formal però amb el to d'eficiència d'Adeptify.`,
+  });
+  return response.text || "";
 }
