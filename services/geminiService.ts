@@ -71,8 +71,24 @@ export async function getNextConsultantQuestion(
     config: { responseMimeType: "application/json", temperature: 0.3 }
   });
   
-  const data = JSON.parse(response.text || '{}');
-  return data as DynamicQuestion;
+  try {
+    const data = JSON.parse(response.text || '{}');
+    return {
+      question: data.question || "MÒDUL 1: AUDITORIA EN CURS\n\nError de sincronització. ¿Podria repetir l'últim punt?",
+      options: data.options || ["Continuar", "Reintentar", "Altres..."],
+      isMultiSelect: !!data.isMultiSelect,
+      isComplete: !!data.isComplete,
+      confidence: data.confidence || 0
+    };
+  } catch (e) {
+    return {
+      question: "MÒDUL 1: AUDITORIA EN CURS\n\nEl sistema ha detectat una anomalia en la trama de dades. ¿Com procedim amb l'auditoria?",
+      options: ["Reintentar diagnòstic", "Altres..."],
+      isMultiSelect: false,
+      isComplete: false,
+      confidence: 0
+    };
+  }
 }
 
 export async function generateEducationalProposal(diagnosis: DiagnosisState): Promise<ProposalData> {
@@ -99,7 +115,22 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState): Pr
     config: { responseMimeType: "application/json" }
   });
 
-  return JSON.parse(response.text || '{}') as ProposalData;
+  try {
+    const data = JSON.parse(response.text || '{}');
+    // Garantim valors per defecte per evitar crashes de 'map'
+    return {
+      diagnosis: data.diagnosis || "Diagnòstic en procés de validació.",
+      solution: data.solution || "Solució tècnica pendent d'arquitectura final.",
+      items: data.items || [],
+      totalInitial: data.totalInitial || 0,
+      nextGenFundsInfo: data.nextGenFundsInfo || "Informació no disponible.",
+      implementationTime: data.implementationTime || "Pendent",
+      roi: data.roi || "Pendent",
+      phases: data.phases || []
+    };
+  } catch (e) {
+    throw new Error("Error en el processament de la proposta executiva.");
+  }
 }
 
 export function createAdeptifyChat(clientContext: string = ''): Chat {

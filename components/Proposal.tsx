@@ -60,10 +60,10 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
             <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">01 Resum Executiu</h4>
             <div className="space-y-6">
               <p className="text-2xl font-serif text-slate-800 leading-snug italic border-l-4 border-indigo-600 pl-8">
-                "{data.diagnosis}"
+                "{data?.diagnosis || "Processant diagnòstic detallat..."}"
               </p>
               <p className="text-base text-slate-600 leading-relaxed pl-8">
-                {data.solution}
+                {data?.solution || "L'arquitectura de la solució s'està perfilant segons els vostres requeriments."}
               </p>
             </div>
           </section>
@@ -72,14 +72,18 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
           <section>
             <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">02 Implementació i Full de Ruta</h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-slate-100 border border-slate-100 rounded-lg overflow-hidden">
-              {data.phases.map((phase, idx) => (
+              {data?.phases?.length ? data.phases.map((phase, idx) => (
                 <div key={idx} className="bg-white p-8 space-y-4">
                   <span className="text-[10px] font-bold text-slate-400 uppercase">Fase 0{idx+1}</span>
                   <h5 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{phase.name}</h5>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{phase.description}</p>
                   <p className="text-[10px] font-bold text-indigo-600 pt-2">Setmana {phase.startWeek}</p>
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-4 bg-white p-8 text-center text-slate-400 italic text-sm">
+                  Full de ruta en fase de generació...
+                </div>
+              )}
             </div>
           </section>
 
@@ -87,27 +91,31 @@ const Proposal: React.FC<ProposalProps> = ({ data, onAccept }) => {
           <section className="bg-slate-50 p-12 rounded-xl">
             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.4em] mb-12">03 Estructura d'Inversió</h4>
             <div className="space-y-4 mb-16">
-              {data.items.map((item, idx) => (
+              {data?.items?.length ? data.items.map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center py-4 border-b border-slate-200/60">
                   <div>
                     <span className="text-sm font-bold text-slate-800 block">{item.concept}</span>
                     <span className="text-[10px] text-slate-500 font-medium">{item.description}</span>
                   </div>
-                  <span className="font-serif text-lg text-slate-900 font-bold">{item.price.toLocaleString()}€</span>
+                  <span className="font-serif text-lg text-slate-900 font-bold">{(item.price || 0).toLocaleString()}€</span>
                 </div>
-              ))}
+              )) : (
+                <div className="py-4 text-center text-slate-400 italic text-sm">
+                  Desglossament de costos pendent de validació final.
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col md:flex-row justify-between items-end gap-10">
               <div className="text-left">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Inversió Total Estimada</span>
-                <span className="text-6xl font-serif text-slate-900 tracking-tighter">{(data.totalInitial).toLocaleString()}€</span>
+                <span className="text-6xl font-serif text-slate-900 tracking-tighter">{(data?.totalInitial || 0).toLocaleString()}€</span>
               </div>
               
               <div className="bg-indigo-600 text-white p-8 rounded-xl space-y-2 min-w-[300px] shadow-xl shadow-indigo-100">
                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Amb Subvenció NextGen</p>
                  <p className="text-4xl font-serif italic">0,00€<span className="text-sm opacity-60 ml-2 font-sans font-normal">*</span></p>
-                 <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">*Pendent de validació oficial</p>
+                 <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">*Pendent de validació oficial per part d'Adeptify</p>
               </div>
             </div>
           </section>
