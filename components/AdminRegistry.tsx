@@ -233,7 +233,12 @@ const AdminRegistry: React.FC = () => {
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Transcripció Històrica: {selectedClient?.centerName}</h3>
                       <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Seguretat Adeptify Systems</p>
                     </div>
-                    <button className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-indigo-600 transition-colors">
+                    <button
+                      type="button"
+                      className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-indigo-600 transition-colors"
+                      aria-label="Descarregar transcripció"
+                      title="Descarregar transcripció"
+                    >
                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     </button>
                   </div>
@@ -290,7 +295,12 @@ const AdminRegistry: React.FC = () => {
                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Inversió</p>
                            <p className="text-2xl font-serif italic font-bold text-slate-900">{(c.proposal?.totalInitial || 0).toLocaleString()}€</p>
                         </div>
-                        <button className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all">
+                      <button
+                        type="button"
+                        className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all"
+                        aria-label="Ver detalles del presupuesto"
+                        title="Ver detalles del presupuesto"
+                      >
                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                         </button>
                      </div>

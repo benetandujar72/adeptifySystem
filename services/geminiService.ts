@@ -3,7 +3,23 @@ import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ProposalData, DiagnosisState, Task, ProductType } from "../types";
 import { Language } from "../translations";
 
-const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+type EnvLike = Record<string, unknown> | undefined;
+
+const getApiKey = (): string | undefined => {
+  const env = (process.env as EnvLike) || {};
+  const key = (env as any).GEMINI_API_KEY || (env as any).API_KEY;
+  return typeof key === 'string' && key.trim() ? key.trim() : undefined;
+};
+
+const getAi = (): GoogleGenAI | null => {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+  try {
+    return new GoogleGenAI({ apiKey });
+  } catch {
+    return null;
+  }
+};
 
 export interface DynamicQuestion {
   question: string;
@@ -19,6 +35,17 @@ export async function getNextConsultantQuestion(
   lang: Language = 'ca'
 ): Promise<DynamicQuestion> {
   const ai = getAi();
+  if (!ai) {
+    return {
+      question: lang === 'ca'
+        ? "Falta configuració del sistema. Pots tornar-ho a provar més tard?"
+        : "Falta configuración del sistema. ¿Puedes volver a intentarlo más tarde?",
+      options: [lang === 'ca' ? 'Reintentar' : 'Reintentar'],
+      isMultiSelect: false,
+      isComplete: false,
+      confidence: 0,
+    };
+  }
   const historyStr = history.map(h => `Pregunta: ${h.question}\nResposta: ${h.answer}`).join('\n');
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   
@@ -71,6 +98,11 @@ export async function getNextConsultantQuestion(
 
 export async function generateEducationalProposal(diagnosis: DiagnosisState, lang: Language = 'ca'): Promise<ProposalData> {
   const ai = getAi();
+  if (!ai) {
+    throw new Error(lang === 'ca'
+      ? 'Falta configuració del sistema (API).'
+      : 'Falta configuración del sistema (API).');
+  }
   const historyStr = (diagnosis.consultationHistory || []).map(h => `Pregunta: ${h.question}\nResposta: ${h.answer}`).join('\n');
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   
@@ -102,6 +134,16 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
 
 export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca'): Chat {
   const ai = getAi();
+  if (!ai) {
+    // Minimal shim so the UI can still operate and show a helpful message.
+    return {
+      sendMessage: async () => ({
+        text: lang === 'ca'
+          ? 'El xat no està configurat (API).'
+          : 'El chat no está configurado (API).',
+      }),
+    } as unknown as Chat;
+  }
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
@@ -113,6 +155,11 @@ export function createAdeptifyChat(clientContext: string = '', lang: Language = 
 
 export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean, lang: Language = 'ca'): Promise<string> {
   const ai = getAi();
+  if (!ai) {
+    return lang === 'ca'
+      ? 'Falta configuració del sistema (API).'
+      : 'Falta configuración del sistema (API).';
+  }
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   const response = await ai.models.generateContent({
     model: 'gemini-3-pro-preview',
@@ -124,6 +171,9 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
 // Fix: Implementación de analyzeTasksIntelligence para TaskManager.tsx
 export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
   const ai = getAi();
+  if (!ai) {
+    return "Sistema no configurat.";
+  }
   const tasksStr = tasks.map(t => `- [${t.status}] ${t.title} (Responsable: ${t.assignee}, Plazo: ${t.deadline})`).join('\n');
   
   const prompt = `ACTÚA COMO UN CONSULTOR DE EFICIENCIA ESCOLAR.

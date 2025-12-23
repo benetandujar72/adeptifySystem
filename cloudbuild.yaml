@@ -1,9 +1,9 @@
 substitutions:
   # Region for Artifact Registry (image storage)
   _AR_REGION: europe-west1
-  # Region for Cloud Run (service execution) - Madrid
-  _RUN_REGION: europe-southwest1
-  _SERVICE: adeptify-systems
+  # Region for Cloud Run (service execution)
+  _RUN_REGION: europe-west1
+  _SERVICE: adeptify-consultor
   _AR_REPO: adeptify
 
 steps:
@@ -14,12 +14,14 @@ steps:
     args:
       - '-c'
       - |
-        cat > .env.production <<'EOF'
-        GEMINI_API_KEY=$$GEMINI_API_KEY
-        SUPABASE_URL=$$SUPABASE_URL
-        SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY
-        SB_PUBLISHABLE_KEY=$$SB_PUBLISHABLE_KEY
-        EOF
+        : > .env.production
+        printf 'GEMINI_API_KEY=%s\n' "$$GEMINI_API_KEY" >> .env.production
+        printf 'SUPABASE_URL=%s\n' "$$SUPABASE_URL" >> .env.production
+        printf 'SUPABASE_ANON_KEY=%s\n' "$$SUPABASE_ANON_KEY" >> .env.production
+        printf 'SB_PUBLISHABLE_KEY=%s\n' "$$SB_PUBLISHABLE_KEY" >> .env.production
+
+        # Sanity check (do not print secret values)
+        sed -E 's/=(.*)$/=*** /' .env.production
 
   # 1) Build image
   - name: 'gcr.io/cloud-builders/docker'
