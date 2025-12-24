@@ -4,10 +4,21 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+ARG GEMINI_API_KEY
+ARG SUPABASE_URL
+ARG SUPABASE_ANON_KEY
+ARG SB_PUBLISHABLE_KEY
+
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 COPY . .
+
+ENV GEMINI_API_KEY=$GEMINI_API_KEY \
+	SUPABASE_URL=$SUPABASE_URL \
+	SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+	SB_PUBLISHABLE_KEY=$SB_PUBLISHABLE_KEY
+
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine

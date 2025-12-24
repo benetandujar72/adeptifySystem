@@ -25,8 +25,17 @@ steps:
 
   # 1) Build image
   - name: 'gcr.io/cloud-builders/docker'
+    secretEnv: ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
     args:
       - 'build'
+      - '--build-arg'
+      - 'GEMINI_API_KEY=$$GEMINI_API_KEY'
+      - '--build-arg'
+      - 'SUPABASE_URL=$$SUPABASE_URL'
+      - '--build-arg'
+      - 'SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY'
+      - '--build-arg'
+      - 'SB_PUBLISHABLE_KEY=$$SB_PUBLISHABLE_KEY'
       - '-t'
       - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
       - '-t'
