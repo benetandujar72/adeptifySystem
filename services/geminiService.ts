@@ -21,6 +21,48 @@ const getAi = (): GoogleGenAI | null => {
   }
 };
 
+const CHAT_MODEL_CANDIDATES = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+];
+
+const PRO_MODEL_CANDIDATES = [
+  'gemini-2.0-pro',
+  'gemini-1.5-pro',
+];
+
+const shouldTryNextModel = (err: unknown): boolean => {
+  const message = (err as any)?.message;
+  if (typeof message !== 'string') return true;
+  // Common cases where retrying with another model can help.
+  return (
+    message.toLowerCase().includes('model') ||
+    message.toLowerCase().includes('not found') ||
+    message.toLowerCase().includes('invalid') ||
+    message.toLowerCase().includes('permission') ||
+    message.toLowerCase().includes('403') ||
+    message.toLowerCase().includes('404')
+  );
+};
+
+async function generateContentWithFallback(
+  ai: GoogleGenAI,
+  models: string[],
+  request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'> & { model?: string }
+) {
+  let lastError: unknown;
+  for (const model of models) {
+    try {
+      return await ai.models.generateContent({ ...request, model } as any);
+    } catch (e) {
+      lastError = e;
+      if (!shouldTryNextModel(e)) break;
+    }
+  }
+  throw lastError;
+}
+
 export interface DynamicQuestion {
   question: string;
   options: string[];
@@ -71,11 +113,10 @@ export async function getNextConsultantQuestion(
     }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: { responseMimeType: "application/json", temperature: 0.4 }
-    });
+      const response = await generateContentWithFallback(ai, CHAT_MODEL_CANDIDATES, {
+        contents: prompt,
+        config: { responseMimeType: "application/json", temperature: 0.4 },
+      });
     
     const data = JSON.parse(response.text || '{}');
     return {
@@ -86,6 +127,7 @@ export async function getNextConsultantQuestion(
       confidence: data.confidence || 0
     };
   } catch (e) {
+      console.error('Gemini error (getNextConsultantQuestion):', e);
     return {
       question: lang === 'ca' ? "Hi ha un petit problema. Continuem?" : "Hay un pequeño problema. ¿Continuamos?",
       options: ["Reintentar"],
@@ -119,16 +161,18 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
     Respon en format JSON ProposalData.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+    const response = await generateContentWithFallback(ai, PRO_MODEL_CANDIDATES, {
       contents: prompt,
-      config: { responseMimeType: "application/json" }
+      config: { responseMimeType: "application/json" },
     });
 
     const data = JSON.parse(response.text || '{}');
     return data;
   } catch (e) {
-    throw new Error("Error generant la proposta.");
+    console.error('Gemini error (generateEducationalProposal):', e);
+    throw new Error(lang === 'ca'
+      ? "Error generant la proposta. (Revisa la clau/API i possibles restriccions de domini)"
+      : "Error generando la propuesta. (Revisa la clave/API y posibles restricciones de dominio)");
   }
 }
 
@@ -146,7 +190,7 @@ export function createAdeptifyChat(clientContext: string = '', lang: Language = 
   }
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   return ai.chats.create({
-    model: 'gemini-3-flash-preview',
+    model: CHAT_MODEL_CANDIDATES[0],
     config: { 
         systemInstruction: `Ets l'ajudant personal d'Adeptify per a escoles. Parla sempre en ${langName}. Ets empàtic, educat i entens l'estrès d'un director escolar.` 
     },
@@ -161,8 +205,7 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
       : 'Falta configuración del sistema (API).';
   }
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+  const response = await generateContentWithFallback(ai, PRO_MODEL_CANDIDATES, {
     contents: `Ajuda'm a redactar un esborrany de ${type} escolar en ${langName}. Que soni oficial però fàcil de llegir. Context: ${context}. Dades: ${indicators}.`,
   });
   return response.text || "Generant...";
@@ -186,12 +229,12 @@ export async function analyzeTasksIntelligence(tasks: Task[]): Promise<string> {
     Responde directamente con el consejo.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+    const response = await generateContentWithFallback(ai, CHAT_MODEL_CANDIDATES, {
       contents: prompt,
     });
     return response.text || "No hi ha suggeriments en aquest moment.";
   } catch (e) {
+    console.error('Gemini error (analyzeTasksIntelligence):', e);
     return "Error analitzant les tasques.";
   }
 }

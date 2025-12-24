@@ -13,11 +13,16 @@ interface AdeptifyChatProps {
 const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => {
   const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [effectiveCenterId, setEffectiveCenterId] = useState(centerId);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatRef = useRef<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setEffectiveCenterId(centerId);
+  }, [centerId]);
 
   /**
    * Helper para formatear texto Markdown a HTML básico de forma segura.
@@ -40,7 +45,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
 
   const getClientContext = async (): Promise<string> => {
     const consultations = await consultationService.getAll();
-    const clientData = consultations.find(c => c.centerName === centerId) || consultations[0];
+    const clientData = consultations.find(c => c.centerName === effectiveCenterId) || consultations[0];
     
     if (!clientData) return language === 'ca' ? "Parlem d'ajudar l'escola." : "Hablemos de ayudar al colegio.";
 
@@ -53,11 +58,19 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
   useEffect(() => {
     const initChat = async () => {
       if (isOpen) {
+        // If we don't yet know the center id, but there are consultations,
+        // use the most recent one to persist chat under a meaningful key.
+        if (centerId === 'general') {
+          const consultations = await consultationService.getAll();
+          const fallbackCenterName = consultations?.[0]?.centerName;
+          if (fallbackCenterName) setEffectiveCenterId(fallbackCenterName);
+        }
+
         const context = await getClientContext();
         chatRef.current = createAdeptifyChat(context, language);
         
         // Cargar historial
-        const history = await consultationService.getChatHistory(centerId);
+        const history = await consultationService.getChatHistory(effectiveCenterId);
         
         if (history.length === 0) {
           // Si no hay historial, insertar el mensaje de bienvenida oficial
@@ -67,14 +80,14 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
             timestamp: new Date().toISOString()
           };
           setMessages([welcomeMsg]);
-          await consultationService.saveChatMessage(centerId, welcomeMsg);
+          await consultationService.saveChatMessage(effectiveCenterId, welcomeMsg);
         } else {
           setMessages(history);
         }
       }
     };
     initChat();
-  }, [isOpen, centerId, language, t.chatWelcome]);
+  }, [isOpen, centerId, effectiveCenterId, language, t.chatWelcome]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -92,7 +105,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    await consultationService.saveChatMessage(centerId, userMsg);
+    await consultationService.saveChatMessage(effectiveCenterId, userMsg);
 
     try {
       const result = await chatRef.current.sendMessage({ message: userText });
@@ -103,7 +116,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
         timestamp: new Date().toISOString() 
       };
       setMessages(prev => [...prev, modelMsg]);
-      await consultationService.saveChatMessage(centerId, modelMsg);
+      await consultationService.saveChatMessage(effectiveCenterId, modelMsg);
     } catch (error) {
       const errorMsg: ChatMessage = { role: 'model', text: "Error de conexión.", timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, errorMsg]);
