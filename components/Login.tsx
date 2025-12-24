@@ -74,8 +74,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{t.loginEmail}</label>
+            <label htmlFor="login-email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{t.loginEmail}</label>
             <input 
+              id="login-email"
               type="email" 
               required
               autoFocus
@@ -88,8 +89,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{t.loginPass}</label>
+            <label htmlFor="login-password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{t.loginPass}</label>
             <input 
+              id="login-password"
               type="password" 
               required
               autoComplete="current-password"
@@ -121,7 +123,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <div className="pt-6 border-t border-slate-50 text-center">
            <p className="text-[8px] text-slate-300 font-bold uppercase tracking-widest">
-             Sessió xifrada mitjançant protocols de seguretat avançada
+             {t.loginSecureSession}
            </p>
         </div>
       </div>

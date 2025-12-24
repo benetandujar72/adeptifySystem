@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Question } from '../types';
+import { useLanguage } from '../LanguageContext';
 
 interface TriageStepProps {
   question: Question;
@@ -9,6 +10,7 @@ interface TriageStepProps {
 }
 
 const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) => {
+  const { t } = useLanguage();
   const [textValue, setTextValue] = useState('');
   const [selectedValues, setSelectedValues] = useState<string[]>([]);
 
@@ -39,7 +41,7 @@ const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) =
   return (
     <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
       <div className="mb-10">
-        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-4 block">Pas d'Auditoria Tècnica</span>
+        <span className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-4 block">{t.triageStepBadge}</span>
         <h2 className="text-3xl font-black text-slate-900 leading-tight">
           {question.text}
         </h2>
@@ -79,7 +81,7 @@ const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) =
               disabled={selectedValues.length === 0}
               className="mt-10 w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-indigo-600 transition-all disabled:opacity-30 shadow-2xl shadow-slate-200 uppercase text-[10px] tracking-[0.3em] active:scale-95"
             >
-              Confirmar Paràmetres →
+              {t.triageConfirm}
             </button>
           )}
         </div>
@@ -90,6 +92,7 @@ const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) =
               autoFocus
               className="w-full p-6 rounded-2xl border border-slate-200 focus:border-indigo-600 outline-none text-sm font-medium transition-all h-40 bg-white shadow-inner"
               placeholder={question.placeholder}
+              aria-label={question.text}
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
             />
@@ -99,6 +102,7 @@ const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) =
               autoFocus
               className="w-full p-6 rounded-2xl border border-slate-200 focus:border-indigo-600 outline-none text-lg font-black tracking-tight transition-all bg-white"
               placeholder={question.placeholder}
+              aria-label={question.text}
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
             />
@@ -108,14 +112,14 @@ const TriageStep: React.FC<TriageStepProps> = ({ question, onSelect, isLast }) =
             disabled={!textValue.trim()}
             className="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-indigo-600 transition-all disabled:opacity-50 shadow-2xl shadow-slate-200 uppercase text-[10px] tracking-[0.3em]"
           >
-            Següent →
+            {t.triageNext}
           </button>
         </form>
       )}
 
       <div className="mt-16 pt-8 border-t border-slate-100 flex items-center justify-between">
         <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">
-          {isLast ? "Sistemes Tècnics Validats" : "Auditoria en curs • Adeptify Systems"}
+          {isLast ? t.triageFooterLast : t.triageFooterProgress}
         </p>
         <div className="flex gap-1">
             <div className="w-1 h-1 bg-slate-200 rounded-full" />

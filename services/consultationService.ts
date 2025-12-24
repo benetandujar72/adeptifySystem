@@ -12,11 +12,20 @@ export const consultationService = {
   
   saveConsultation: async (diagnosis: DiagnosisState, proposal: ProposalData): Promise<Consultation> => {
     const consultationId = `CONS-${Date.now()}`;
+
+    const normalizedProposal: ProposalData = {
+      ...proposal,
+      meta: {
+        ...(proposal?.meta || {}),
+        generatedAt: proposal?.meta?.generatedAt || new Date().toISOString(),
+      },
+    };
+
     const newConsultation: Consultation = {
       ...diagnosis,
       id: consultationId,
       date: new Date().toISOString(),
-      proposal
+      proposal: normalizedProposal
     };
 
     if (supabase) {
@@ -29,7 +38,7 @@ export const consultationService = {
             contact_email: diagnosis.contactEmail,
             product_type: diagnosis.selectedProduct,
             audit_history: diagnosis.consultationHistory,
-            proposal_data: proposal
+            proposal_data: normalizedProposal
           }
         ]);
 
@@ -68,7 +77,14 @@ export const consultationService = {
             centerName: dbItem.center_name,
             contactEmail: dbItem.contact_email,
             selectedProduct: dbItem.product_type,
-            consultationHistory: dbItem.audit_history,
+            consultationHistory: Array.isArray(dbItem.audit_history)
+              ? dbItem.audit_history.map((h: any) => ({
+                  question: String(h?.question ?? ''),
+                  answer: Array.isArray(h?.answer)
+                    ? h.answer.map((x: any) => String(x))
+                    : [String(h?.answer ?? '')].filter(Boolean),
+                }))
+              : [],
             proposal: dbItem.proposal_data,
             date: dbItem.created_at
           }));
@@ -81,7 +97,24 @@ export const consultationService = {
     }
 
     // Fallback LocalStorage
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+    try {
+      const raw = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
+      return Array.isArray(raw)
+        ? raw.map((c: any) => ({
+            ...c,
+            consultationHistory: Array.isArray(c?.consultationHistory)
+              ? c.consultationHistory.map((h: any) => ({
+                  question: String(h?.question ?? ''),
+                  answer: Array.isArray(h?.answer)
+                    ? h.answer.map((x: any) => String(x))
+                    : [String(h?.answer ?? '')].filter(Boolean),
+                }))
+              : [],
+          }))
+        : [];
+    } catch {
+      return [];
+    }
   },
 
   getChatHistory: async (centerId: string): Promise<ChatMessage[]> => {

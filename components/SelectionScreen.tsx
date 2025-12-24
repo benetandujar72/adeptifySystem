@@ -58,6 +58,15 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({ onChoice }) => {
           <div 
             key={product.id} 
             onClick={() => onChoice(product.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onChoice(product.id);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={product.title}
             className="group bg-white p-10 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] hover:border-indigo-200 transition-all duration-500 cursor-pointer flex flex-col items-start text-left gap-6"
           >
             <div className="w-12 h-12 bg-slate-50 text-slate-900 rounded-xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">

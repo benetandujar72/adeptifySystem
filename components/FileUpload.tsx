@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
+import { useLanguage } from '../LanguageContext';
 
 const FileUpload: React.FC = () => {
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [complete, setComplete] = useState(false);
@@ -29,9 +31,9 @@ const FileUpload: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
         </div>
-        <h3 className="text-xl font-bold text-slate-800">Càrrega Segura de Dades</h3>
+        <h3 className="text-xl font-bold text-slate-800">{t.fileUploadTitle}</h3>
         <p className="text-slate-500 mt-2 text-sm">
-          No necessites explicar res més. Puja un exemple de les teves dades (PDF, Excel, Imatge) i jo m'encarrego d'estructurar-lo.
+          {t.fileUploadDesc}
         </p>
       </div>
 
@@ -50,7 +52,7 @@ const FileUpload: React.FC = () => {
             {file ? (
               <span className="text-indigo-600 font-medium">{file.name}</span>
             ) : (
-              <span className="text-slate-400 italic">Selecciona un arxiu o arrossega'l aquí</span>
+              <span className="text-slate-400 italic">{t.fileUploadChooseFile}</span>
             )}
           </label>
           
@@ -59,7 +61,7 @@ const FileUpload: React.FC = () => {
               onClick={simulateUpload}
               className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all"
             >
-              Començar Automatització
+              {t.fileUploadStart}
             </button>
           )}
 
@@ -68,7 +70,7 @@ const FileUpload: React.FC = () => {
               <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
                 <div className="bg-indigo-600 h-2 rounded-full animate-[progress_2.5s_ease-in-out]" />
               </div>
-              <p className="text-xs text-indigo-600 font-bold animate-pulse">Processant estructura amb IA...</p>
+              <p className="text-xs text-indigo-600 font-bold animate-pulse">{t.fileUploadProcessing}</p>
             </div>
           )}
         </div>
@@ -79,8 +81,8 @@ const FileUpload: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-green-800 font-bold">Rebut! En 48h tindràs el teu sistema operatiu.</p>
-          <p className="text-green-700 text-sm mt-1">Rebràs un correu electrònic amb els accessos al tauler de control.</p>
+          <p className="text-green-800 font-bold">{t.fileUploadSuccessTitle}</p>
+          <p className="text-green-700 text-sm mt-1">{t.fileUploadSuccessDesc}</p>
         </div>
       )}
     </div>

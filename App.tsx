@@ -40,8 +40,10 @@ const AppContent: React.FC = () => {
     setPhase(Phase.DYNAMIC_DIAGNOSIS);
   };
 
-  const handleAuditComplete = async (history: { question: string; answer: string }[]) => {
-    const centerNameAnswer = history.find(h => h.question.toLowerCase().includes('escola') || h.question.toLowerCase().includes('institut') || h.question.toLowerCase().includes('colegio'))?.answer;
+  const handleAuditComplete = async (history: { question: string; answer: string[] }[]) => {
+    const centerNameAnswer = history
+      .find(h => h.question.toLowerCase().includes('escola') || h.question.toLowerCase().includes('institut') || h.question.toLowerCase().includes('colegio'))
+      ?.answer?.find(a => a && a.trim());
     
     const finalDiagnosis = { 
       ...diagnosis, 

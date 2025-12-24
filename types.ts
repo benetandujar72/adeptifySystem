@@ -42,7 +42,7 @@ export interface DiagnosisState {
   selectedProduct?: ProductType;
   centerName: string;
   contactEmail: string;
-  consultationHistory: { question: string; answer: string }[];
+  consultationHistory: { question: string; answer: string[] }[];
   category?: string;
 }
 
@@ -74,6 +74,10 @@ export interface ProposalData {
   implementationTime: string;
   roi: string;
   phases: ImplementationPhase[];
+  meta?: {
+    modelUsed?: string;
+    generatedAt?: string;
+  };
 }
 
 export interface ChatMessage {

@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { Task } from '../types';
 import { analyzeTasksIntelligence } from '../services/geminiService';
+import { useLanguage } from '../LanguageContext';
 
 const TaskManager: React.FC = () => {
+  const { language, t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([
     { id: '1', title: 'Revisar informes trimestrals', assignee: 'Marta G.', deadline: '2023-11-30', status: 'pendent' },
     { id: '2', title: 'Enviar circular famílies', assignee: 'Joan P.', deadline: '2023-11-25', status: 'en_proces' },
@@ -23,8 +25,8 @@ const TaskManager: React.FC = () => {
     const task: Task = {
       id: Math.random().toString(36).substr(2, 9),
       title: newTask.title,
-      assignee: newTask.assignee || 'Sense assignar',
-      deadline: newTask.deadline || 'Sense data',
+      assignee: newTask.assignee || t.taskManagerNoAssignee,
+      deadline: newTask.deadline || t.taskManagerNoDate,
       status: 'pendent',
     };
     
@@ -37,7 +39,7 @@ const TaskManager: React.FC = () => {
     if (tasks.length === 0 || isAnalyzing) return;
     setIsAnalyzing(true);
     try {
-      const suggestion = await analyzeTasksIntelligence(tasks);
+      const suggestion = await analyzeTasksIntelligence(tasks, language);
       setAiAnalysis(suggestion);
     } catch (error) {
       console.error(error);
@@ -66,9 +68,9 @@ const TaskManager: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
               </div>
-              Tauler de Tasques
+              {t.taskManagerTitle}
             </h3>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1 ml-11">Adeptify Efficiency Control</p>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1 ml-11">{t.taskManagerSubtitle}</p>
           </div>
           
           <button 
@@ -83,14 +85,20 @@ const TaskManager: React.FC = () => {
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
               </svg>
             )}
-            {isAnalyzing ? 'Processant...' : 'Consultoria IA'}
+            {isAnalyzing ? t.taskManagerAiProcessing : t.taskManagerAiBtn}
           </button>
         </div>
 
         {aiAnalysis && (
           <div className="mb-8 p-6 bg-indigo-600 rounded-3xl text-white shadow-2xl shadow-indigo-200 flex gap-5 items-start animate-in zoom-in-95 duration-500 relative">
             <div className="absolute top-2 right-2">
-              <button onClick={() => setAiAnalysis(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <button
+                type="button"
+                onClick={() => setAiAnalysis(null)}
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                aria-label={t.taskManagerAiClose}
+                title={t.taskManagerAiClose}
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -98,7 +106,7 @@ const TaskManager: React.FC = () => {
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 mb-1">Assistent Adeptify Intelligence</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 mb-1">{t.taskManagerAiAssistantLabel}</p>
               <p className="text-sm font-bold leading-relaxed">"{aiAnalysis}"</p>
             </div>
           </div>
@@ -109,7 +117,8 @@ const TaskManager: React.FC = () => {
             <div className="flex-1 relative">
               <input
                 type="text"
-                placeholder="Què necessites delegar a la IA?"
+                placeholder={t.taskManagerTitlePlaceholder}
+                aria-label={t.taskManagerTitleAria}
                 className={`w-full p-4 bg-white border-2 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-sm ${
                   showValidation && !newTask.title ? 'border-red-400 shake shadow-lg shadow-red-50' : 'border-slate-100 hover:border-slate-200 focus:border-indigo-500'
                 }`}
@@ -120,7 +129,7 @@ const TaskManager: React.FC = () => {
                 }}
               />
               {showValidation && !newTask.title && (
-                <p className="absolute -bottom-5 left-2 text-[10px] text-red-500 font-black uppercase tracking-tighter">Camp obligatori</p>
+                <p className="absolute -bottom-5 left-2 text-[10px] text-red-500 font-black uppercase tracking-tighter">{t.taskManagerRequiredField}</p>
               )}
             </div>
             
@@ -131,7 +140,8 @@ const TaskManager: React.FC = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Responsable"
+                  placeholder={t.taskManagerAssigneePlaceholder}
+                  aria-label={t.taskManagerAssigneeAria}
                   className="w-full pl-10 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-xs font-bold"
                   value={newTask.assignee}
                   onChange={e => setNewTask({...newTask, assignee: e.target.value})}
@@ -144,6 +154,7 @@ const TaskManager: React.FC = () => {
                 </div>
                 <input
                   type="date"
+                  aria-label={t.taskManagerDeadlineAria}
                   className="w-full pl-10 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-xs font-bold text-slate-500"
                   value={newTask.deadline}
                   onChange={e => setNewTask({...newTask, deadline: e.target.value})}
@@ -157,7 +168,7 @@ const TaskManager: React.FC = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
                 </svg>
-                Crear
+                {t.taskManagerCreate}
               </button>
             </div>
           </div>
@@ -170,8 +181,8 @@ const TaskManager: React.FC = () => {
           {tasks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-300 opacity-60 italic">
               <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>
-              <p className="text-sm font-bold uppercase tracking-[0.2em]">Flux de treball buit</p>
-              <p className="text-[10px] mt-1">L'IA t'està esperant per començar</p>
+              <p className="text-sm font-bold uppercase tracking-[0.2em]">{t.taskManagerEmptyTitle}</p>
+              <p className="text-[10px] mt-1">{t.taskManagerEmptySubtitle}</p>
             </div>
           ) : (
             tasks.map(task => (
@@ -216,20 +227,24 @@ const TaskManager: React.FC = () => {
                   <select
                     value={task.status}
                     onChange={(e) => updateStatus(task.id, e.target.value as Task['status'])}
+                    aria-label={t.taskManagerStatusAria}
                     className={`text-[10px] font-black py-2 px-4 rounded-xl border-2 cursor-pointer focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none ${
                       task.status === 'completada' ? 'bg-green-50 border-green-100 text-green-700' :
                       task.status === 'en_proces' ? 'bg-amber-50 border-amber-100 text-amber-700' : 
                       'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}
                   >
-                    <option value="pendent">Pendent</option>
-                    <option value="en_proces">En procés</option>
-                    <option value="completada">Completada</option>
+                    <option value="pendent">{t.taskManagerStatusPending}</option>
+                    <option value="en_proces">{t.taskManagerStatusInProgress}</option>
+                    <option value="completada">{t.taskManagerStatusDone}</option>
                   </select>
                   
                   <button 
+                    type="button"
                     onClick={() => deleteTask(task.id)}
                     className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0"
+                    aria-label={t.taskManagerDeleteTask}
+                    title={t.taskManagerDeleteTask}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

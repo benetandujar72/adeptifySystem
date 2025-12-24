@@ -118,7 +118,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       setMessages(prev => [...prev, modelMsg]);
       await consultationService.saveChatMessage(effectiveCenterId, modelMsg);
     } catch (error) {
-      const errorMsg: ChatMessage = { role: 'model', text: "Error de conexión.", timestamp: new Date().toISOString() };
+      const errorMsg: ChatMessage = { role: 'model', text: t.chatErrorConnection, timestamp: new Date().toISOString() };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsTyping(false);
@@ -143,8 +143,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
               type="button"
               onClick={() => setIsOpen(false)}
               className="p-2 hover:bg-white/10 rounded-xl transition-all"
-              aria-label="Cerrar chat"
-              title="Cerrar chat"
+              aria-label={t.chatClose}
+              title={t.chatClose}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -186,8 +186,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
                   type="button"
                   onClick={sendMessage}
                   className="bg-slate-900 text-white p-5 rounded-2xl hover:bg-indigo-600 transition-all shadow-xl active:scale-95 group"
-                  aria-label="Enviar mensaje"
-                  title="Enviar mensaje"
+                  aria-label={t.chatSend}
+                  title={t.chatSend}
                 >
                 <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
               </button>
@@ -199,8 +199,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="h-20 w-20 bg-slate-950 text-white rounded-[2rem] flex items-center justify-center shadow-2xl hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 border-4 border-white group relative"
-          aria-label={isOpen ? 'Cerrar chat' : 'Abrir chat'}
-          title={isOpen ? 'Cerrar chat' : 'Abrir chat'}
+          aria-label={isOpen ? t.chatClose : t.chatOpen}
+          title={isOpen ? t.chatClose : t.chatOpen}
         >
         <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
       </button>

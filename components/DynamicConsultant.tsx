@@ -6,18 +6,25 @@ import { useLanguage } from '../LanguageContext';
 
 interface DynamicConsultantProps {
   initialDiagnosis: DiagnosisState;
-  onComplete: (history: { question: string; answer: string }[]) => void;
+  onComplete: (history: { question: string; answer: string[] }[]) => void;
 }
 
 const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis, onComplete }) => {
-  const { language } = useLanguage();
-  const [history, setHistory] = useState<{ question: string; answer: string }[]>([]);
+  const { language, t } = useLanguage();
+  const [history, setHistory] = useState<{ question: string; answer: string[] }[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Partial<DynamicQuestion>>({});
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customAnswer, setCustomAnswer] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const parseFreeTextAnswers = (text: string): string[] => {
+    return text
+      .split(/\r?\n|;/g)
+      .map(x => x.trim())
+      .filter(Boolean);
+  };
 
   useEffect(() => {
     const initAudit = async () => {
@@ -35,15 +42,17 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
   }, [history, isLoading]);
 
   const handleFinalSubmit = async (finalAnswer?: string) => {
-    let answerText = finalAnswer || '';
-    if (!finalAnswer) {
-      const parts = [...selectedOptions];
-      if (customAnswer.trim()) parts.push(customAnswer.trim());
-      answerText = parts.join(', ');
+    let answers: string[] = [];
+    if (finalAnswer) {
+      answers = [finalAnswer];
+    } else {
+      answers = [...selectedOptions];
+      if (customAnswer.trim()) answers.push(...parseFreeTextAnswers(customAnswer));
     }
-    if (!answerText.trim() || isLoading) return;
+    answers = answers.map(a => a.trim()).filter(Boolean);
+    if (answers.length === 0 || isLoading) return;
 
-    const newHistory = [...history, { question: currentQuestion.question!, answer: answerText }];
+    const newHistory = [...history, { question: currentQuestion.question!, answer: answers }];
     setHistory(newHistory);
     setSelectedOptions([]);
     setCustomAnswer('');
@@ -68,8 +77,11 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-[0.2em]">{language === 'ca' ? "Pla d'Eficiència" : "Plan de Eficiencia"}</h3>
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">Adeptify Consulting</p>
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em]">{t.consultantTitle}</h3>
+            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{t.consultantSubtitle}</p>
+            {!!currentQuestion.modelUsed && (
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">{t.modelLabel}: {currentQuestion.modelUsed}</p>
+            )}
           </div>
         </div>
       </div>
@@ -85,7 +97,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
             </div>
             <div className="flex justify-end">
               <div className="bg-slate-900 p-5 rounded-2xl text-white max-w-[85%] shadow-xl">
-                <p className="text-sm font-medium">{item.answer}</p>
+                <p className="text-sm font-medium whitespace-pre-wrap">{item.answer.join('\n')}</p>
               </div>
             </div>
           </div>
@@ -95,7 +107,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
           <div className="flex justify-start">
             <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest px-8">
               <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-pulse" />
-              {language === 'ca' ? "Preparant següent pas..." : "Preparando siguiente paso..."}
+              {t.consultantPreparing}
             </div>
           </div>
         ) : (
@@ -135,7 +147,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
                 <textarea
                   autoFocus
                   className="w-full p-6 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-600 transition-all font-medium text-sm text-slate-800 h-32"
-                  placeholder={language === 'ca' ? "Expliqui'ns més..." : "Cuéntenos más..."}
+                  placeholder={t.consultantTellMore}
                   value={customAnswer}
                   onChange={(e) => setCustomAnswer(e.target.value)}
                 />
@@ -147,7 +159,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
                     disabled={selectedOptions.length === 0 && !customAnswer.trim()}
                     className="bg-slate-950 text-white px-12 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-30 shadow-xl"
                   >
-                    {language === 'ca' ? "Continuar →" : "Continuar →"}
+                      {t.consultantContinue}
                   </button>
               </div>
             </div>
