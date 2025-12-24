@@ -28,8 +28,17 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfPageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      while (heightLeft > 0) {
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfPageHeight;
+        position -= pdfPageHeight;
+        if (heightLeft > 0) pdf.addPage();
+      }
       pdf.save(`${t.proposalPdfFilenamePrefix}_${centerName || t.proposalDefaultCenterName}.pdf`);
     } catch (error) {
       alert(t.proposalPdfError);
@@ -86,6 +95,102 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
             </div>
           </section>
 
+          {/* Q/A recap */}
+          <section>
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.proposalRecapTitle}</h4>
+            {(data?.consultationRecap || []).length > 0 ? (
+              <div className="space-y-6">
+                {data.consultationRecap!.map((row, idx) => (
+                  <div key={idx} className="bg-white border border-slate-100 rounded-xl p-8">
+                    <p className="text-xs font-bold text-slate-900 mb-3">{row.question}</p>
+                    <div className="space-y-2">
+                      {(row.answers || []).length > 0 ? (
+                        <ul className="text-xs text-slate-600 list-disc pl-5 space-y-1">
+                          {row.answers.map((a, j) => (
+                            <li key={j}>{a}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">—</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-xl p-8 text-center text-slate-400 italic text-sm">
+                {t.roadmapGenerating}
+              </div>
+            )}
+          </section>
+
+          {/* System interpretation / response */}
+          <section>
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.proposalSystemResponseTitle}</h4>
+            {(data?.consultationRecap || []).length > 0 ? (
+              <div className="space-y-6">
+                {data.consultationRecap!.map((row, idx) => (
+                  <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-8">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{t.phaseLabel} 0{idx + 1}</p>
+                    <p className="text-sm font-bold text-slate-900 mb-3">{row.question}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalInterpretationLabel}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{row.systemInterpretation || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalSystemResponseLabel}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{row.systemResponse || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-xl p-8 text-center text-slate-400 italic text-sm">
+                {t.roadmapGenerating}
+              </div>
+            )}
+          </section>
+
+          {/* Detailed solution */}
+          <section>
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.proposalSolutionDetailsTitle}</h4>
+            {(data?.solutionDetails || []).length > 0 ? (
+              <div className="space-y-6">
+                {data.solutionDetails!.map((p, idx) => (
+                  <div key={idx} className="bg-white border border-slate-100 rounded-xl p-8">
+                    <h5 className="text-sm font-bold text-slate-900 mb-4">{p.title}</h5>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalPainPointLabel}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{p.painPoint}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalHowItSolvesLabel}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{p.howItSolvesIt}</p>
+                      </div>
+                      {(p.examples || []).length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalExamplesLabel}</p>
+                          <ul className="text-xs text-slate-600 list-disc pl-5 space-y-1">
+                            {p.examples.map((ex, j) => (
+                              <li key={j}>{ex}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-slate-100 rounded-xl p-8 text-center text-slate-400 italic text-sm">
+                {t.roadmapGenerating}
+              </div>
+            )}
+          </section>
+
           {/* Roadmap */}
           <section>
             <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.roadmapTitle}</h4>
@@ -96,6 +201,21 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                   <h5 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{phase?.name || t.proposalUnnamedPhase}</h5>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{phase?.description || t.proposalPendingDescription}</p>
                   <p className="text-[10px] font-bold text-indigo-600 pt-2">{t.weekLabel} {phase?.startWeek || idx+1}</p>
+
+                  {typeof (phase as any)?.cost === 'number' && (
+                    <p className="text-[10px] font-bold text-slate-700">{t.proposalPhaseCostLabel}: {(phase as any).cost.toLocaleString()}€</p>
+                  )}
+
+                  {Array.isArray((phase as any)?.deliverables) && (phase as any).deliverables.length > 0 && (
+                    <div className="pt-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{t.proposalIncludesLabel}</p>
+                      <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                        {(phase as any).deliverables.slice(0, 4).map((d: string, j: number) => (
+                          <li key={j}>{d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )) : (
                 <div className="col-span-4 bg-white p-8 text-center text-slate-400 italic text-sm">
@@ -136,6 +256,82 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                  <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">{t.nextGenDisclaimer}</p>
               </div>
             </div>
+
+            {/* Subscription */}
+            <div className="mt-16 bg-white border border-slate-100 rounded-xl p-10">
+              <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">{t.proposalSubscriptionTitle}</h4>
+              {data?.subscription ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{data.subscription.name}</p>
+                      <p className="text-xs text-slate-500">{t.proposalSlaLabel}: {data.subscription.sla}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-serif text-slate-900 font-bold">
+                        {data.subscription.pricePerMonth.toLocaleString()}€<span className="text-xs text-slate-500 font-sans font-medium">{t.proposalPerMonth}</span>
+                      </p>
+                    </div>
+                  </div>
+                  {Array.isArray(data.subscription.includes) && data.subscription.includes.length > 0 && (
+                    <ul className="text-xs text-slate-600 list-disc pl-5 space-y-1">
+                      {data.subscription.includes.map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">{t.costsPending}</p>
+              )}
+            </div>
+
+            {/* Add-ons */}
+            <div className="mt-10 bg-white border border-slate-100 rounded-xl p-10">
+              <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">{t.proposalAddonsTitle}</h4>
+              {(data?.addons || []).length > 0 ? (
+                <div className="space-y-4">
+                  {data.addons!.map((a, idx) => (
+                    <div key={idx} className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 py-4 border-b border-slate-100 last:border-b-0">
+                      <div className="max-w-2xl">
+                        <p className="text-sm font-bold text-slate-900">{a.name}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed">{a.description}</p>
+                      </div>
+                      <div className="text-right text-xs text-slate-700 font-bold whitespace-nowrap">
+                        {typeof a.setupPrice === 'number' && (
+                          <div>{t.proposalSetupLabel}: {a.setupPrice.toLocaleString()}€</div>
+                        )}
+                        {typeof a.pricePerMonth === 'number' && (
+                          <div>{a.pricePerMonth.toLocaleString()}€{t.proposalPerMonth}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400 italic">{t.costsPending}</p>
+              )}
+            </div>
+
+            {/* Totals */}
+            {data?.totals && (
+              <div className="mt-10 bg-slate-900 text-white rounded-xl p-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.proposalTotalsInitialLabel}</p>
+                    <p className="text-2xl font-serif font-bold">{data.totals.initial.toLocaleString()}€</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.proposalTotalsMonthlyLabel}</p>
+                    <p className="text-2xl font-serif font-bold">{data.totals.recurringMonthly.toLocaleString()}€{t.proposalPerMonth}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{t.proposalTotalsFirstYearLabel}</p>
+                    <p className="text-2xl font-serif font-bold">{data.totals.estimatedFirstYear.toLocaleString()}€</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         </div>
         

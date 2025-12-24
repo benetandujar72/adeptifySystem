@@ -63,13 +63,55 @@ export interface ImplementationPhase {
   startWeek: number;
   durationWeeks: number;
   description: string;
+  cost?: number;
+  deliverables?: string[];
+  successCriteria?: string[];
+}
+
+export interface ConsultationRecapItem {
+  question: string;
+  answers: string[];
+  systemInterpretation: string;
+  systemResponse: string;
+}
+
+export interface SolutionDetailPoint {
+  title: string;
+  painPoint: string;
+  howItSolvesIt: string;
+  examples: string[];
+}
+
+export interface SubscriptionPlan {
+  name: string;
+  pricePerMonth: number;
+  includes: string[];
+  sla: string;
+}
+
+export interface AddOn {
+  name: string;
+  description: string;
+  setupPrice?: number;
+  pricePerMonth?: number;
+}
+
+export interface ProposalTotals {
+  initial: number;
+  recurringMonthly: number;
+  estimatedFirstYear: number;
 }
 
 export interface ProposalData {
   diagnosis: string;
   solution: string;
+  consultationRecap?: ConsultationRecapItem[];
+  solutionDetails?: SolutionDetailPoint[];
   items: BudgetItem[];
   totalInitial: number;
+  subscription?: SubscriptionPlan;
+  addons?: AddOn[];
+  totals?: ProposalTotals;
   nextGenFundsInfo: string;
   implementationTime: string;
   roi: string;

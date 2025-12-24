@@ -211,19 +211,58 @@ Genera un JSON que compleixi EXACTAMENT aquesta estructura (ProposalData):
 {
   "diagnosis": string,
   "solution": string,
+  "consultationRecap": [{
+    "question": string,
+    "answers": string[],
+    "systemInterpretation": string,
+    "systemResponse": string
+  }],
+  "solutionDetails": [{
+    "title": string,
+    "painPoint": string,
+    "howItSolvesIt": string,
+    "examples": string[]
+  }],
   "items": [{"concept": string, "description": string, "price": number}],
   "totalInitial": number,
+  "subscription": {
+    "name": string,
+    "pricePerMonth": number,
+    "includes": string[],
+    "sla": string
+  },
+  "addons": [{
+    "name": string,
+    "description": string,
+    "setupPrice": number,
+    "pricePerMonth": number
+  }],
+  "totals": {
+    "initial": number,
+    "recurringMonthly": number,
+    "estimatedFirstYear": number
+  },
   "nextGenFundsInfo": string,
   "implementationTime": string,
   "roi": string,
-  "phases": [{"name": string, "startWeek": number, "durationWeeks": number, "description": string}],
+  "phases": [{
+    "name": string,
+    "startWeek": number,
+    "durationWeeks": number,
+    "description": string,
+    "cost": number,
+    "deliverables": string[],
+    "successCriteria": string[]
+  }],
   "meta": {"generatedAt": string}
 }
 
 Recomanacions:
 - A "solution" inclou una secció final de "Crida a l'acció" amb pròxims passos.
 - Pressupost: especifica què inclou / què no inclou.
-- Fases: entregables i criteris d'èxit per fase.`
+- Fases: entregables i criteris d'èxit per fase.
+- A la "subscription" descriu clarament manteniment, suport i millores.
+- A "addons" proposa opcions extra amb més funcionalitats.`
     : `ERES UN CONSULTOR ESTRATÉGICO SÉNIOR PARA CENTROS EDUCATIVOS.
 Objetivo: generar un INFORME FINAL Y PRESUPUESTO muy minucioso, exhaustivo, elegante y profesional.
 
@@ -241,19 +280,58 @@ Genera un JSON que cumpla EXACTAMENTE esta estructura (ProposalData):
 {
   "diagnosis": string,
   "solution": string,
+  "consultationRecap": [{
+    "question": string,
+    "answers": string[],
+    "systemInterpretation": string,
+    "systemResponse": string
+  }],
+  "solutionDetails": [{
+    "title": string,
+    "painPoint": string,
+    "howItSolvesIt": string,
+    "examples": string[]
+  }],
   "items": [{"concept": string, "description": string, "price": number}],
   "totalInitial": number,
+  "subscription": {
+    "name": string,
+    "pricePerMonth": number,
+    "includes": string[],
+    "sla": string
+  },
+  "addons": [{
+    "name": string,
+    "description": string,
+    "setupPrice": number,
+    "pricePerMonth": number
+  }],
+  "totals": {
+    "initial": number,
+    "recurringMonthly": number,
+    "estimatedFirstYear": number
+  },
   "nextGenFundsInfo": string,
   "implementationTime": string,
   "roi": string,
-  "phases": [{"name": string, "startWeek": number, "durationWeeks": number, "description": string}],
+  "phases": [{
+    "name": string,
+    "startWeek": number,
+    "durationWeeks": number,
+    "description": string,
+    "cost": number,
+    "deliverables": string[],
+    "successCriteria": string[]
+  }],
   "meta": {"generatedAt": string}
 }
 
 Recomendaciones:
 - En "solution" incluye una sección final de "Llamada a la acción" con próximos pasos.
 - Presupuesto: especifica qué incluye / qué no incluye.
-- Fases: entregables y criterios de éxito por fase.`;
+- Fases: entregables y criterios de éxito por fase.
+- En "subscription" describe claramente mantenimiento, soporte y mejoras.
+- En "addons" propone extras con más funcionalidades.`;
 
   try {
     const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
