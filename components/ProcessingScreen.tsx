@@ -57,12 +57,12 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({ centerName, onCompl
         </div>
 
         <div className="relative pt-1">
-          <div className="overflow-hidden h-1.5 mb-10 text-xs flex rounded-full bg-slate-100">
-            <div 
-              style={{ width: `${progress}%` }} 
-              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"
-            />
-          </div>
+          <progress
+            className="w-full h-1.5 mb-10 rounded-full overflow-hidden bg-slate-100"
+            value={progress}
+            max={100}
+            aria-label="progress"
+          />
         </div>
 
         <div className="space-y-6 text-left max-w-xs mx-auto">

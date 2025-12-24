@@ -37,16 +37,18 @@ const NotificationSettings: React.FC = () => {
               <span className="block font-bold text-slate-700 text-sm">{item.label}</span>
               <span className="text-[10px] text-slate-400 leading-tight">{item.desc}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => toggle(item.key as keyof NotificationPrefs)}
-              className={`w-10 h-5 rounded-full shrink-0 transition-colors relative ${prefs[item.key as keyof NotificationPrefs] ? 'bg-indigo-600' : 'bg-slate-200'}`}
-              role="switch"
-              aria-checked={prefs[item.key as keyof NotificationPrefs]}
-              aria-label={item.label}
+            <label
+              className={`w-10 h-5 rounded-full shrink-0 transition-colors relative cursor-pointer ${prefs[item.key as keyof NotificationPrefs] ? 'bg-indigo-600' : 'bg-slate-200'}`}
             >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={prefs[item.key as keyof NotificationPrefs]}
+                onChange={() => toggle(item.key as keyof NotificationPrefs)}
+                aria-label={item.label}
+              />
               <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${prefs[item.key as keyof NotificationPrefs] ? 'left-5.5' : 'left-0.5'}`} />
-            </button>
+            </label>
           </div>
         ))}
       </div>

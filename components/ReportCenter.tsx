@@ -88,16 +88,16 @@ const ReportCenter: React.FC = () => {
             <span className="block text-sm font-bold text-indigo-900">{t.reportScheduleTitle}</span>
             <span className="text-[10px] text-indigo-700">{t.reportScheduleDesc}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setScheduled(!scheduled)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${scheduled ? 'bg-indigo-600' : 'bg-slate-300'}`}
-            role="switch"
-            aria-checked={scheduled}
-            aria-label={t.reportScheduleToggleAria}
-          >
+          <label className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${scheduled ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={scheduled}
+              onChange={() => setScheduled(!scheduled)}
+              aria-label={t.reportScheduleToggleAria}
+            />
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${scheduled ? 'left-7' : 'left-1'}`} />
-          </button>
+          </label>
         </div>
       </div>
     </div>
