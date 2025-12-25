@@ -5,21 +5,11 @@ import { Language } from "../translations";
 
 type EnvLike = Record<string, unknown> | undefined;
 
-type ViteImportMeta = { env?: Record<string, unknown> };
-
-const getViteEnv = (key: string): string | undefined => {
-  try {
-    const env = (import.meta as unknown as ViteImportMeta)?.env;
-    const value = env?.[key];
-    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
 const getApiKey = (): string | undefined => {
-  const fromVite = getViteEnv('VITE_GEMINI_API_KEY');
-  if (fromVite) return fromVite;
+  // IMPORTANT: Vite injects custom env vars only when accessed via
+  // `import.meta.env.VITE_*` (static property access). Avoid computed access.
+  const fromVite = (import.meta as any)?.env?.VITE_GEMINI_API_KEY;
+  if (typeof fromVite === 'string' && fromVite.trim()) return fromVite.trim();
 
   // Backward-compatible fallback for older builds.
   const env = (process.env as EnvLike) || {};
