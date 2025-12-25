@@ -8,7 +8,7 @@ type EnvLike = Record<string, unknown> | undefined;
 const getApiKey = (): string | undefined => {
   // IMPORTANT: Vite injects custom env vars only when accessed via
   // `import.meta.env.VITE_*` (static property access). Avoid computed access.
-  const fromVite = (import.meta as any)?.env?.VITE_GEMINI_API_KEY;
+  const fromVite = import.meta.env.VITE_GEMINI_API_KEY;
   if (typeof fromVite === 'string' && fromVite.trim()) return fromVite.trim();
 
   // Backward-compatible fallback for older builds.
