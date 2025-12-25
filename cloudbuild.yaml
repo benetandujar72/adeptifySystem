@@ -15,10 +15,11 @@ steps:
       - '-c'
       - |
         : > .env.production
-        printf 'GEMINI_API_KEY=%s\n' "$$GEMINI_API_KEY" >> .env.production
-        printf 'SUPABASE_URL=%s\n' "$$SUPABASE_URL" >> .env.production
-        printf 'SUPABASE_ANON_KEY=%s\n' "$$SUPABASE_ANON_KEY" >> .env.production
-        printf 'SB_PUBLISHABLE_KEY=%s\n' "$$SB_PUBLISHABLE_KEY" >> .env.production
+        # Vite only exposes variables prefixed with VITE_ to the browser bundle.
+        printf 'VITE_GEMINI_API_KEY=%s\n' "$$GEMINI_API_KEY" >> .env.production
+        printf 'VITE_SUPABASE_URL=%s\n' "$$SUPABASE_URL" >> .env.production
+        printf 'VITE_SUPABASE_ANON_KEY=%s\n' "$$SUPABASE_ANON_KEY" >> .env.production
+        printf 'VITE_SB_PUBLISHABLE_KEY=%s\n' "$$SB_PUBLISHABLE_KEY" >> .env.production
 
         # Sanity check (do not print secret values)
         sed -E 's/=(.*)$/=*** /' .env.production
@@ -29,13 +30,13 @@ steps:
     args:
       - 'build'
       - '--build-arg'
-      - 'GEMINI_API_KEY=$$GEMINI_API_KEY'
+      - 'VITE_GEMINI_API_KEY=$$GEMINI_API_KEY'
       - '--build-arg'
-      - 'SUPABASE_URL=$$SUPABASE_URL'
+      - 'VITE_SUPABASE_URL=$$SUPABASE_URL'
       - '--build-arg'
-      - 'SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY'
+      - 'VITE_SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY'
       - '--build-arg'
-      - 'SB_PUBLISHABLE_KEY=$$SB_PUBLISHABLE_KEY'
+      - 'VITE_SB_PUBLISHABLE_KEY=$$SB_PUBLISHABLE_KEY'
       - '-t'
       - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
       - '-t'

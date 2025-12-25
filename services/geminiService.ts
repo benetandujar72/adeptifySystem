@@ -5,7 +5,23 @@ import { Language } from "../translations";
 
 type EnvLike = Record<string, unknown> | undefined;
 
+type ViteImportMeta = { env?: Record<string, unknown> };
+
+const getViteEnv = (key: string): string | undefined => {
+  try {
+    const env = (import.meta as unknown as ViteImportMeta)?.env;
+    const value = env?.[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const getApiKey = (): string | undefined => {
+  const fromVite = getViteEnv('VITE_GEMINI_API_KEY');
+  if (fromVite) return fromVite;
+
+  // Backward-compatible fallback for older builds.
   const env = (process.env as EnvLike) || {};
   const key = (env as any).GEMINI_API_KEY || (env as any).API_KEY;
   return typeof key === 'string' && key.trim() ? key.trim() : undefined;

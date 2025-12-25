@@ -8,8 +8,27 @@ import { createClient } from '@supabase/supabase-js';
  * Si no se detectan, el sistema activa el protocolo de contingencia (LocalStorage).
  */
 
-const supabaseUrl = (process.env as any).SUPABASE_URL || 'https://cqqifwjzljxtiphdcyyi.supabase.co';
-const supabaseAnonKey = (process.env as any).SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxcWlmd2p6bGp4dGlwaGRjeXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTYxMjUsImV4cCI6MjA4MjAzMjEyNX0.3IXdHciSW0haFqzk2amaxCdb3RnmBlxg32lnhiINfBQ';
+type ViteImportMeta = { env?: Record<string, unknown> };
+
+const readEnv = (key: string): string | undefined => {
+  try {
+    const env = (import.meta as unknown as ViteImportMeta)?.env;
+    const value = env?.[key];
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const supabaseUrl =
+  readEnv('VITE_SUPABASE_URL') ||
+  (process.env as any).SUPABASE_URL ||
+  'https://cqqifwjzljxtiphdcyyi.supabase.co';
+
+const supabaseAnonKey =
+  readEnv('VITE_SUPABASE_ANON_KEY') ||
+  (process.env as any).SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxcWlmd2p6bGp4dGlwaGRjeXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTYxMjUsImV4cCI6MjA4MjAzMjEyNX0.3IXdHciSW0haFqzk2amaxCdb3RnmBlxg32lnhiINfBQ';
 
 let supabaseInstance = null;
 
