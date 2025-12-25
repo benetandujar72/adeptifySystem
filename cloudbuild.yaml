@@ -26,22 +26,19 @@ steps:
 
   # 1) Build image
   - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
     secretEnv: ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
     args:
-      - 'build'
-      - '--build-arg'
-      - 'VITE_GEMINI_API_KEY=$$GEMINI_API_KEY'
-      - '--build-arg'
-      - 'VITE_SUPABASE_URL=$$SUPABASE_URL'
-      - '--build-arg'
-      - 'VITE_SUPABASE_ANON_KEY=$$SUPABASE_ANON_KEY'
-      - '--build-arg'
-      - 'VITE_SB_PUBLISHABLE_KEY=$$SB_PUBLISHABLE_KEY'
-      - '-t'
-      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
-      - '-t'
-      - '${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest'
-      - '.'
+      - '-c'
+      - |
+        docker build \
+          --build-arg VITE_GEMINI_API_KEY="$$GEMINI_API_KEY" \
+          --build-arg VITE_SUPABASE_URL="$$SUPABASE_URL" \
+          --build-arg VITE_SUPABASE_ANON_KEY="$$SUPABASE_ANON_KEY" \
+          --build-arg VITE_SB_PUBLISHABLE_KEY="$$SB_PUBLISHABLE_KEY" \
+          -t "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID" \
+          -t "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest" \
+          .
 
   # 2) Push to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
