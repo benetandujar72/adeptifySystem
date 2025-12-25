@@ -91,6 +91,20 @@ function formatHistoryForPrompt(
     .join('\n\n');
 }
 
+function detectAudience(diagnosis: DiagnosisState, history: { question: string; answer: string[] }[]): 'school' | 'family' | 'other' {
+  const cat = String((diagnosis as any)?.category ?? '').toLowerCase();
+  if (cat.includes('fam')) return 'family';
+  if (cat.includes('cent') || cat.includes('esco') || cat.includes('coleg') || cat.includes('instit')) return 'school';
+
+  const blob = (history || [])
+    .flatMap(h => [h.question, ...(h.answer || [])])
+    .join(' ')
+    .toLowerCase();
+  if (blob.includes('famil')) return 'family';
+  if (blob.includes('centre') || blob.includes('escuela') || blob.includes('escola') || blob.includes('colegio') || blob.includes('institut')) return 'school';
+  return 'other';
+}
+
 export interface DynamicQuestion {
   question: string;
   options: string[];
@@ -119,9 +133,31 @@ export async function getNextConsultantQuestion(
   }
   const historyStr = formatHistoryForPrompt(history, lang);
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const audience = detectAudience(diagnosis, history);
   
   const prompt = lang === 'ca'
-    ? `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A ESCOLES.
+    ? (audience === 'family'
+      ? `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA I ORGANITZACIÓ PER A FAMÍLIES.
+OBJECTIU: entendre què està generant tensió, desordre o manca de temps a casa per proposar una solució de "vida fàcil".
+
+REGLES CRÍTIQUES:
+- PARLA SEMPRE EN ${langName}.
+- No facis servir llenguatge tècnic. Prohibit parlar de "API", "Base de dades", "Backend", "Workflow".
+- Parla de "temps de qualitat", "rutines", "convivència", "organització".
+- Fes servir exemples familiars: "discussions", "deures", "pantalles", "horaris", "tasques de casa".
+
+HISTORIAL:
+${historyStr}
+
+Respon en aquest format JSON (i només JSON):
+{
+  "question": "Pregunta amable i humana en ${langName}",
+  "options": ["Opció 1 en ${langName}", "Opció 2", "Altres..."],
+  "isMultiSelect": boolean,
+  "isComplete": boolean,
+  "confidence": 0-100
+}`
+      : `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A ESCOLES.
 OBJECTIU: entendre on perd temps el claustre per proposar una solució de "vida fàcil".
 
 REGLES CRÍTIQUES:
@@ -140,8 +176,29 @@ Respon en aquest format JSON (i només JSON):
   "isMultiSelect": boolean,
   "isComplete": boolean,
   "confidence": 0-100
+}`)
+    : (audience === 'family'
+      ? `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA Y ORGANIZACIÓN PARA FAMILIAS.
+OBJETIVO: entender qué genera tensión, desorden o falta de tiempo en casa para proponer una solución de "vida fácil".
+
+REGLAS CRÍTICAS:
+- HABLA SIEMPRE EN ${langName}.
+- No uses lenguaje técnico. Prohibido hablar de "API", "Base de datos", "Backend", "Workflow".
+- Habla de "tiempo de calidad", "rutinas", "convivencia", "organización".
+- Usa ejemplos familiares: "discusiones", "deberes", "pantallas", "horarios", "tareas de casa".
+
+HISTORIAL:
+${historyStr}
+
+Responde en este formato JSON (y solo JSON):
+{
+  "question": "Pregunta amable y humana en ${langName}",
+  "options": ["Opción 1 en ${langName}", "Opción 2", "Otros..."],
+  "isMultiSelect": boolean,
+  "isComplete": boolean,
+  "confidence": 0-100
 }`
-    : `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA PARA COLEGIOS.
+      : `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA PARA COLEGIOS.
 OBJETIVO: entender dónde pierde tiempo el claustro para proponer una solución de "vida fácil".
 
 REGLAS CRÍTICAS:
@@ -160,7 +217,7 @@ Responde en este formato JSON (y solo JSON):
   "isMultiSelect": boolean,
   "isComplete": boolean,
   "confidence": 0-100
-}`;
+}`);
 
   try {
       const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {

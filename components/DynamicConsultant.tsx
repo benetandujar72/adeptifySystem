@@ -17,6 +17,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
   const [customAnswer, setCustomAnswer] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [wizardStepId, setWizardStepId] = useState<string | null>('audience');
+  const [diagnosisForAi, setDiagnosisForAi] = useState<DiagnosisState>(initialDiagnosis);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const parseFreeTextAnswers = (text: string): string[] => {
@@ -26,15 +28,158 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       .filter(Boolean);
   };
 
-  useEffect(() => {
-    const initAudit = async () => {
-      setIsLoading(true);
-      try {
-        const firstQuestion = await getNextConsultantQuestion([], initialDiagnosis, language);
-        setCurrentQuestion(firstQuestion);
-      } catch (e) { console.error(e); } finally { setIsLoading(false); }
+  type WizardStep = {
+    id: string;
+    question: { ca: string; es: string };
+    options: { ca: string; es: string }[];
+    isMultiSelect: boolean;
+    next: (answers: string[]) => string | null;
+    applyToDiagnosis?: (answers: string[]) => Partial<DiagnosisState>;
+  };
+
+  const getWizardSteps = (): WizardStep[] => {
+    const audienceStep: WizardStep = {
+      id: 'audience',
+      question: {
+        ca: "Abans de començar: qui demana ajuda avui?",
+        es: "Antes de empezar: ¿quién solicita ayuda hoy?",
+      },
+      options: [
+        { ca: 'Centre educatiu', es: 'Centro educativo' },
+        { ca: 'Família', es: 'Familia' },
+        { ca: 'Altres…', es: 'Otros…' },
+      ],
+      isMultiSelect: false,
+      next: (answers) => {
+        const a = answers.join(' ').toLowerCase();
+        if (a.includes('fam')) return 'goal_family';
+        if (a.includes('centre') || a.includes('coleg') || a.includes('instit')) return 'goal_school';
+        return 'goal_generic';
+      },
+      applyToDiagnosis: (answers) => {
+        const a = answers.join(' ').toLowerCase();
+        if (a.includes('fam')) return { category: 'FAMILIA' };
+        if (a.includes('centre') || a.includes('coleg') || a.includes('instit')) return { category: 'CENTRO' };
+        return { category: 'OTRO' };
+      },
     };
-    initAudit();
+
+    const goalCommon = {
+      isMultiSelect: true,
+      next: () => 'urgency',
+    } as const;
+
+    const goalSchool: WizardStep = {
+      id: 'goal_school',
+      question: {
+        ca: "Què us agradaria millorar primer? (Pots marcar més d'una opció)",
+        es: "¿Qué te gustaría mejorar primero? (Puedes marcar más de una opción)",
+      },
+      options: [
+        { ca: 'Reduir paperassa i burocràcia', es: 'Reducir papeleo y burocracia' },
+        { ca: 'Comunicació amb famílies', es: 'Comunicación con familias' },
+        { ca: "Seguiment de l'alumnat", es: 'Seguimiento del alumnado' },
+        { ca: 'Organitzar reunions i tasques', es: 'Organizar reuniones y tareas' },
+        { ca: 'Altres…', es: 'Otros…' },
+      ],
+      ...goalCommon,
+    };
+
+    const goalFamily: WizardStep = {
+      id: 'goal_family',
+      question: {
+        ca: "Quina és la necessitat principal a casa? (Pots marcar més d'una opció)",
+        es: "¿Cuál es la necesidad principal en casa? (Puedes marcar más de una opción)",
+      },
+      options: [
+        { ca: 'Organització i rutines', es: 'Organización y rutinas' },
+        { ca: 'Comunicació familiar', es: 'Comunicación familiar' },
+        { ca: "Acompanyament a l'estudi", es: 'Acompañamiento en el estudio' },
+        { ca: 'Gestió emocional i convivència', es: 'Gestión emocional y convivencia' },
+        { ca: 'Altres…', es: 'Otros…' },
+      ],
+      ...goalCommon,
+    };
+
+    const goalGeneric: WizardStep = {
+      id: 'goal_generic',
+      question: {
+        ca: "Quin objectiu voleu assolir? (Pots marcar més d'una opció)",
+        es: "¿Qué objetivo queréis conseguir? (Puedes marcar más de una opción)",
+      },
+      options: [
+        { ca: 'Estalviar temps', es: 'Ahorrar tiempo' },
+        { ca: 'Millorar organització', es: 'Mejorar organización' },
+        { ca: 'Millorar comunicació', es: 'Mejorar comunicación' },
+        { ca: 'Altres…', es: 'Otros…' },
+      ],
+      ...goalCommon,
+    };
+
+    const urgency: WizardStep = {
+      id: 'urgency',
+      question: {
+        ca: 'Quina urgència té?',
+        es: '¿Qué urgencia tiene?',
+      },
+      options: [
+        { ca: 'Aquesta setmana', es: 'Esta semana' },
+        { ca: 'Aquest mes', es: 'Este mes' },
+        { ca: 'Aquest trimestre', es: 'Este trimestre' },
+        { ca: 'Sense urgència', es: 'Sin urgencia' },
+      ],
+      isMultiSelect: false,
+      next: () => 'constraints',
+    };
+
+    const constraints: WizardStep = {
+      id: 'constraints',
+      question: {
+        ca: "Hi ha alguna limitació important? (Pots marcar més d'una opció)",
+        es: "¿Hay alguna limitación importante? (Puedes marcar más de una opción)",
+      },
+      options: [
+        { ca: 'Poc temps', es: 'Poco tiempo' },
+        { ca: 'Pressupost ajustat', es: 'Presupuesto ajustado' },
+        { ca: 'Resistència al canvi', es: 'Resistencia al cambio' },
+        { ca: 'Privacitat i dades sensibles', es: 'Privacidad y datos sensibles' },
+        { ca: 'Altres…', es: 'Otros…' },
+      ],
+      isMultiSelect: true,
+      next: () => null,
+    };
+
+    return [audienceStep, goalSchool, goalFamily, goalGeneric, urgency, constraints];
+  };
+
+  const getWizardStep = (id: string | null): WizardStep | null => {
+    if (!id) return null;
+    return getWizardSteps().find(s => s.id === id) || null;
+  };
+
+  const pushWizardQuestion = (step: WizardStep) => {
+    const q = language === 'ca' ? step.question.ca : step.question.es;
+    const opts = step.options.map(o => (language === 'ca' ? o.ca : o.es));
+    setCurrentQuestion({
+      question: q,
+      options: opts,
+      isMultiSelect: step.isMultiSelect,
+      isComplete: false,
+      confidence: 100,
+    });
+  };
+
+  useEffect(() => {
+    // Start with the local adaptive wizard, then continue with Gemini questions.
+    setHistory([]);
+    setSelectedOptions([]);
+    setCustomAnswer('');
+    setShowCustomInput(false);
+    setDiagnosisForAi(initialDiagnosis);
+    setWizardStepId('audience');
+    const step = getWizardStep('audience');
+    if (step) pushWizardQuestion(step);
+    setIsLoading(false);
   }, [initialDiagnosis.selectedProduct, language]);
 
   useEffect(() => {
@@ -57,16 +202,51 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
     setSelectedOptions([]);
     setCustomAnswer('');
     setShowCustomInput(false);
-    setIsLoading(true);
 
+    // Wizard path (local adaptive steps)
+    if (wizardStepId) {
+      const step = getWizardStep(wizardStepId);
+      const nextId = step?.next(answers) ?? null;
+      if (step?.applyToDiagnosis) {
+        setDiagnosisForAi(prev => ({ ...prev, ...step.applyToDiagnosis!(answers) }));
+      }
+
+      if (nextId) {
+        setWizardStepId(nextId);
+        const nextStep = getWizardStep(nextId);
+        if (nextStep) pushWizardQuestion(nextStep);
+        return;
+      }
+
+      // Wizard complete → switch to Gemini questions
+      setWizardStepId(null);
+      setIsLoading(true);
+      try {
+        const next = await getNextConsultantQuestion(newHistory, diagnosisForAi, language);
+        setCurrentQuestion(next);
+      } catch (e) {
+        console.error(e);
+        onComplete(newHistory);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Gemini path
+    setIsLoading(true);
     try {
-      const next = await getNextConsultantQuestion(newHistory, initialDiagnosis, language);
+      const next = await getNextConsultantQuestion(newHistory, diagnosisForAi, language);
       if (next.isComplete || history.length >= 7) {
         onComplete(newHistory);
       } else {
         setCurrentQuestion(next);
       }
-    } catch (error) { onComplete(newHistory); } finally { setIsLoading(false); }
+    } catch (error) {
+      onComplete(newHistory);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -126,9 +306,21 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
                       key={idx}
                       onClick={() => {
                         if (option.includes('Altres') || option.includes('Otros')) { setShowCustomInput(!showCustomInput); return; }
+                        // Wizard always requires explicit continue (even for single-select).
+                        if (wizardStepId) {
+                          if (currentQuestion.isMultiSelect) {
+                            setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
+                          } else {
+                            setSelectedOptions([option]);
+                          }
+                          return;
+                        }
+
                         if (currentQuestion.isMultiSelect) {
                           setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
-                        } else { handleFinalSubmit(option); }
+                        } else {
+                          handleFinalSubmit(option);
+                        }
                       }}
                       className={`text-left p-6 rounded-xl border transition-all duration-300 flex items-center justify-between group ${
                         isSelected 
