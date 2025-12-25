@@ -203,6 +203,19 @@ REGLES CRÍTIQUES:
 - To executiu, clar i orientat a direcció.
 - Retorna NOMÉS JSON vàlid (sense Markdown, sense text extra).
 
+COHERÈNCIA ECONÒMICA (OBLIGATÒRIA):
+- "totalInitial" HA DE SER EXACTAMENT la suma de "items[].price".
+- La suma de "phases[].cost" HA DE SER EXACTAMENT igual a "totalInitial".
+- "totals.initial" = "totalInitial".
+- "totals.recurringMonthly" = "subscription.pricePerMonth".
+- "totals.estimatedFirstYear" = totalInitial + (12 * subscription.pricePerMonth).
+- Els "addons" són OPCIONALS i NO s'han d'incloure dins "totals" (són extres fora del paquet base).
+
+POLÍTICA DE PREUS (TRIA'LS TU, PERÒ SIGUES CONSTANT):
+- Base inicial típica: 6.900€–12.900€ (tria segons el dolor del centre).
+- Subscripció mensual de manteniment: 390€/mes per defecte (puja a 490€/mes si el centre és gran o demana més seguiment).
+- Inclou 3–5 "addons" (integracions, analítica avançada, app mòbil, signatura/autoritzacions, quadres de comandament) amb preus creïbles: setup 0€–2.500€ i/o 29€–149€/mes.
+
 CENTRE: "${diagnosis.centerName}".
 HISTORIAL (preguntes i respostes):
 ${historyStr}
@@ -271,6 +284,19 @@ REGLAS CRÍTICAS:
 - Prohibido hablar de API, backend, base de datos o detalles técnicos.
 - Tono ejecutivo, claro y orientado a dirección.
 - Devuelve SOLO JSON válido (sin Markdown, sin texto extra).
+
+COHERENCIA ECONÓMICA (OBLIGATORIA):
+- "totalInitial" DEBE SER EXACTAMENTE la suma de "items[].price".
+- La suma de "phases[].cost" DEBE SER EXACTAMENTE igual a "totalInitial".
+- "totals.initial" = "totalInitial".
+- "totals.recurringMonthly" = "subscription.pricePerMonth".
+- "totals.estimatedFirstYear" = totalInitial + (12 * subscription.pricePerMonth).
+- Los "addons" son OPCIONALES y NO deben incluirse dentro de "totals" (son extras fuera del pack base).
+
+POLÍTICA DE PRECIOS (ELÍGELOS TÚ, PERO SÉ CONSTANTE):
+- Base inicial típica: 6.900€–12.900€ (elige según el dolor del centro).
+- Suscripción mensual de mantenimiento: 390€/mes por defecto (sube a 490€/mes si el centro es grande o pide más seguimiento).
+- Incluye 3–5 "addons" (integraciones, analítica avanzada, app móvil, firma/autorizaciones, cuadros de mando) con precios creíbles: alta 0€–2.500€ y/o 29€–149€/mes.
 
 CENTRO: "${diagnosis.centerName}".
 HISTORIAL (preguntas y respuestas):
