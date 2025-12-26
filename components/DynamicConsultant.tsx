@@ -306,21 +306,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
                       key={idx}
                       onClick={() => {
                         if (option.includes('Altres') || option.includes('Otros')) { setShowCustomInput(!showCustomInput); return; }
-                        // Wizard always requires explicit continue (even for single-select).
-                        if (wizardStepId) {
-                          if (currentQuestion.isMultiSelect) {
-                            setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
-                          } else {
-                            setSelectedOptions([option]);
-                          }
-                          return;
-                        }
-
-                        if (currentQuestion.isMultiSelect) {
-                          setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
-                        } else {
-                          handleFinalSubmit(option);
-                        }
+                        // Multichoice: always toggle selection; advance only via "Continuar".
+                        setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
                       }}
                       className={`text-left p-6 rounded-xl border transition-all duration-300 flex items-center justify-between group ${
                         isSelected 
