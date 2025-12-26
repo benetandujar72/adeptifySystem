@@ -276,9 +276,20 @@ COHERÈNCIA ECONÒMICA (OBLIGATÒRIA):
 - Els "addons" són OPCIONALS i NO s'han d'incloure dins "totals" (són extres fora del paquet base).
 
 POLÍTICA DE PREUS (TRIA'LS TU, PERÒ SIGUES CONSTANT):
-- Base inicial típica: 6.900€–12.900€ (tria segons el dolor del centre).
-- Subscripció mensual de manteniment: 390€/mes per defecte (puja a 490€/mes si el centre és gran o demana més seguiment).
-- Inclou 3–5 "addons" (integracions, analítica avançada, app mòbil, signatura/autoritzacions, quadres de comandament) amb preus creïbles: setup 0€–2.500€ i/o 29€–149€/mes.
+
+MODALITAT DE LLIURAMENT (OBLIGATÒRIA):
+- Has de pressupostar explicitament com a "Implementació accelerada (IA + revisió humana)" quan l'objectiu sigui RAPIDESA i REDUCCIÓ DE COSTOS.
+- Aquesta modalitat prioritza: reutilització de components, configuració, plantilles, automatitzacions i iteracions ràpides; evita desenvolupament a mida innecessari.
+- Només proposa "Desenvolupament estàndard" si el context indica integracions complexes, requisits legals específics o personalitzacions profundes.
+
+POLÍTICA DE PREUS (TRIA'LS TU, PERÒ SIGUES CONSTANT):
+- Implementació accelerada (IA + revisió humana): base inicial típica 2.900€–5.900€.
+- Desenvolupament estàndard: base inicial típica 6.900€–12.900€ (només si cal).
+- Tarifa hora orientativa (per a "items" amb hours/hourlyRate):
+  - Accelerada: 55€–85€/h.
+  - Estàndard: 85€–120€/h.
+- Subscripció mensual de manteniment: 190€/mes–390€/mes segons seguiment (triar baixa per a accelerada).
+- Inclou 3–5 "addons" amb preus creïbles: setup 0€–2.500€ i/o 29€–149€/mes.
 
 CENTRE: "${diagnosis.centerName}".
 HISTORIAL (preguntes i respostes):
@@ -338,6 +349,7 @@ Recomanacions:
 - A "solution" inclou una secció final de "Crida a l'acció" amb pròxims passos.
 - Pressupost: especifica què inclou / què no inclou.
 - Pressupost (TRANSPARÈNCIA): a cada partida de "items" indica també "hours" i "hourlyRate" (€/h) perquè el client vegi el càlcul.
+- Pressupost (CONTROL DE COST): prioritza el mínim viable i quick-wins en 2–4 setmanes si el cas ho permet.
 - Fases: entregables i criteris d'èxit per fase.
 - A la "subscription" descriu clarament manteniment, suport i millores.
 - A "addons" proposa opcions extra amb més funcionalitats.`
@@ -360,9 +372,20 @@ COHERENCIA ECONÓMICA (OBLIGATORIA):
 - Los "addons" son OPCIONALES y NO deben incluirse dentro de "totals" (son extras fuera del pack base).
 
 POLÍTICA DE PRECIOS (ELÍGELOS TÚ, PERO SÉ CONSTANTE):
-- Base inicial típica: 6.900€–12.900€ (elige según el dolor del centro).
-- Suscripción mensual de mantenimiento: 390€/mes por defecto (sube a 490€/mes si el centro es grande o pide más seguimiento).
-- Incluye 3–5 "addons" (integraciones, analítica avanzada, app móvil, firma/autorizaciones, cuadros de mando) con precios creíbles: alta 0€–2.500€ y/o 29€–149€/mes.
+
+MODALIDAD DE ENTREGA (OBLIGATORIA):
+- Debes presupuestar explícitamente como "Implementación acelerada (IA + revisión humana)" cuando el objetivo sea RAPIDEZ y REDUCCIÓN DE COSTES.
+- Esta modalidad prioriza: reutilización de componentes, configuración, plantillas, automatizaciones e iteraciones rápidas; evita desarrollo a medida innecesario.
+- Solo propone "Desarrollo estándar" si el contexto indica integraciones complejas, requisitos legales específicos o personalizaciones profundas.
+
+POLÍTICA DE PRECIOS (ELÍGELOS TÚ, PERO SÉ CONSTANTE):
+- Implementación acelerada (IA + revisión humana): base inicial típica 2.900€–5.900€.
+- Desarrollo estándar: base inicial típica 6.900€–12.900€ (solo si hace falta).
+- Tarifa hora orientativa (para "items" con hours/hourlyRate):
+  - Acelerada: 55€–85€/h.
+  - Estándar: 85€–120€/h.
+- Suscripción mensual de mantenimiento: 190€/mes–390€/mes según seguimiento (elige baja para acelerada).
+- Incluye 3–5 "addons" con precios creíbles: alta 0€–2.500€ y/o 29€–149€/mes.
 
 CENTRO: "${diagnosis.centerName}".
 HISTORIAL (preguntas y respuestas):
@@ -422,6 +445,7 @@ Recomendaciones:
 - En "solution" incluye una sección final de "Llamada a la acción" con próximos pasos.
 - Presupuesto: especifica qué incluye / qué no incluye.
 - Presupuesto (TRANSPARENCIA): en cada partida de "items" indica también "hours" y "hourlyRate" (€/h) para que el cliente vea el cálculo.
+- Presupuesto (CONTROL DE COSTES): prioriza el mínimo viable y quick-wins en 2–4 semanas si el caso lo permite.
 - Fases: entregables y criterios de éxito por fase.
 - En "subscription" describe claramente mantenimiento, soporte y mejoras.
 - En "addons" propone extras con más funcionalidades.`;
