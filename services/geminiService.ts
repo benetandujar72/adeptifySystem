@@ -268,6 +268,7 @@ REGLES CRÍTIQUES:
 
 COHERÈNCIA ECONÒMICA (OBLIGATÒRIA):
 - "totalInitial" HA DE SER EXACTAMENT la suma de "items[].price".
+- Per a cada partida: "items[].price" HA DE SER EXACTAMENT (items[].hours * items[].hourlyRate).
 - La suma de "phases[].cost" HA DE SER EXACTAMENT igual a "totalInitial".
 - "totals.initial" = "totalInitial".
 - "totals.recurringMonthly" = "subscription.pricePerMonth".
@@ -299,7 +300,7 @@ Genera un JSON que compleixi EXACTAMENT aquesta estructura (ProposalData):
     "howItSolvesIt": string,
     "examples": string[]
   }],
-  "items": [{"concept": string, "description": string, "price": number}],
+  "items": [{"concept": string, "description": string, "hours": number, "hourlyRate": number, "price": number}],
   "totalInitial": number,
   "subscription": {
     "name": string,
@@ -336,6 +337,7 @@ Genera un JSON que compleixi EXACTAMENT aquesta estructura (ProposalData):
 Recomanacions:
 - A "solution" inclou una secció final de "Crida a l'acció" amb pròxims passos.
 - Pressupost: especifica què inclou / què no inclou.
+- Pressupost (TRANSPARÈNCIA): a cada partida de "items" indica també "hours" i "hourlyRate" (€/h) perquè el client vegi el càlcul.
 - Fases: entregables i criteris d'èxit per fase.
 - A la "subscription" descriu clarament manteniment, suport i millores.
 - A "addons" proposa opcions extra amb més funcionalitats.`
@@ -350,6 +352,7 @@ REGLAS CRÍTICAS:
 
 COHERENCIA ECONÓMICA (OBLIGATORIA):
 - "totalInitial" DEBE SER EXACTAMENTE la suma de "items[].price".
+- Para cada partida: "items[].price" DEBE SER EXACTAMENTE (items[].hours * items[].hourlyRate).
 - La suma de "phases[].cost" DEBE SER EXACTAMENTE igual a "totalInitial".
 - "totals.initial" = "totalInitial".
 - "totals.recurringMonthly" = "subscription.pricePerMonth".
@@ -381,7 +384,7 @@ Genera un JSON que cumpla EXACTAMENTE esta estructura (ProposalData):
     "howItSolvesIt": string,
     "examples": string[]
   }],
-  "items": [{"concept": string, "description": string, "price": number}],
+  "items": [{"concept": string, "description": string, "hours": number, "hourlyRate": number, "price": number}],
   "totalInitial": number,
   "subscription": {
     "name": string,
@@ -418,6 +421,7 @@ Genera un JSON que cumpla EXACTAMENTE esta estructura (ProposalData):
 Recomendaciones:
 - En "solution" incluye una sección final de "Llamada a la acción" con próximos pasos.
 - Presupuesto: especifica qué incluye / qué no incluye.
+- Presupuesto (TRANSPARENCIA): en cada partida de "items" indica también "hours" y "hourlyRate" (€/h) para que el cliente vea el cálculo.
 - Fases: entregables y criterios de éxito por fase.
 - En "subscription" describe claramente mantenimiento, soporte y mejoras.
 - En "addons" propone extras con más funcionalidades.`;

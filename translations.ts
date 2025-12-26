@@ -96,6 +96,7 @@ export const translations = {
     proposalPendingDescription: "Descripció pendent",
     proposalConceptFallback: "Concepte",
     proposalItemDetailsFallback: "Detalls de la partida",
+    proposalHoursBreakdown: "{hours}h × {rate}€/h",
 
     // Consultant
     consultantTitle: "Pla d'eficiència",
@@ -364,6 +365,7 @@ export const translations = {
     proposalPendingDescription: "Descripción pendiente",
     proposalConceptFallback: "Concepto",
     proposalItemDetailsFallback: "Detalles de la partida",
+    proposalHoursBreakdown: "{hours}h × {rate}€/h",
 
     // Consultant
     consultantTitle: "Plan de eficiencia",

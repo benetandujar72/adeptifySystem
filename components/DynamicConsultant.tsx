@@ -28,6 +28,16 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       .filter(Boolean);
   };
 
+  const getOtherLabel = () => (language === 'ca' ? 'Altres…' : 'Otros…');
+
+  const isOtherOption = (option: string) => /(^|\b)(altres|otros)(\b|\.|…|\.)/i.test(option);
+
+  const ensureOtherOption = (options?: string[]) => {
+    const base = Array.isArray(options) ? options.filter(Boolean) : [];
+    if (base.some(isOtherOption)) return base;
+    return [...base, getOtherLabel()];
+  };
+
   type WizardStep = {
     id: string;
     question: { ca: string; es: string };
@@ -299,13 +309,14 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
               </h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {currentQuestion.options?.map((option, idx) => {
-                  const isSelected = selectedOptions.includes(option);
+                {ensureOtherOption(currentQuestion.options)?.map((option, idx) => {
+                  const other = isOtherOption(option);
+                  const isSelected = selectedOptions.includes(option) || (other && showCustomInput);
                   return (
                     <button
                       key={idx}
                       onClick={() => {
-                        if (option.includes('Altres') || option.includes('Otros')) { setShowCustomInput(!showCustomInput); return; }
+                        if (other) { setShowCustomInput(!showCustomInput); return; }
                         // Multichoice: always toggle selection; advance only via "Continuar".
                         setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
                       }}

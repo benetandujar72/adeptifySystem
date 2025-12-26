@@ -55,6 +55,8 @@ export interface Consultation extends DiagnosisState {
 export interface BudgetItem {
   concept: string;
   description: string;
+  hours?: number;
+  hourlyRate?: number;
   price: number;
 }
 

@@ -234,6 +234,13 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                   <div>
                     <span className="text-sm font-bold text-slate-800 block">{item?.concept || t.proposalConceptFallback}</span>
                     <span className="text-[10px] text-slate-500 font-medium">{item?.description || t.proposalItemDetailsFallback}</span>
+                    {typeof item?.hours === 'number' && typeof item?.hourlyRate === 'number' && (
+                      <div className="mt-1 text-[10px] text-slate-500 font-bold">
+                        {t.proposalHoursBreakdown
+                          .replace('{hours}', String(item.hours))
+                          .replace('{rate}', String(item.hourlyRate))}
+                      </div>
+                    )}
                   </div>
                   <span className="font-serif text-lg text-slate-900 font-bold">{(item?.price || 0).toLocaleString()}€</span>
                 </div>
