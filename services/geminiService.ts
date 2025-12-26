@@ -278,6 +278,7 @@ COHERÈNCIA ECONÒMICA (OBLIGATÒRIA):
 POLÍTICA DE PREUS (TRIA'LS TU, PERÒ SIGUES CONSTANT):
 
 MODALITAT DE LLIURAMENT (OBLIGATÒRIA):
+- Per defecte, assumeix que el client vol una implementació accelerada (IA + revisió humana) per reduir costos i guanyar rapidesa.
 - Has de pressupostar explicitament com a "Implementació accelerada (IA + revisió humana)" quan l'objectiu sigui RAPIDESA i REDUCCIÓ DE COSTOS.
 - Aquesta modalitat prioritza: reutilització de components, configuració, plantilles, automatitzacions i iteracions ràpides; evita desenvolupament a mida innecessari.
 - Només proposa "Desenvolupament estàndard" si el context indica integracions complexes, requisits legals específics o personalitzacions profundes.
@@ -374,6 +375,7 @@ COHERENCIA ECONÓMICA (OBLIGATORIA):
 POLÍTICA DE PRECIOS (ELÍGELOS TÚ, PERO SÉ CONSTANTE):
 
 MODALIDAD DE ENTREGA (OBLIGATORIA):
+- Por defecto, asume que el cliente quiere una implementación acelerada (IA + revisión humana) para reducir costes y ganar rapidez.
 - Debes presupuestar explícitamente como "Implementación acelerada (IA + revisión humana)" cuando el objetivo sea RAPIDEZ y REDUCCIÓN DE COSTES.
 - Esta modalidad prioriza: reutilización de componentes, configuración, plantillas, automatizaciones e iteraciones rápidas; evita desarrollo a medida innecesario.
 - Solo propone "Desarrollo estándar" si el contexto indica integraciones complejas, requisitos legales específicos o personalizaciones profundas.

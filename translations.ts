@@ -265,6 +265,10 @@ export const translations = {
     adminFilterAccepted: "Acceptats",
     adminTotalInvestment: "Total Inversió",
     adminViewBudgetDetails: "Veure detalls del pressupost",
+    adminViewBudgetExtended: "Veure pressupost estès",
+    adminHideBudgetExtended: "Amagar pressupost estès",
+    adminBudgetItemsTitle: "Partides del pressupost",
+    adminBudgetPhasesTitle: "Fases i entregables",
 
     // Chat a11y
     chatOpen: "Obrir chat",
@@ -534,6 +538,10 @@ export const translations = {
     adminFilterAccepted: "Aceptados",
     adminTotalInvestment: "Inversión Total",
     adminViewBudgetDetails: "Ver detalles del presupuesto",
+    adminViewBudgetExtended: "Ver presupuesto extendido",
+    adminHideBudgetExtended: "Ocultar presupuesto extendido",
+    adminBudgetItemsTitle: "Partidas del presupuesto",
+    adminBudgetPhasesTitle: "Fases y entregables",
 
     // Chat a11y
     chatOpen: "Abrir chat",

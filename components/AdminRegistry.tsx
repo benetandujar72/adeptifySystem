@@ -15,6 +15,8 @@ const AdminRegistry: React.FC = () => {
   const [clientChats, setClientChats] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dbMode, setDbMode] = useState<'cloud' | 'local'>('local');
+  const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
+  const [showExtendedBudget, setShowExtendedBudget] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -302,10 +304,80 @@ const AdminRegistry: React.FC = () => {
                         className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all"
                         aria-label={t.adminViewBudgetDetails}
                         title={t.adminViewBudgetDetails}
+                        onClick={() => {
+                          setExpandedBudgetId(prev => {
+                            const next = prev === c.id ? null : c.id;
+                            if (next !== prev) setShowExtendedBudget(false);
+                            return next;
+                          });
+                        }}
                       >
                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                         </button>
                      </div>
+
+
+                     {expandedBudgetId === c.id && (
+                       <div className="mt-6 pt-6 border-t border-slate-200/50 space-y-5">
+                         <div className="flex items-center justify-between">
+                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.adminBudgetItemsTitle}</p>
+                           <button
+                             type="button"
+                             onClick={() => setShowExtendedBudget(v => !v)}
+                             className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all"
+                           >
+                             {showExtendedBudget ? t.adminHideBudgetExtended : t.adminViewBudgetExtended}
+                           </button>
+                         </div>
+
+                         <div className="space-y-2">
+                           {(c.proposal?.items || []).slice(0, showExtendedBudget ? 999 : 4).map((item, idx) => (
+                             <div key={idx} className="flex items-start justify-between gap-4">
+                               <div className="min-w-0">
+                                 <p className="text-[10px] font-black text-slate-800 uppercase truncate">{item.concept}</p>
+                                 <p className="text-[10px] text-slate-500 font-medium truncate">{item.description}</p>
+                                 {typeof (item as any)?.hours === 'number' && typeof (item as any)?.hourlyRate === 'number' && (
+                                   <p className="text-[10px] text-slate-500 font-black">
+                                     {t.proposalHoursBreakdown
+                                       .replace('{hours}', String((item as any).hours))
+                                       .replace('{rate}', String((item as any).hourlyRate))}
+                                   </p>
+                                 )}
+                               </div>
+                               <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(item.price || 0).toLocaleString()}€</p>
+                             </div>
+                           ))}
+                         </div>
+
+                         {showExtendedBudget && (
+                           <div className="pt-4 border-t border-slate-200/50 space-y-3">
+                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.adminBudgetPhasesTitle}</p>
+                             <div className="space-y-3">
+                               {(c.proposal?.phases || []).map((phase, idx) => (
+                                 <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4">
+                                   <div className="flex items-start justify-between gap-4">
+                                     <div className="min-w-0">
+                                       <p className="text-[10px] font-black text-slate-900 uppercase truncate">{phase.name}</p>
+                                       <p className="text-[10px] text-slate-500 font-medium line-clamp-2">{phase.description}</p>
+                                     </div>
+                                     {typeof (phase as any)?.cost === 'number' && (
+                                       <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(phase as any).cost.toLocaleString()}€</p>
+                                     )}
+                                   </div>
+                                   {Array.isArray((phase as any)?.deliverables) && (phase as any).deliverables.length > 0 && (
+                                     <ul className="mt-2 text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                                       {(phase as any).deliverables.slice(0, 6).map((d: string, j: number) => (
+                                         <li key={j}>{d}</li>
+                                       ))}
+                                     </ul>
+                                   )}
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     )}
                   </div>
                 ))}
              </div>
