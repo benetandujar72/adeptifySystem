@@ -493,8 +493,37 @@ export type CenterReport = {
   priorities: string[];
   quickWins: string[];
   nextSteps: string[];
+  sections?: Array<{
+    category: string;
+    summary: string;
+    evidence: string[];
+    recommendations: string[];
+    suggestedKpis: string[];
+    quickWins: string[];
+  }>;
+  performanceMetrics?: string[];
+  openQuestions?: string[];
   meta?: { modelUsed?: string; generatedAt?: string };
 };
+
+function safeJsonParse(text: string | undefined): any {
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Best-effort recovery: extract first JSON object.
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(text.slice(start, end + 1));
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  }
+}
 
 const compactCenterHistoryForPrompt = (
   histories: Array<{ question: string; answer: string[] }[]>,
@@ -697,13 +726,16 @@ export async function generateCenterReport(centerName: string, histories: Array<
   const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
   const compact = compactCenterHistoryWithCountsForPrompt(histories, lang);
   const prompt = lang === 'ca'
-    ? `ETS UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A CENTRES EDUCATIUS.
-Objectiu: redactar un informe breu i accionable per enviar al client.
+    ? `ETS UN CONSULTOR SÈNIOR D'EFICIÈNCIA I TRANSFORMACIÓ DIGITAL PER A CENTRES EDUCATIUS.
+Objectiu: generar un INFORME el més profund, exhaustiu i detallat possible, però accionable.
 
-REGLES:
+REGLES CRÍTIQUES:
 - Escriu estrictament en ${langName}.
 - Retorna NOMÉS JSON vàlid (sense Markdown, sense text extra).
-- Sigues útil: consens vs divergències, prioritats, quick wins.
+- Basa't en EVIDÈNCIA del resum (freqüències). No inventis dades.
+- CATEGORITZA EN FUNCIÓ DE LES RESPOSTES (el significat del que diuen), no només pel text de les preguntes.
+- Identifica consens i divergències (on hi ha desacord o respostes múltiples).
+- Proposa mètriques (KPIs) mesurables i com recollir-les.
 
 CENTRE: "${centerName}".
 RESUM AGREGAT (amb freqüències aproximades):
@@ -716,16 +748,31 @@ Retorna EXACTAMENT aquest JSON:
   "divergences": string[],
   "priorities": string[],
   "quickWins": string[],
+  "sections": [
+    {
+      "category": string,
+      "summary": string,
+      "evidence": string[],
+      "recommendations": string[],
+      "suggestedKpis": string[],
+      "quickWins": string[]
+    }
+  ],
+  "performanceMetrics": string[],
+  "openQuestions": string[],
   "nextSteps": string[],
   "meta": {"generatedAt": string}
 }`
     : `ERES UN CONSULTOR SÉNIOR DE EFICIENCIA PARA CENTROS EDUCATIVOS.
-Objetivo: redactar un informe breve y accionable para enviar al cliente.
+Objetivo: generar un INFORME lo más profundo, exhaustivo y detallado posible, pero accionable.
 
-REGLAS:
+REGLAS CRÍTICAS:
 - Escribe estrictamente en ${langName}.
 - Devuelve SOLO JSON válido (sin Markdown, sin texto extra).
-- Sé útil: consenso vs divergencias, prioridades, quick wins.
+- Basado en EVIDENCIA del resumen (frecuencias). No inventes datos.
+- CATEGORIZA EN FUNCIÓN DE LAS RESPUESTAS (el significado), no solo por el texto de las preguntas.
+- Identifica consenso y divergencias.
+- Propón métricas (KPIs) medibles y cómo recogerlas.
 
 CENTRO: "${centerName}".
 RESUMEN AGREGADO (con frecuencias aproximadas):
@@ -738,22 +785,50 @@ Devuelve EXACTAMENTE este JSON:
   "divergences": string[],
   "priorities": string[],
   "quickWins": string[],
+  "sections": [
+    {
+      "category": string,
+      "summary": string,
+      "evidence": string[],
+      "recommendations": string[],
+      "suggestedKpis": string[],
+      "quickWins": string[]
+    }
+  ],
+  "performanceMetrics": string[],
+  "openQuestions": string[],
   "nextSteps": string[],
   "meta": {"generatedAt": string}
 }`;
 
   const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
     contents: prompt,
-    config: { responseMimeType: 'application/json', temperature: 0.3 },
+    config: { responseMimeType: 'application/json', temperature: 0.25 },
   });
 
-  const data = JSON.parse(response.text || '{}');
+  const data = safeJsonParse(response.text);
   return {
     executiveSummary: data.executiveSummary || '',
     consensus: Array.isArray(data.consensus) ? data.consensus : [],
     divergences: Array.isArray(data.divergences) ? data.divergences : [],
     priorities: Array.isArray(data.priorities) ? data.priorities : [],
     quickWins: Array.isArray(data.quickWins) ? data.quickWins : [],
+    sections: Array.isArray(data.sections)
+      ? data.sections.map((s: any) => ({
+          category: String(s?.category ?? ''),
+          summary: String(s?.summary ?? ''),
+          evidence: Array.isArray(s?.evidence) ? s.evidence.map((x: any) => String(x)) : [],
+          recommendations: Array.isArray(s?.recommendations) ? s.recommendations.map((x: any) => String(x)) : [],
+          suggestedKpis: Array.isArray(s?.suggestedKpis) ? s.suggestedKpis.map((x: any) => String(x)) : [],
+          quickWins: Array.isArray(s?.quickWins) ? s.quickWins.map((x: any) => String(x)) : [],
+        })).filter((s: any) => s.category || s.summary)
+      : [],
+    performanceMetrics: Array.isArray(data.performanceMetrics)
+      ? data.performanceMetrics.map((x: any) => String(x))
+      : [],
+    openQuestions: Array.isArray(data.openQuestions)
+      ? data.openQuestions.map((x: any) => String(x))
+      : [],
     nextSteps: Array.isArray(data.nextSteps) ? data.nextSteps : [],
     meta: {
       ...(data?.meta || {}),

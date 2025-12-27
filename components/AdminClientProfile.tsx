@@ -469,7 +469,149 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
               </button>
             </div>
             {latestReport ? (
-              <p className="text-[10px] text-slate-600 font-medium leading-relaxed break-words">{latestReport.executiveSummary}</p>
+              <div className="max-h-[420px] overflow-auto pr-2 space-y-4">
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Resum executiu' : 'Resumen ejecutivo'}</p>
+                  <p className="text-[10px] text-slate-600 font-medium leading-relaxed break-words">{latestReport.executiveSummary}</p>
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Consens' : 'Consenso'}</p>
+                  {latestReport.consensus?.length ? (
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.consensus.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 font-bold italic">{language === 'ca' ? 'Sense dades.' : 'Sin datos.'}</p>
+                  )}
+                </div>
+
+                {!!latestReport.divergences?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Divergències' : 'Divergencias'}</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.divergences.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!latestReport.priorities?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Prioritats' : 'Prioridades'}</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.priorities.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!latestReport.quickWins?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Quick wins</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.quickWins.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!latestReport.sections?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Anàlisi per categories' : 'Análisis por categorías'}</p>
+                    <div className="space-y-3">
+                      {latestReport.sections.map((s, idx) => (
+                        <div key={idx} className="p-3 bg-white rounded-2xl border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-700 break-words">{s.category}</p>
+                          {!!s.summary && <p className="text-[10px] text-slate-600 font-medium leading-relaxed break-words mt-1">{s.summary}</p>}
+
+                          {!!s.evidence?.length && (
+                            <div className="mt-2">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Evidència' : 'Evidencia'}</p>
+                              <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                                {s.evidence.slice(0, 8).map((x, j) => (
+                                  <li key={j} className="break-words">{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {!!s.recommendations?.length && (
+                            <div className="mt-2">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Recomanacions' : 'Recomendaciones'}</p>
+                              <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                                {s.recommendations.slice(0, 8).map((x, j) => (
+                                  <li key={j} className="break-words">{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {!!s.suggestedKpis?.length && (
+                            <div className="mt-2">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'KPIs suggerits' : 'KPIs sugeridos'}</p>
+                              <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                                {s.suggestedKpis.slice(0, 8).map((x, j) => (
+                                  <li key={j} className="break-words">{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {!!s.quickWins?.length && (
+                            <div className="mt-2">
+                              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Quick wins</p>
+                              <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                                {s.quickWins.slice(0, 6).map((x, j) => (
+                                  <li key={j} className="break-words">{x}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!!latestReport.performanceMetrics?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Mètriques (KPIs)' : 'Métricas (KPIs)'}</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.performanceMetrics.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!latestReport.openQuestions?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Preguntes obertes' : 'Preguntas abiertas'}</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.openQuestions.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {!!latestReport.nextSteps?.length && (
+                  <div>
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Següents passos' : 'Siguientes pasos'}</p>
+                    <ul className="text-[10px] text-slate-600 font-medium leading-relaxed list-disc pl-5 space-y-1">
+                      {latestReport.nextSteps.slice(0, 12).map((x, idx) => (
+                        <li key={idx} className="break-words">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="text-[10px] text-slate-400 font-bold italic">{language === 'ca' ? 'Encara no hi ha informe generat.' : 'Aún no hay informe generado.'}</p>
             )}

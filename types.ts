@@ -135,6 +135,15 @@ export interface ChatMessage {
 
 export type CenterArtifactType = 'dafo' | 'report' | 'custom_proposal';
 
+export type CenterReportSection = {
+  category: string;
+  summary: string;
+  evidence: string[];
+  recommendations: string[];
+  suggestedKpis: string[];
+  quickWins: string[];
+};
+
 export type CenterReport = {
   executiveSummary: string;
   consensus: string[];
@@ -142,6 +151,9 @@ export type CenterReport = {
   priorities: string[];
   quickWins: string[];
   nextSteps: string[];
+  sections?: CenterReportSection[];
+  performanceMetrics?: string[];
+  openQuestions?: string[];
   meta?: { modelUsed?: string; generatedAt?: string };
 };
 

@@ -144,6 +144,50 @@ export function downloadCenterReportPdf(centerName: string, report: CenterReport
   y = addSubTitle(doc, lang === 'ca' ? 'Quick wins (2–4 setmanes)' : 'Quick wins (2–4 semanas)', y);
   y = addBullets(doc, report?.quickWins || [], y);
 
+  if (Array.isArray(report?.sections) && report.sections.length) {
+    y = addSubTitle(doc, lang === 'ca' ? 'Anàlisi per categories' : 'Análisis por categorías', y);
+    for (const section of report.sections) {
+      const cat = String(section?.category || '').trim();
+      if (cat) {
+        y = addSubTitle(doc, cat, y);
+      }
+
+      if (section?.summary) {
+        y = addParagraph(doc, String(section.summary), y);
+      }
+
+      if (Array.isArray(section?.evidence) && section.evidence.length) {
+        y = addSubTitle(doc, lang === 'ca' ? 'Evidència' : 'Evidencia', y);
+        y = addBullets(doc, section.evidence.map(String), y);
+      }
+
+      if (Array.isArray(section?.recommendations) && section.recommendations.length) {
+        y = addSubTitle(doc, lang === 'ca' ? 'Recomanacions' : 'Recomendaciones', y);
+        y = addBullets(doc, section.recommendations.map(String), y);
+      }
+
+      if (Array.isArray(section?.suggestedKpis) && section.suggestedKpis.length) {
+        y = addSubTitle(doc, lang === 'ca' ? 'KPIs suggerits' : 'KPIs sugeridos', y);
+        y = addBullets(doc, section.suggestedKpis.map(String), y);
+      }
+
+      if (Array.isArray(section?.quickWins) && section.quickWins.length) {
+        y = addSubTitle(doc, lang === 'ca' ? 'Quick wins (categoria)' : 'Quick wins (categoría)', y);
+        y = addBullets(doc, section.quickWins.map(String), y);
+      }
+    }
+  }
+
+  if (Array.isArray(report?.performanceMetrics) && report.performanceMetrics.length) {
+    y = addSubTitle(doc, lang === 'ca' ? 'Mètriques de rendiment (KPIs)' : 'Métricas de rendimiento (KPIs)', y);
+    y = addBullets(doc, report.performanceMetrics.map(String), y);
+  }
+
+  if (Array.isArray(report?.openQuestions) && report.openQuestions.length) {
+    y = addSubTitle(doc, lang === 'ca' ? 'Preguntes obertes / buits d’informació' : 'Preguntas abiertas / vacíos de información', y);
+    y = addBullets(doc, report.openQuestions.map(String), y);
+  }
+
   y = addSubTitle(doc, lang === 'ca' ? 'Següents passos' : 'Siguientes pasos', y);
   y = addBullets(doc, report?.nextSteps || [], y);
 
