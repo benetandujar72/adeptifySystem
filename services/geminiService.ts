@@ -486,6 +486,16 @@ export type DafoResult = {
   meta?: { modelUsed?: string; generatedAt?: string };
 };
 
+export type CenterReport = {
+  executiveSummary: string;
+  consensus: string[];
+  divergences: string[];
+  priorities: string[];
+  quickWins: string[];
+  nextSteps: string[];
+  meta?: { modelUsed?: string; generatedAt?: string };
+};
+
 const compactCenterHistoryForPrompt = (
   histories: Array<{ question: string; answer: string[] }[]>,
   lang: Language,
@@ -520,6 +530,43 @@ const compactCenterHistoryForPrompt = (
     lines.push(`${labelA}: ${list.join(' | ')}`);
   }
   return lines.slice(0, 220).join('\n');
+};
+
+const compactCenterHistoryWithCountsForPrompt = (
+  histories: Array<{ question: string; answer: string[] }[]>,
+  lang: Language,
+) => {
+  // Build per-question answer frequencies (normalized).
+  const grouped = new Map<string, Map<string, number>>();
+  for (const h of histories) {
+    for (const item of h || []) {
+      const q = String(item?.question ?? '').trim();
+      const answers = Array.isArray(item?.answer)
+        ? item.answer.map(x => String(x).trim()).filter(Boolean)
+        : [];
+      if (!q || answers.length === 0) continue;
+      if (!grouped.has(q)) grouped.set(q, new Map());
+      const freq = grouped.get(q)!;
+      for (const a of answers) {
+        const key = a.toLowerCase();
+        freq.set(key, (freq.get(key) || 0) + 1);
+      }
+    }
+  }
+
+  const lines: string[] = [];
+  for (const [q, freq] of grouped.entries()) {
+    const top = Array.from(freq.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([ans, count]) => `${ans} (${count})`);
+
+    const labelQ = lang === 'ca' ? 'P' : 'P';
+    const labelA = lang === 'ca' ? 'R' : 'R';
+    lines.push(`${labelQ}: ${q}`);
+    lines.push(`${labelA}: ${top.join(' | ')}`);
+  }
+  return lines.slice(0, 240).join('\n');
 };
 
 export async function generateCenterDAFO(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, lang: Language = 'ca'): Promise<DafoResult> {
@@ -628,12 +675,92 @@ export async function generateCenterCustomProposal(centerName: string, histories
     threats: dafo.threats,
     automationIdeas: dafo.automationIdeas,
   });
+
+  const balanceText = compactCenterHistoryWithCountsForPrompt(histories, lang);
   diagnosis.consultationHistory = [
     ...diagnosis.consultationHistory,
+    { question: lang === 'ca' ? 'Resum agregat amb freqüències (intern)' : 'Resumen agregado con frecuencias (interno)', answer: [balanceText] },
     { question: lang === 'ca' ? 'DAFO agregat del centre (intern)' : 'DAFO agregado del centro (interno)', answer: [dafoText] },
   ];
 
   return generateEducationalProposal(diagnosis, lang);
+}
+
+export async function generateCenterReport(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, lang: Language = 'ca'): Promise<CenterReport> {
+  const ai = getAi();
+  if (!ai) {
+    throw new Error(lang === 'ca'
+      ? 'Falta configuració del sistema (API).'
+      : 'Falta configuración del sistema (API).');
+  }
+
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const compact = compactCenterHistoryWithCountsForPrompt(histories, lang);
+  const prompt = lang === 'ca'
+    ? `ETS UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A CENTRES EDUCATIUS.
+Objectiu: redactar un informe breu i accionable per enviar al client.
+
+REGLES:
+- Escriu estrictament en ${langName}.
+- Retorna NOMÉS JSON vàlid (sense Markdown, sense text extra).
+- Sigues útil: consens vs divergències, prioritats, quick wins.
+
+CENTRE: "${centerName}".
+RESUM AGREGAT (amb freqüències aproximades):
+${compact}
+
+Retorna EXACTAMENT aquest JSON:
+{
+  "executiveSummary": string,
+  "consensus": string[],
+  "divergences": string[],
+  "priorities": string[],
+  "quickWins": string[],
+  "nextSteps": string[],
+  "meta": {"generatedAt": string}
+}`
+    : `ERES UN CONSULTOR SÉNIOR DE EFICIENCIA PARA CENTROS EDUCATIVOS.
+Objetivo: redactar un informe breve y accionable para enviar al cliente.
+
+REGLAS:
+- Escribe estrictamente en ${langName}.
+- Devuelve SOLO JSON válido (sin Markdown, sin texto extra).
+- Sé útil: consenso vs divergencias, prioridades, quick wins.
+
+CENTRO: "${centerName}".
+RESUMEN AGREGADO (con frecuencias aproximadas):
+${compact}
+
+Devuelve EXACTAMENTE este JSON:
+{
+  "executiveSummary": string,
+  "consensus": string[],
+  "divergences": string[],
+  "priorities": string[],
+  "quickWins": string[],
+  "nextSteps": string[],
+  "meta": {"generatedAt": string}
+}`;
+
+  const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+    contents: prompt,
+    config: { responseMimeType: 'application/json', temperature: 0.3 },
+  });
+
+  const data = JSON.parse(response.text || '{}');
+  return {
+    executiveSummary: data.executiveSummary || '',
+    consensus: Array.isArray(data.consensus) ? data.consensus : [],
+    divergences: Array.isArray(data.divergences) ? data.divergences : [],
+    priorities: Array.isArray(data.priorities) ? data.priorities : [],
+    quickWins: Array.isArray(data.quickWins) ? data.quickWins : [],
+    nextSteps: Array.isArray(data.nextSteps) ? data.nextSteps : [],
+    meta: {
+      ...(data?.meta || {}),
+      modelUsed,
+      generatedAt: data?.meta?.generatedAt || new Date().toISOString(),
+    },
+  };
 }
 
 export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca'): Chat {

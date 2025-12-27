@@ -133,6 +133,28 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export type CenterArtifactType = 'dafo' | 'report' | 'custom_proposal';
+
+export type CenterReport = {
+  executiveSummary: string;
+  consensus: string[];
+  divergences: string[];
+  priorities: string[];
+  quickWins: string[];
+  nextSteps: string[];
+  meta?: { modelUsed?: string; generatedAt?: string };
+};
+
+export interface CenterArtifact {
+  id: string;
+  tenantSlug?: string;
+  centerKey: string;
+  centerName?: string;
+  artifactType: CenterArtifactType;
+  payload: any;
+  createdAt: string;
+}
+
 export interface Task {
   id: string;
   title: string;

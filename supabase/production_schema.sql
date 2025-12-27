@@ -81,6 +81,26 @@ create trigger trg_center_insights_v2_updated_at
 before update on public.center_insights_v2
 for each row execute procedure public.set_updated_at();
 
+-- 4) Center artifacts history (DAFO / reports / custom proposals).
+-- Stores immutable snapshots so the admin can view/download previous versions.
+create extension if not exists pgcrypto;
+
+create table if not exists public.center_artifacts (
+  id uuid primary key default gen_random_uuid(),
+  tenant_slug text,
+  center_key text not null,
+  center_name text,
+  artifact_type text not null,
+  payload_json jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists center_artifacts_tenant_center_created_idx
+  on public.center_artifacts(tenant_slug, center_key, created_at desc);
+
+create index if not exists center_artifacts_type_idx
+  on public.center_artifacts(artifact_type);
+
 -- SECURITY NOTE:
 -- This app uses the Supabase anon key from the browser.
 -- If you enable RLS, you must create appropriate policies; otherwise reads/writes will fail.

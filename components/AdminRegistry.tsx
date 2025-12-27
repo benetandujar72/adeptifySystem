@@ -7,6 +7,7 @@ import { useLanguage } from '../LanguageContext';
 import { generateCenterDAFO, generateCenterCustomProposal, DafoResult } from '../services/geminiService';
 import { centerInsightsService, normalizeCenterKey } from '../services/centerInsightsService';
 import ReportCenter from './ReportCenter';
+import AdminClientProfile from './AdminClientProfile';
 
 type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports';
 
@@ -30,9 +31,42 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
   const [customLoadingKey, setCustomLoadingKey] = useState<string | null>(null);
   const [centerInsightError, setCenterInsightError] = useState<string | null>(null);
 
+  const navigateAdmin = (adminPath: string) => {
+    const basePath = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : '';
+    window.history.pushState({}, '', `${basePath}${adminPath}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  const getAdminClientKeyFromPath = (pathname: string): string | null => {
+    let path = pathname;
+    if (tenantSlug) {
+      const rawPrefix = `/t/${tenantSlug}`;
+      const encodedPrefix = `/t/${encodeURIComponent(tenantSlug)}`;
+      if (path.startsWith(rawPrefix)) path = path.slice(rawPrefix.length) || '/';
+      else if (path.startsWith(encodedPrefix)) path = path.slice(encodedPrefix.length) || '/';
+    }
+    const match = path.match(/^\/admin\/clients\/([^/?#]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+
   useEffect(() => {
     loadAllData();
   }, [tenantSlug]);
+
+  useEffect(() => {
+    const syncSelectionFromUrl = () => {
+      const keyFromUrl = getAdminClientKeyFromPath(window.location.pathname);
+      if (!keyFromUrl) return;
+      setActiveTab('clients');
+      const wantedKey = normalizeCenterKey(keyFromUrl);
+      const match = consultations.find(c => normalizeCenterKey(c.centerName) === wantedKey);
+      if (match) setSelectedClient(match);
+    };
+
+    syncSelectionFromUrl();
+    window.addEventListener('popstate', syncSelectionFromUrl);
+    return () => window.removeEventListener('popstate', syncSelectionFromUrl);
+  }, [consultations, tenantSlug]);
 
 
   const loadAllData = async () => {
@@ -113,7 +147,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
   useEffect(() => {
     if (selectedClient && activeTab === 'chats') {
-      loadClientChats(selectedClient.centerName);
+      const centerId = tenantSlug ? `${tenantSlug}::${selectedClient.centerName}` : selectedClient.centerName;
+      loadClientChats(centerId);
     }
   }, [selectedClient, activeTab]);
 
@@ -217,7 +252,10 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                {consultations.map(c => (
                  <button
                    key={c.id}
-                   onClick={() => setSelectedClient(c)}
+                   onClick={() => {
+                     setSelectedClient(c);
+                     navigateAdmin(`/admin/clients/${encodeURIComponent(normalizeCenterKey(c.centerName))}`);
+                   }}
                    className={`w-full text-left p-6 rounded-3xl border-2 transition-all ${
                      selectedClient?.id === c.id 
                        ? 'bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]' 
@@ -232,40 +270,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
             
             <div className="lg:col-span-8">
                {selectedClient ? (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl animate-in slide-in-from-right-8 max-h-[70vh] flex flex-col overflow-hidden">
-                  <div className="p-10 pb-8 border-b border-slate-50 flex justify-between items-start shrink-0">
-                      <div>
-                        <h3 className="text-3xl font-black text-slate-900 mb-1">{selectedClient.centerName}</h3>
-                        <p className="text-indigo-600 font-bold uppercase text-[10px] tracking-[0.3em]">{selectedClient.id}</p>
-                      </div>
-                      <div className="bg-slate-50 px-4 py-2 rounded-xl text-center">
-                         <p className="text-[8px] font-black text-slate-400 uppercase mb-1">{t.adminInvestment}</p>
-                         <p className="font-serif italic font-bold text-slate-900">{(selectedClient.proposal?.totalInitial || 0).toLocaleString()}€</p>
-                      </div>
-                    </div>
-
-                  <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                       <div className="space-y-4">
-                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">{t.adminAiDiagnosis}</h5>
-                          <p className="text-xs text-slate-600 leading-relaxed italic">"{selectedClient.proposal?.diagnosis}"</p>
-                       </div>
-                       <div className="space-y-4">
-                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">{t.adminTechnicalContact}</h5>
-                          <div className="space-y-1">
-                             <p className="text-xs font-bold text-slate-800">{selectedClient.contactEmail}</p>
-                            <p className="text-[10px] text-slate-400">{t.adminCapturedViaAudit.replace('{product}', String(selectedClient.selectedProduct))}</p>
-                          </div>
-                       </div>
-                    </div>
-
-                  </div>
-
-                  <div className="p-10 pt-8 border-t border-slate-50 flex gap-4 shrink-0">
-                    <button className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all">{t.adminSendContract}</button>
-                    <button className="flex-1 bg-white border border-slate-200 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-slate-400 transition-all">{t.adminArchive}</button>
-                  </div>
-                 </div>
+                 <AdminClientProfile tenantSlug={tenantSlug} centerName={selectedClient.centerName} consultations={consultations} />
                ) : (
                  <div className="h-64 flex items-center justify-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100 text-slate-300 italic text-sm">
                       {t.adminSelectClient}
