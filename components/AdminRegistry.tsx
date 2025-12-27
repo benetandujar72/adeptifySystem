@@ -231,8 +231,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
             
             <div className="lg:col-span-8">
                {selectedClient ? (
-                 <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl space-y-8 animate-in slide-in-from-right-8">
-                    <div className="flex justify-between items-start">
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl animate-in slide-in-from-right-8 max-h-[70vh] flex flex-col overflow-hidden">
+                  <div className="p-10 pb-8 border-b border-slate-50 flex justify-between items-start shrink-0">
                       <div>
                         <h3 className="text-3xl font-black text-slate-900 mb-1">{selectedClient.centerName}</h3>
                         <p className="text-indigo-600 font-bold uppercase text-[10px] tracking-[0.3em]">{selectedClient.id}</p>
@@ -243,7 +243,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
+                  <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
                           <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-2">{t.adminAiDiagnosis}</h5>
                           <p className="text-xs text-slate-600 leading-relaxed italic">"{selectedClient.proposal?.diagnosis}"</p>
@@ -257,10 +258,12 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                        </div>
                     </div>
 
-                    <div className="pt-6 border-t border-slate-50 flex gap-4">
-                        <button className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all">{t.adminSendContract}</button>
-                        <button className="flex-1 bg-white border border-slate-200 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-slate-400 transition-all">{t.adminArchive}</button>
-                    </div>
+                  </div>
+
+                  <div className="p-10 pt-8 border-t border-slate-50 flex gap-4 shrink-0">
+                    <button className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all">{t.adminSendContract}</button>
+                    <button className="flex-1 bg-white border border-slate-200 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-slate-400 transition-all">{t.adminArchive}</button>
+                  </div>
                  </div>
                ) : (
                  <div className="h-64 flex items-center justify-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100 text-slate-300 italic text-sm">
@@ -352,7 +355,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
              
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {consultations.map(c => (
-                  <div key={c.id} className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:border-indigo-200 transition-all group flex flex-col justify-between h-72">
+                <div key={c.id} className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:border-indigo-200 transition-all group flex flex-col min-h-72">
                      <div>
                         <div className="flex justify-between items-start mb-4">
                            <span className="text-[8px] font-black px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded uppercase tracking-widest">{c.selectedProduct}</span>
@@ -385,7 +388,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
 
                      {expandedBudgetId === c.id && (
-                       <div className="mt-6 pt-6 border-t border-slate-200/50 space-y-5">
+                       <div className="mt-6 pt-6 border-t border-slate-200/50 space-y-5 max-h-[45vh] overflow-y-auto pr-2 custom-scrollbar">
                          <div className="flex items-center justify-between">
                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.adminBudgetItemsTitle}</p>
                            <button
@@ -473,30 +476,30 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
                            {dafoCache[normalizeCenterKey(c.centerName)] && (
                              <div className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3">
-                               <p className="text-[10px] text-slate-600 font-medium">{dafoCache[normalizeCenterKey(c.centerName)].summary}</p>
-                               <div className="grid grid-cols-2 gap-3">
+                                 <p className="text-[10px] text-slate-600 font-medium break-words">{dafoCache[normalizeCenterKey(c.centerName)].summary}</p>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Fortaleses' : 'Fortalezas'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                     {dafoCache[normalizeCenterKey(c.centerName)].strengths.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                       {dafoCache[normalizeCenterKey(c.centerName)].strengths.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Debilitats' : 'Debilidades'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                     {dafoCache[normalizeCenterKey(c.centerName)].weaknesses.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                       {dafoCache[normalizeCenterKey(c.centerName)].weaknesses.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Oportunitats' : 'Oportunidades'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                     {dafoCache[normalizeCenterKey(c.centerName)].opportunities.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                       {dafoCache[normalizeCenterKey(c.centerName)].opportunities.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Amenaces' : 'Amenazas'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                     {dafoCache[normalizeCenterKey(c.centerName)].threats.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                       {dafoCache[normalizeCenterKey(c.centerName)].threats.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                </div>
@@ -508,8 +511,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                                      {dafoCache[normalizeCenterKey(c.centerName)].automationIdeas.slice(0, 4).map((idea, i) => (
                                        <div key={i} className="flex items-start justify-between gap-4">
                                          <div className="min-w-0">
-                                           <p className="text-[10px] font-black text-slate-800 uppercase truncate">{idea.title}</p>
-                                           <p className="text-[10px] text-slate-500 font-medium line-clamp-2">{idea.description}</p>
+                                           <p className="text-[10px] font-black text-slate-800 uppercase line-clamp-2 break-words">{idea.title}</p>
+                                           <p className="text-[10px] text-slate-500 font-medium line-clamp-3 break-words">{idea.description}</p>
                                          </div>
                                          <p className="text-[9px] font-black text-slate-600 whitespace-nowrap">{idea.impact}/{idea.effort}</p>
                                        </div>
@@ -525,7 +528,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Proposta a mida' : 'Propuesta a medida'}</p>
                                <div className="flex items-start justify-between gap-4">
                                  <div className="min-w-0">
-                                   <p className="text-[10px] text-slate-600 font-medium line-clamp-2">{customProposalCache[normalizeCenterKey(c.centerName)]?.diagnosis}</p>
+                                   <p className="text-[10px] text-slate-600 font-medium line-clamp-3 break-words">{customProposalCache[normalizeCenterKey(c.centerName)]?.diagnosis}</p>
                                  </div>
                                  <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(customProposalCache[normalizeCenterKey(c.centerName)]?.totalInitial || 0).toLocaleString()}€</p>
                                </div>
