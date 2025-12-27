@@ -5,9 +5,9 @@ substitutions:
   _RUN_REGION: europe-west1
   _SERVICE: adeptify-consultor
   _AR_REPO: adeptify
-  # GCS bucket for automatic Supabase backups (must exist and be accessible by Cloud Build SA)
-  # NOTE (testing phase): DB backup steps are currently disabled below.
-  _BACKUP_BUCKET: adeptify-supabase-backups
+  # (Testing phase) DB backup steps are currently disabled below.
+  # When re-enabling backups, you can restore:
+  # _BACKUP_BUCKET: adeptify-supabase-backups
 
 steps:
   # 0) Create .env.production from Secret Manager for Vite build (bundle-time)
