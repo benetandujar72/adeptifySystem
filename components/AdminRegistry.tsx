@@ -356,8 +356,13 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
              
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {consultations.map(c => (
-                <div key={c.id} className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:border-indigo-200 transition-all group flex flex-col min-h-72">
-                     <div>
+               <div
+                key={c.id}
+                className={`bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:border-indigo-200 transition-all group flex flex-col ${
+                  expandedBudgetId === c.id ? 'h-[70vh] overflow-hidden' : 'min-h-72'
+                }`}
+               >
+                  <div className="shrink-0">
                         <div className="flex justify-between items-start mb-4">
                            <span className="text-[8px] font-black px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded uppercase tracking-widest">{c.selectedProduct}</span>
                            <span className="text-[9px] font-bold text-slate-400">{new Date(c.date).toLocaleDateString()}</span>
@@ -365,7 +370,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                         <h4 className="font-black text-sm text-slate-900 uppercase mb-2 truncate">{c.centerName}</h4>
                         <p className="text-[10px] text-slate-400 font-medium italic line-clamp-3">"{c.proposal?.diagnosis}"</p>
                      </div>
-                     <div className="pt-6 border-t border-slate-200/50 flex justify-between items-end">
+                  <div className="pt-6 border-t border-slate-200/50 flex justify-between items-end shrink-0">
                         <div>
                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.adminTotalInvestment}</p>
                            <p className="text-2xl font-serif italic font-bold text-slate-900">{(c.proposal?.totalInitial || 0).toLocaleString()}€</p>
@@ -389,7 +394,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
 
                      {expandedBudgetId === c.id && (
-                       <div className="mt-6 pt-6 border-t border-slate-200/50 space-y-5 max-h-[45vh] overflow-y-auto pr-2 custom-scrollbar">
+                       <div className="mt-6 pt-6 border-t border-slate-200/50 space-y-5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                          <div className="flex items-center justify-between">
                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.adminBudgetItemsTitle}</p>
                            <button
