@@ -5,7 +5,7 @@ import { centerInsightsService, normalizeCenterKey } from '../services/centerIns
 import { centerArtifactsService } from '../services/centerArtifactsService';
 import { consultationService } from '../services/consultationService';
 import { generateCenterDAFO, generateCenterCustomProposal, generateCenterReport, DafoResult } from '../services/geminiService';
-import { downloadCenterReportPdf, downloadDafoPdf } from '../services/pdfExport';
+import { downloadCenterReportPdf, downloadCustomProposalPdf, downloadDafoPdf } from '../services/pdfExport';
 
 type AnswerCountRow = { label: string; count: number };
 type QuestionDistributionRow = { question: string; total: number; top: AnswerCountRow[] };
@@ -66,6 +66,24 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
   const centerConsultations = useMemo(() => {
     return consultations.filter(c => normalizeCenterKey(c.centerName) === centerKey);
   }, [consultations, centerKey]);
+
+  const defaultRecipientEmail = useMemo(() => {
+    const sorted = centerConsultations
+      .slice()
+      .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
+    const firstWithEmail = sorted.find(c => (c.contactEmail || '').trim());
+    return (firstWithEmail?.contactEmail || '').trim();
+  }, [centerConsultations]);
+
+  const openGmailCompose = (opts: { to?: string; subject: string; body: string }) => {
+    const url = new URL('https://mail.google.com/mail/');
+    url.searchParams.set('view', 'cm');
+    url.searchParams.set('fs', '1');
+    if (opts.to) url.searchParams.set('to', opts.to);
+    url.searchParams.set('su', opts.subject);
+    url.searchParams.set('body', opts.body);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  };
 
   const dashboard = useMemo(() => {
     const byRespondent = new Map<string, {
@@ -436,7 +454,7 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
             <div className="flex items-center justify-between gap-4 mb-4">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === 'ca' ? 'DAFO (última versió)' : 'DAFO (última versión)'}</p>
@@ -459,14 +477,39 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
           <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
             <div className="flex items-center justify-between gap-4 mb-4">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === 'ca' ? 'Informe (última versió)' : 'Informe (última versión)'}</p>
-              <button
-                type="button"
-                onClick={() => latestReport && downloadCenterReportPdf(centerName, latestReport, language)}
-                disabled={!latestReport}
-                className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
-              >
-                {language === 'ca' ? 'Descarregar PDF' : 'Descargar PDF'}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => latestReport && downloadCenterReportPdf(centerName, latestReport, language)}
+                  disabled={!latestReport}
+                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                >
+                  {language === 'ca' ? 'Descarregar PDF' : 'Descargar PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!latestReport) return;
+                    const subject = language === 'ca'
+                      ? `Informe Adeptify — ${centerName}`
+                      : `Informe Adeptify — ${centerName}`;
+                    const body = (
+                      language === 'ca'
+                        ? `Hola,\n\nAdjunto trobaràs l'informe del centre (${centerName}).\n\nResum executiu:\n${latestReport.executiveSummary || ''}\n\nNota: adjunta el PDF descarregat des de l'aplicació.\n\nSalutacions,\nAdeptify\n`
+                        : `Hola,\n\nAdjunto encontrarás el informe del centro (${centerName}).\n\nResumen ejecutivo:\n${latestReport.executiveSummary || ''}\n\nNota: adjunta el PDF descargado desde la aplicación.\n\nSaludos,\nAdeptify\n`
+                    );
+                    openGmailCompose({
+                      to: defaultRecipientEmail,
+                      subject,
+                      body,
+                    });
+                  }}
+                  disabled={!latestReport}
+                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                >
+                  Gmail
+                </button>
+              </div>
             </div>
             {latestReport ? (
               <div className="max-h-[420px] overflow-auto pr-2 space-y-4">
@@ -616,6 +659,70 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
               <p className="text-[10px] text-slate-400 font-bold italic">{language === 'ca' ? 'Encara no hi ha informe generat.' : 'Aún no hay informe generado.'}</p>
             )}
           </div>
+
+          <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{language === 'ca' ? 'Proposta a mida (última versió)' : 'Propuesta a medida (última versión)'}</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => latestCustomProposal && downloadCustomProposalPdf(centerName, latestCustomProposal, language)}
+                  disabled={!latestCustomProposal}
+                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                >
+                  {language === 'ca' ? 'Descarregar PDF' : 'Descargar PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!latestCustomProposal) return;
+                    const subject = language === 'ca'
+                      ? `Proposta a mida Adeptify — ${centerName}`
+                      : `Propuesta a medida Adeptify — ${centerName}`;
+
+                    const totalsLine = latestCustomProposal?.totals
+                      ? (language === 'ca'
+                        ? `\n\nTotals:\n- Cost inicial: ${Math.round(latestCustomProposal.totalInitial || 0).toLocaleString('es-ES')} €\n- Recurrent mensual: ${Math.round(latestCustomProposal.totals.recurringMonthly || 0).toLocaleString('es-ES')} €\n- 1r any (est.): ${Math.round(latestCustomProposal.totals.estimatedFirstYear || 0).toLocaleString('es-ES')} €`
+                        : `\n\nTotales:\n- Coste inicial: ${Math.round(latestCustomProposal.totalInitial || 0).toLocaleString('es-ES')} €\n- Recurrente mensual: ${Math.round(latestCustomProposal.totals.recurringMonthly || 0).toLocaleString('es-ES')} €\n- 1er año (est.): ${Math.round(latestCustomProposal.totals.estimatedFirstYear || 0).toLocaleString('es-ES')} €`
+                      )
+                      : (language === 'ca'
+                        ? `\n\nCost inicial: ${Math.round(latestCustomProposal.totalInitial || 0).toLocaleString('es-ES')} €`
+                        : `\n\nCoste inicial: ${Math.round(latestCustomProposal.totalInitial || 0).toLocaleString('es-ES')} €`
+                      );
+
+                    const body = (
+                      language === 'ca'
+                        ? `Hola,\n\nAdjunto trobaràs la proposta a mida per al centre (${centerName}).\n\nDiagnosi:\n${latestCustomProposal.diagnosis || ''}\n\nSolució proposada:\n${latestCustomProposal.solution || ''}${totalsLine}\n\nNota: adjunta el PDF descarregat des de l'aplicació.\n\nSalutacions,\nAdeptify\n`
+                        : `Hola,\n\nAdjunto encontrarás la propuesta a medida para el centro (${centerName}).\n\nDiagnóstico:\n${latestCustomProposal.diagnosis || ''}\n\nSolución propuesta:\n${latestCustomProposal.solution || ''}${totalsLine}\n\nNota: adjunta el PDF descargado desde la aplicación.\n\nSaludos,\nAdeptify\n`
+                    );
+                    openGmailCompose({
+                      to: defaultRecipientEmail,
+                      subject,
+                      body,
+                    });
+                  }}
+                  disabled={!latestCustomProposal}
+                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                >
+                  Gmail
+                </button>
+              </div>
+            </div>
+            {latestCustomProposal ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Diagnosi' : 'Diagnóstico'}</p>
+                  <p className="text-[10px] text-slate-600 font-medium leading-relaxed break-words">{latestCustomProposal.diagnosis}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Solució' : 'Solución'}</p>
+                  <p className="text-[10px] text-slate-600 font-medium leading-relaxed break-words">{latestCustomProposal.solution}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-400 font-bold italic">{language === 'ca' ? 'Encara no hi ha proposta a mida generada.' : 'Aún no hay propuesta a medida generada.'}</p>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border border-slate-100 rounded-[2rem] p-8">
@@ -650,6 +757,15 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
                       <button
                         type="button"
                         onClick={() => downloadCenterReportPdf(centerName, a.payload as CenterReport, language)}
+                        className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all"
+                      >
+                        PDF
+                      </button>
+                    )}
+                    {a.artifactType === 'custom_proposal' && (
+                      <button
+                        type="button"
+                        onClick={() => downloadCustomProposalPdf(centerName, a.payload as ProposalData, language)}
                         className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all"
                       >
                         PDF

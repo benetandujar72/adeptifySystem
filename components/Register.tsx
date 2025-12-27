@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLanguage } from '../LanguageContext';
+import { CatEducationCenter, searchCatEducationCenters } from '../services/educationCentersService';
 
 export type RegistrationData = {
   contactName: string;
@@ -15,10 +16,13 @@ interface RegisterProps {
 const LOCAL_REG_KEY = 'adeptify_registration';
 
 const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [contactName, setContactName] = useState(initial?.contactName ?? '');
   const [contactEmail, setContactEmail] = useState(initial?.contactEmail ?? '');
   const [centerName, setCenterName] = useState(initial?.centerName ?? '');
+  const [centerOptions, setCenterOptions] = useState<CatEducationCenter[]>([]);
+  const [centerLoading, setCenterLoading] = useState(false);
+  const [centerOpen, setCenterOpen] = useState(false);
 
   useEffect(() => {
     // If there's already a stored registration, prefill.
@@ -34,6 +38,34 @@ const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const q = centerName.trim();
+
+    if (q.length < 2) {
+      setCenterOptions([]);
+      setCenterLoading(false);
+      return;
+    }
+
+    setCenterLoading(true);
+    const handle = window.setTimeout(async () => {
+      try {
+        const res = await searchCatEducationCenters(q, 12);
+        if (!alive) return;
+        setCenterOptions(res);
+      } finally {
+        if (!alive) return;
+        setCenterLoading(false);
+      }
+    }, 200);
+
+    return () => {
+      alive = false;
+      window.clearTimeout(handle);
+    };
+  }, [centerName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,15 +129,54 @@ const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
 
           <div className="space-y-2">
             <label htmlFor="reg-center" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">{t.registerCenter}</label>
-            <input
-              id="reg-center"
-              type="text"
-              required
-              className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-600 transition-all font-bold text-sm text-slate-700"
-              value={centerName}
-              onChange={(e) => setCenterName(e.target.value)}
-              placeholder={t.registerCenterPlaceholder}
-            />
+            <div className="relative">
+              <input
+                id="reg-center"
+                type="text"
+                required
+                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:border-indigo-600 transition-all font-bold text-sm text-slate-700"
+                value={centerName}
+                onChange={(e) => {
+                  setCenterName(e.target.value);
+                  setCenterOpen(true);
+                }}
+                onFocus={() => setCenterOpen(true)}
+                onBlur={() => {
+                  // Allow click selection before closing.
+                  window.setTimeout(() => setCenterOpen(false), 120);
+                }}
+                placeholder={t.registerCenterPlaceholder}
+                autoComplete="off"
+              />
+
+              {centerOpen && (centerLoading || centerOptions.length > 0) && (
+                <div className="absolute z-20 mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
+                  {centerLoading && (
+                    <div className="px-5 py-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                      {language === 'ca' ? 'Carregant...' : 'Cargando...'}
+                    </div>
+                  )}
+
+                  {!centerLoading && centerOptions.map((c) => (
+                    <button
+                      key={c.codi_centre}
+                      type="button"
+                      className="w-full text-left px-5 py-4 hover:bg-slate-50 transition-all border-t border-slate-50"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setCenterName(c.denominacio_completa);
+                        setCenterOpen(false);
+                      }}
+                    >
+                      <p className="text-sm font-black text-slate-900 truncate">{c.denominacio_completa}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
+                        {(c.nom_municipi || '-')}{c.nom_comarca ? ` • ${c.nom_comarca}` : ''}{c.codi_postal ? ` • ${c.codi_postal}` : ''}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <button

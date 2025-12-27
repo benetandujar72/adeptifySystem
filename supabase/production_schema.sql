@@ -106,3 +106,85 @@ create index if not exists center_artifacts_type_idx
 -- If you enable RLS, you must create appropriate policies; otherwise reads/writes will fail.
 -- For a public demo, you can keep RLS disabled, but for real production you should add auth
 -- and lock down policies to admins only.
+
+-- 5) Catalog: Centres educatius de Catalunya (TOTCAT).
+-- Source CSV: totcat-centres-educatius.csv (semicolon-delimited).
+-- Purpose: allow type-ahead center selection from DB.
+
+create extension if not exists pg_trgm;
+
+create table if not exists public.cat_education_centers (
+  codi_centre text primary key,
+  denominacio_completa text not null,
+  codi_naturalesa text,
+  nom_naturalesa text,
+  codi_titularitat text,
+  nom_titularitat text,
+  adreca text,
+  codi_postal text,
+  telefon text,
+  codi_delegacio text,
+  nom_delegacio text,
+  codi_comarca text,
+  nom_comarca text,
+  codi_municipi text,
+  nom_municipi text,
+  codi_districte_municipal text,
+  nom_dm text,
+  codi_localitat text,
+  nom_localitat text,
+  coordenades_utm_x integer,
+  coordenades_utm_y integer,
+  coordenades_geo_x double precision,
+  coordenades_geo_y double precision,
+  email_centre text,
+  estudis text,
+  einf1c boolean not null default false,
+  einf2c boolean not null default false,
+  epri boolean not null default false,
+  eso boolean not null default false,
+  batx boolean not null default false,
+  aa01 boolean not null default false,
+  cfpm boolean not null default false,
+  ppas boolean not null default false,
+  aa03 boolean not null default false,
+  cfps boolean not null default false,
+  ee boolean not null default false,
+  ife boolean not null default false,
+  pfi boolean not null default false,
+  pa01 boolean not null default false,
+  cfam boolean not null default false,
+  pa02 boolean not null default false,
+  cfas boolean not null default false,
+  esdi boolean not null default false,
+  escm boolean not null default false,
+  escs boolean not null default false,
+  adr boolean not null default false,
+  crbc boolean not null default false,
+  idi boolean not null default false,
+  dane boolean not null default false,
+  danp boolean not null default false,
+  dans boolean not null default false,
+  muse boolean not null default false,
+  musp boolean not null default false,
+  muss boolean not null default false,
+  tegm boolean not null default false,
+  tegs boolean not null default false,
+  estr boolean not null default false,
+  adults boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cat_education_centers_name_trgm_idx
+  on public.cat_education_centers using gin (denominacio_completa gin_trgm_ops);
+
+create index if not exists cat_education_centers_muni_trgm_idx
+  on public.cat_education_centers using gin (nom_municipi gin_trgm_ops);
+
+create index if not exists cat_education_centers_comarca_idx
+  on public.cat_education_centers(nom_comarca);
+
+drop trigger if exists trg_cat_education_centers_updated_at on public.cat_education_centers;
+create trigger trg_cat_education_centers_updated_at
+before update on public.cat_education_centers
+for each row execute procedure public.set_updated_at();

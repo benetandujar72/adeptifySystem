@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { CenterReport } from '../types';
+import { CenterReport, ProposalData } from '../types';
 import { DafoResult } from './geminiService';
 
 type Lang = 'ca' | 'es';
@@ -145,7 +145,7 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string, opts?: { logoDa
 }
 
 function addFooters(doc: jsPDF, lang: Lang) {
-  const total = doc.internal.getNumberOfPages();
+  const total = doc.getNumberOfPages();
   const width = doc.internal.pageSize.getWidth();
   const height = doc.internal.pageSize.getHeight();
   for (let i = 1; i <= total; i++) {
@@ -286,6 +286,11 @@ function addCardParagraph(doc: jsPDF, x: number, y: number, w: number, text: str
 
 function sanitizeFilename(name: string) {
   return (name || 'centre').replace(/[^a-z0-9-_ ]/gi, '').trim().replace(/\s+/g, '_');
+}
+
+function formatEuros(value: number | undefined) {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return `${Math.round(n).toLocaleString('es-ES')} €`;
 }
 
 export function downloadDafoPdf(centerName: string, dafo: DafoResult, lang: Lang = 'ca') {
@@ -492,5 +497,133 @@ export async function downloadCenterReportPdf(centerName: string, report: Center
   addFooters(doc, lang);
 
   const filename = `${sanitizeFilename(centerName)}_informe.pdf`;
+  doc.save(filename);
+}
+
+export function downloadCustomProposalPdf(centerName: string, proposal: ProposalData, lang: Lang = 'ca') {
+  // Backward compatible wrapper (older call sites may not await).
+  void downloadCustomProposalPdfAsync(centerName, proposal, lang);
+}
+
+export async function downloadCustomProposalPdfAsync(centerName: string, proposal: ProposalData, lang: Lang = 'ca') {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const title = lang === 'ca' ? 'Proposta a mida' : 'Propuesta a medida';
+  const generatedAt = proposal?.meta?.generatedAt
+    ? new Date(proposal.meta.generatedAt).toLocaleString()
+    : new Date().toLocaleString();
+  const subtitle = `${centerName} • ${(lang === 'ca' ? 'Generat: ' : 'Generado: ') + generatedAt}`;
+  const logoDataUri = await getBrandLogoDataUri();
+  drawHeader(doc, title, subtitle, { logoDataUri, lang });
+
+  let y = page.margin + page.headerHeight;
+  const pageW = doc.internal.pageSize.getWidth();
+  const fullW = pageW - page.margin * 2;
+  const x = page.margin;
+
+  const addParagraphCard = (cardTitle: string, text: string) => {
+    const contentH = measureParagraphHeight(doc, text || '', fullW - page.cardPadding * 2);
+    const h = 22 + page.cardPadding + contentH + 4;
+    y = ensureSpace(doc, y, h);
+    addCard(doc, x, y, fullW, h, cardTitle);
+    addCardParagraph(doc, x, y + 22 + page.cardPadding, fullW, text || '');
+    y += h + 14;
+  };
+
+  const addListCard = (cardTitle: string, items: string[]) => {
+    const contentH = measureBulletsHeight(doc, items || [], fullW - page.cardPadding * 2 - 14);
+    const h = 22 + page.cardPadding + contentH + 6;
+    y = ensureSpace(doc, y, h);
+    addCard(doc, x, y, fullW, h, cardTitle);
+    addCardBullets(doc, x, y + 22 + page.cardPadding, fullW, items || []);
+    y += h + 14;
+  };
+
+  addParagraphCard(lang === 'ca' ? 'Diagnosi' : 'Diagnóstico', proposal?.diagnosis || '');
+  addParagraphCard(lang === 'ca' ? 'Solució proposada' : 'Solución propuesta', proposal?.solution || '');
+
+  if (Array.isArray(proposal?.solutionDetails) && proposal.solutionDetails.length) {
+    const lines = proposal.solutionDetails.map(d => {
+      const titleTxt = String(d?.title || '').trim();
+      const pain = String(d?.painPoint || '').trim();
+      const how = String(d?.howItSolvesIt || '').trim();
+      const core = `${titleTxt}${titleTxt ? ': ' : ''}${pain}${pain && how ? ' → ' : ''}${how}`.trim();
+      return core;
+    }).filter(Boolean);
+    if (lines.length) {
+      addListCard(lang === 'ca' ? 'Detall de la solució' : 'Detalle de la solución', lines);
+    }
+  }
+
+  if (Array.isArray(proposal?.items) && proposal.items.length) {
+    const itemLines = proposal.items.map(it => {
+      const concept = String(it?.concept || '').trim();
+      const desc = String(it?.description || '').trim();
+      const hours = typeof it?.hours === 'number' ? it.hours : undefined;
+      const rate = typeof it?.hourlyRate === 'number' ? it.hourlyRate : undefined;
+      const effort = (hours && rate) ? ` (${hours}h × ${Math.round(rate)}€/h)` : (hours ? ` (${hours}h)` : '');
+      const priceTxt = formatEuros(it?.price);
+      const head = `${concept}${effort} — ${priceTxt}`.trim();
+      return desc ? `${head}: ${desc}` : head;
+    }).filter(Boolean);
+
+    addListCard(lang === 'ca' ? 'Pressupost (partides)' : 'Presupuesto (partidas)', itemLines);
+  }
+
+  {
+    const totalsLines: string[] = [];
+    if (typeof proposal?.totalInitial === 'number') {
+      totalsLines.push(`${lang === 'ca' ? 'Cost inicial' : 'Coste inicial'}: ${formatEuros(proposal.totalInitial)}`);
+    }
+    if (proposal?.totals) {
+      totalsLines.push(`${lang === 'ca' ? 'Mensualitat recurrent' : 'Mensualidad recurrente'}: ${formatEuros(proposal.totals.recurringMonthly)}`);
+      totalsLines.push(`${lang === 'ca' ? 'Estimació primer any' : 'Estimación primer año'}: ${formatEuros(proposal.totals.estimatedFirstYear)}`);
+    }
+    if (proposal?.subscription) {
+      totalsLines.push(`${lang === 'ca' ? 'Subscripció' : 'Suscripción'}: ${proposal.subscription.name} (${formatEuros(proposal.subscription.pricePerMonth)}/mes)`);
+    }
+    if (Array.isArray(proposal?.addons) && proposal.addons.length) {
+      for (const a of proposal.addons) {
+        const name = String(a?.name || '').trim();
+        const setup = typeof a?.setupPrice === 'number' ? ` setup ${formatEuros(a.setupPrice)}` : '';
+        const monthly = typeof a?.pricePerMonth === 'number' ? ` +${formatEuros(a.pricePerMonth)}/mes` : '';
+        if (name) totalsLines.push(`${lang === 'ca' ? 'Add-on' : 'Add-on'}: ${name}${setup}${monthly}`);
+      }
+    }
+    if (totalsLines.length) {
+      addListCard(lang === 'ca' ? 'Totals' : 'Totales', totalsLines);
+    }
+  }
+
+  if (Array.isArray(proposal?.phases) && proposal.phases.length) {
+    const phaseLines = proposal.phases.map(p => {
+      const name = String(p?.name || '').trim();
+      const start = typeof p?.startWeek === 'number' ? p.startWeek : undefined;
+      const dur = typeof p?.durationWeeks === 'number' ? p.durationWeeks : undefined;
+      const windowTxt = (start && dur) ? ` (setm. ${start}–${start + dur - 1})` : (start ? ` (setm. ${start})` : '');
+      const desc = String(p?.description || '').trim();
+      const cost = typeof p?.cost === 'number' ? ` — ${formatEuros(p.cost)}` : '';
+      return `${name || (lang === 'ca' ? 'Fase' : 'Fase')}${windowTxt}${cost}: ${desc}`.trim();
+    }).filter(Boolean);
+    if (phaseLines.length) {
+      addListCard(lang === 'ca' ? "Pla d'implementació" : 'Plan de implementación', phaseLines);
+    }
+  }
+
+  {
+    const miscLines: string[] = [];
+    const timeTxt = String(proposal?.implementationTime || '').trim();
+    const roiTxt = String(proposal?.roi || '').trim();
+    const fundsTxt = String(proposal?.nextGenFundsInfo || '').trim();
+    if (timeTxt) miscLines.push(`${lang === 'ca' ? "Temps d'implementació" : 'Tiempo de implementación'}: ${timeTxt}`);
+    if (roiTxt) miscLines.push(`ROI: ${roiTxt}`);
+    if (fundsTxt) miscLines.push(`${lang === 'ca' ? 'NextGen / subvencions' : 'NextGen / subvenciones'}: ${fundsTxt}`);
+    if (miscLines.length) {
+      addListCard(lang === 'ca' ? 'Notes' : 'Notas', miscLines);
+    }
+  }
+
+  addFooters(doc, lang);
+
+  const filename = `${sanitizeFilename(centerName)}_proposta.pdf`;
   doc.save(filename);
 }

@@ -10,10 +10,14 @@ import DocGenerator from './components/DocGenerator';
 import AdminRegistry from './components/AdminRegistry';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
+import InstitutionGate from './components/InstitutionGate';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
 import { getTenantSlugFromWindow } from './services/tenant';
+
+const SESSION_TENANT_KEY = 'adeptify_active_tenant_slug';
+const SESSION_TENANT_CENTER_NAME_KEY = 'adeptify_active_tenant_center_name';
 
 const AppContent: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -49,6 +53,29 @@ const AppContent: React.FC = () => {
     window.addEventListener('popstate', updateFromLocation);
     return () => window.removeEventListener('popstate', updateFromLocation);
   }, []);
+
+  // If no tenant is in the URL, try to restore it from sessionStorage (per-session).
+  useEffect(() => {
+    if (tenantSlug) return;
+    try {
+      const saved = (sessionStorage.getItem(SESSION_TENANT_KEY) || '').trim();
+      if (!saved) return;
+      // Route to /t/{tenantSlug} and re-resolve tenant.
+      window.history.replaceState({}, '', `/t/${encodeURIComponent(saved)}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+
+      const savedName = (sessionStorage.getItem(SESSION_TENANT_CENTER_NAME_KEY) || '').trim();
+      if (savedName) {
+        setDiagnosis(prev => ({
+          ...prev,
+          tenantSlug: saved,
+          centerName: savedName,
+        }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [tenantSlug]);
 
   // Recuperem registre gratuït si existeix
   useEffect(() => {
@@ -147,8 +174,78 @@ const AppContent: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('adeptify_admin_auth');
+    sessionStorage.removeItem(SESSION_TENANT_KEY);
+    sessionStorage.removeItem(SESSION_TENANT_CENTER_NAME_KEY);
     setPhase(Phase.LANDING);
   };
+
+  const clearTenantSession = () => {
+    try {
+      sessionStorage.removeItem(SESSION_TENANT_KEY);
+      sessionStorage.removeItem(SESSION_TENANT_CENTER_NAME_KEY);
+    } catch {
+      // ignore
+    }
+    // Navigate to root so the InstitutionGate shows again.
+    window.history.replaceState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
+  // Gate: require selecting which institution (tenant) this session belongs to.
+  if (!tenantSlug) {
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-[#FDFDFD]">
+        <header className="fixed top-0 w-full p-6 md:p-8 flex justify-between items-center z-50 glass border-b border-slate-100">
+          <div className="flex items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity">
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg">
+              <div className="w-3 h-3 bg-indigo-500 rounded-sm" />
+            </div>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-slate-900 leading-none">{t.appTitle}</span>
+          </div>
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="hidden md:flex bg-slate-100 p-1 rounded-xl gap-1">
+              <button
+                onClick={() => setLanguage('ca')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'ca' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                CAT
+              </button>
+              <button
+                onClick={() => setLanguage('es')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'es' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                ESP
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="w-full px-6 md:px-12 mt-32 mb-20 max-w-4xl">
+          <InstitutionGate
+            onSelected={(sel) => {
+              try {
+                sessionStorage.setItem(SESSION_TENANT_KEY, sel.tenantSlug);
+                sessionStorage.setItem(SESSION_TENANT_CENTER_NAME_KEY, sel.centerName);
+              } catch {
+                // ignore
+              }
+
+              // Navigate to tenant route and let existing listener update state.
+              window.history.replaceState({}, '', `/t/${encodeURIComponent(sel.tenantSlug)}`);
+              window.dispatchEvent(new PopStateEvent('popstate'));
+
+              setDiagnosis(prev => ({
+                ...prev,
+                tenantSlug: sel.tenantSlug,
+                centerName: sel.centerName,
+              }));
+              setPhase(Phase.LANDING);
+            }}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-[#FDFDFD]">
@@ -184,6 +281,14 @@ const AppContent: React.FC = () => {
              className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:text-indigo-600 transition-colors"
            >
              {t.navDocs}
+           </button>
+
+           <button
+             onClick={clearTenantSession}
+             className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
+             title={language === 'ca' ? 'Canviar institut' : 'Cambiar instituto'}
+           >
+             {language === 'ca' ? 'Canviar institut' : 'Cambiar instituto'}
            </button>
 
            {isAuthenticated ? (
