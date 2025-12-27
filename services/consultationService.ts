@@ -12,7 +12,7 @@ const normalizeCenterKey = (name: string) => name.trim().toLowerCase().replace(/
  */
 export const consultationService = {
   
-  saveConsultation: async (diagnosis: DiagnosisState, proposal: ProposalData): Promise<Consultation> => {
+  saveConsultation: async (diagnosis: DiagnosisState, proposal: ProposalData, tenantSlug?: string): Promise<Consultation> => {
     const consultationId = `CONS-${Date.now()}`;
 
     const normalizedProposal: ProposalData = {
@@ -25,26 +25,35 @@ export const consultationService = {
 
     const newConsultation: Consultation = {
       ...diagnosis,
+      tenantSlug: tenantSlug ?? diagnosis.tenantSlug,
       id: consultationId,
       date: new Date().toISOString(),
       proposal: normalizedProposal
     };
 
     if (supabase) {
-      const { error } = await supabase
-        .from('consultations')
-        .insert([
-          {
-            id: consultationId,
-            center_name: diagnosis.centerName,
-            center_key: normalizeCenterKey(diagnosis.centerName || ''),
-            contact_email: diagnosis.contactEmail,
-            contact_name: diagnosis.contactName ?? null,
-            product_type: diagnosis.selectedProduct,
-            audit_history: diagnosis.consultationHistory,
-            proposal_data: normalizedProposal
-          }
-        ]);
+      const baseRow: Record<string, any> = {
+        id: consultationId,
+        center_name: diagnosis.centerName,
+        center_key: normalizeCenterKey(diagnosis.centerName || ''),
+        contact_email: diagnosis.contactEmail,
+        contact_name: diagnosis.contactName ?? null,
+        product_type: diagnosis.selectedProduct,
+        audit_history: diagnosis.consultationHistory,
+        proposal_data: normalizedProposal,
+      };
+
+      const rowWithTenant = {
+        ...baseRow,
+        tenant_slug: tenantSlug ?? diagnosis.tenantSlug ?? null,
+      };
+
+      let { error } = await supabase.from('consultations').insert([rowWithTenant]);
+
+      // Backward-compat: if production schema is not yet migrated, retry without tenant_slug.
+      if (error && typeof error.message === 'string' && error.message.toLowerCase().includes('tenant_slug')) {
+        ({ error } = await supabase.from('consultations').insert([baseRow]));
+      }
 
       if (!error) {
         console.log(`ÈXIT: Consulta ${consultationId} persistida al núvol.`);
@@ -67,17 +76,31 @@ export const consultationService = {
     }
   },
 
-  getAll: async (): Promise<Consultation[]> => {
+  getAll: async (tenantSlug?: string): Promise<Consultation[]> => {
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        const query = supabase
           .from('consultations')
           .select('*')
           .order('created_at', { ascending: false });
 
+        let data: any = null;
+        let error: any = null;
+
+        if (tenantSlug) {
+          ({ data, error } = await query.eq('tenant_slug', tenantSlug));
+          // Backward-compat: if tenant_slug column doesn't exist, retry unscoped.
+          if (error && typeof error.message === 'string' && error.message.toLowerCase().includes('tenant_slug')) {
+            ({ data, error } = await query);
+          }
+        } else {
+          ({ data, error } = await query);
+        }
+
         if (!error && data) {
           return data.map(dbItem => ({
             id: dbItem.id,
+            tenantSlug: dbItem.tenant_slug ?? undefined,
             centerName: dbItem.center_name,
             contactName: dbItem.contact_name ?? undefined,
             contactEmail: dbItem.contact_email,
@@ -104,7 +127,7 @@ export const consultationService = {
     // Fallback LocalStorage
     try {
       const raw = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
-      return Array.isArray(raw)
+      const all = Array.isArray(raw)
         ? raw.map((c: any) => ({
             ...c,
             consultationHistory: Array.isArray(c?.consultationHistory)
@@ -117,6 +140,9 @@ export const consultationService = {
               : [],
           }))
         : [];
+
+      if (!tenantSlug) return all;
+      return all.filter((c: any) => String(c?.tenantSlug ?? '').toLowerCase() === tenantSlug.toLowerCase());
     } catch {
       return [];
     }

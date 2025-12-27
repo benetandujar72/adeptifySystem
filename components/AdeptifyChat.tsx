@@ -24,6 +24,17 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     setEffectiveCenterId(centerId);
   }, [centerId]);
 
+  const parseScope = (scopedId: string) => {
+    const raw = scopedId || 'general';
+    const parts = raw.split('::');
+    if (parts.length >= 2) {
+      const tenantSlug = parts[0] || 'global';
+      const centerName = parts.slice(1).join('::') || 'general';
+      return { tenantSlug, centerName, scopedId: raw };
+    }
+    return { tenantSlug: undefined as string | undefined, centerName: raw, scopedId: raw };
+  };
+
   /**
    * Helper para formatear texto Markdown a HTML básico de forma segura.
    * Maneja negritas (**), listas (*), y saltos de línea.
@@ -44,8 +55,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
   };
 
   const getClientContext = async (): Promise<string> => {
-    const consultations = await consultationService.getAll();
-    const clientData = consultations.find(c => c.centerName === effectiveCenterId) || consultations[0];
+    const { tenantSlug, centerName } = parseScope(effectiveCenterId);
+    const consultations = await consultationService.getAll(tenantSlug);
+    const clientData = consultations.find(c => c.centerName === centerName) || consultations[0];
     
     if (!clientData) return language === 'ca' ? "Parlem d'ajudar l'escola." : "Hablemos de ayudar al colegio.";
 
@@ -58,12 +70,13 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
   useEffect(() => {
     const initChat = async () => {
       if (isOpen) {
+        const scope = parseScope(effectiveCenterId);
         // If we don't yet know the center id, but there are consultations,
         // use the most recent one to persist chat under a meaningful key.
-        if (centerId === 'general') {
-          const consultations = await consultationService.getAll();
+        if (scope.centerName === 'general') {
+          const consultations = await consultationService.getAll(scope.tenantSlug);
           const fallbackCenterName = consultations?.[0]?.centerName;
-          if (fallbackCenterName) setEffectiveCenterId(fallbackCenterName);
+          if (fallbackCenterName) setEffectiveCenterId(`${scope.tenantSlug ?? 'global'}::${fallbackCenterName}`);
         }
 
         const context = await getClientContext();

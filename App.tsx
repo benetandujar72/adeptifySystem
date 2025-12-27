@@ -13,12 +13,15 @@ import Register, { RegistrationData } from './components/Register';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
+import { getTenantSlugFromWindow } from './services/tenant';
 
 const AppContent: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
+  const [tenantSlug, setTenantSlug] = useState<string | null>(() => getTenantSlugFromWindow());
   const [phase, setPhase] = useState<Phase>(Phase.LANDING);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [diagnosis, setDiagnosis] = useState<DiagnosisState>({
+    tenantSlug: getTenantSlugFromWindow() ?? undefined,
     centerName: '',
     contactEmail: '',
     contactName: '',
@@ -32,6 +35,19 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const sessionAuth = sessionStorage.getItem('adeptify_admin_auth');
     if (sessionAuth === 'true') setIsAuthenticated(true);
+  }, []);
+
+  // Resolve tenant from URL (supports /t/{tenantSlug}/...).
+  useEffect(() => {
+    const updateFromLocation = () => {
+      const next = getTenantSlugFromWindow();
+      setTenantSlug(next);
+      setDiagnosis(prev => ({ ...prev, tenantSlug: next ?? undefined }));
+    };
+
+    updateFromLocation();
+    window.addEventListener('popstate', updateFromLocation);
+    return () => window.removeEventListener('popstate', updateFromLocation);
   }, []);
 
   // Recuperem registre gratuït si existeix
@@ -105,7 +121,7 @@ const AppContent: React.FC = () => {
     setIsProcessing(true);
     try {
       const generated = await generateEducationalProposal(finalDiagnosis, language);
-      await consultationService.saveConsultation(finalDiagnosis, generated);
+      await consultationService.saveConsultation(finalDiagnosis, generated, tenantSlug ?? undefined);
       setProposal(generated);
       setPhase(Phase.PROPOSAL);
     } catch (error) {
@@ -212,7 +228,7 @@ const AppContent: React.FC = () => {
         )}
 
         {phase === Phase.DOC_GENERATOR && <DocGenerator />}
-        {phase === Phase.ADMIN && <AdminRegistry />}
+        {phase === Phase.ADMIN && <AdminRegistry tenantSlug={tenantSlug ?? undefined} />}
         {phase === Phase.LOGIN && <Login onLoginSuccess={handleLoginSuccess} />}
 
         {phase === Phase.PROPOSAL && proposal && (
@@ -240,7 +256,7 @@ const AppContent: React.FC = () => {
         </footer>
       )}
 
-      <AdeptifyChat centerId={diagnosis.centerName || 'general'} />
+      <AdeptifyChat centerId={`${tenantSlug ?? 'global'}::${diagnosis.centerName || 'general'}`} />
     </div>
   );
 };

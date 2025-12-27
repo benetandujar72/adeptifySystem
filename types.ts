@@ -41,6 +41,7 @@ export interface Question {
 
 export interface DiagnosisState {
   selectedProduct?: ProductType;
+  tenantSlug?: string;
   centerName: string;
   contactEmail: string;
   contactName?: string;

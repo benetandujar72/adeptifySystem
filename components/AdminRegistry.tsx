@@ -9,7 +9,11 @@ import { centerInsightsService, normalizeCenterKey } from '../services/centerIns
 
 type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports';
 
-const AdminRegistry: React.FC = () => {
+type AdminRegistryProps = {
+  tenantSlug?: string;
+};
+
+const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -34,7 +38,7 @@ const AdminRegistry: React.FC = () => {
     setIsLoading(true);
     try {
       setDbMode(supabase ? 'cloud' : 'local');
-      const data = await consultationService.getAll();
+      const data = await consultationService.getAll(tenantSlug);
       setConsultations(data);
       if (data.length > 0 && !selectedClient) {
         setSelectedClient(data[0]);
@@ -68,7 +72,7 @@ const AdminRegistry: React.FC = () => {
     try {
       const histories = getCenterHistories(centerName);
       const dafo = await generateCenterDAFO(centerName, histories, language);
-      await centerInsightsService.upsertDafo(centerName, dafo);
+      await centerInsightsService.upsertDafo(centerName, dafo, tenantSlug);
       persistDafoCache({ ...dafoCache, [key]: dafo });
     } catch (e: any) {
       setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
@@ -85,7 +89,7 @@ const AdminRegistry: React.FC = () => {
       const histories = getCenterHistories(centerName);
       let dafo = dafoCache[key];
       if (!dafo) {
-        const existing = await centerInsightsService.get(centerName);
+        const existing = await centerInsightsService.get(centerName, tenantSlug);
         if (existing?.dafo) {
           dafo = existing.dafo;
           persistDafoCache({ ...dafoCache, [key]: dafo });
@@ -93,11 +97,11 @@ const AdminRegistry: React.FC = () => {
       }
       if (!dafo) {
         dafo = await generateCenterDAFO(centerName, histories, language);
-        await centerInsightsService.upsertDafo(centerName, dafo);
+        await centerInsightsService.upsertDafo(centerName, dafo, tenantSlug);
         persistDafoCache({ ...dafoCache, [key]: dafo });
       }
       const proposal = await generateCenterCustomProposal(centerName, histories, dafo, language);
-      await centerInsightsService.upsertCustomProposal(centerName, proposal);
+      await centerInsightsService.upsertCustomProposal(centerName, proposal, tenantSlug);
       persistCustomProposalCache({ ...customProposalCache, [key]: proposal });
     } catch (e: any) {
       setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
