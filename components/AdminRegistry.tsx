@@ -6,6 +6,7 @@ import { Consultation, ChatMessage, ProposalData } from '../types';
 import { useLanguage } from '../LanguageContext';
 import { generateCenterDAFO, generateCenterCustomProposal, DafoResult } from '../services/geminiService';
 import { centerInsightsService, normalizeCenterKey } from '../services/centerInsightsService';
+import ReportCenter from './ReportCenter';
 
 type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports';
 
@@ -31,7 +32,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
   useEffect(() => {
     loadAllData();
-  }, []);
+  }, [tenantSlug]);
 
 
   const loadAllData = async () => {
@@ -277,7 +278,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
         {/* TAB 4: CHATS */}
         {activeTab === 'chats' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4 space-y-3">
+            <div className="lg:col-span-4 space-y-3 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4">{t.adminRecentConversations}</p>
                {consultations.map(c => (
                  <button
@@ -540,6 +541,20 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                   </div>
                 ))}
              </div>
+          </div>
+        )}
+
+        {/* TAB 5: REPORTS */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t.adminTabReports}</h3>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+                <ReportCenter />
+              </div>
+            </div>
           </div>
         )}
 
