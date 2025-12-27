@@ -30,6 +30,55 @@ const BRAND = {
 // Optional brand logo (PNG/JPEG data URI). Example:
 // VITE_PDF_LOGO_DATA_URI=data:image/png;base64,iVBORw0...
 const BRAND_LOGO_DATA_URI: string | undefined = (import.meta as any)?.env?.VITE_PDF_LOGO_DATA_URI;
+const BRAND_LOGO_URL: string = (import.meta as any)?.env?.VITE_PDF_LOGO_URL || '/brand/adeptify-logo.png';
+
+let brandLogoDataUriPromise: Promise<string | undefined> | null = null;
+
+async function loadImageUrlAsDataUri(url: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(url, { cache: 'force-cache' });
+    if (!res.ok) return undefined;
+    const blob = await res.blob();
+
+    // Downscale to keep PDFs small.
+    const maxDim = 160;
+    try {
+      const bitmap = await createImageBitmap(blob);
+      const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('No canvas context');
+      ctx.drawImage(bitmap as any, 0, 0, w, h);
+      (bitmap as any).close?.();
+
+      const dataUri = canvas.toDataURL('image/png');
+      return dataUri.startsWith('data:') ? dataUri : undefined;
+    } catch {
+      const dataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read logo'));
+        reader.readAsDataURL(blob);
+      });
+      return dataUri.startsWith('data:') ? dataUri : undefined;
+    }
+  } catch {
+    return undefined;
+  }
+}
+
+async function getBrandLogoDataUri(): Promise<string | undefined> {
+  if (BRAND_LOGO_DATA_URI) return BRAND_LOGO_DATA_URI;
+  if (!brandLogoDataUriPromise) {
+    brandLogoDataUriPromise = loadImageUrlAsDataUri(BRAND_LOGO_URL);
+  }
+  return brandLogoDataUriPromise;
+}
 
 function ensureSpace(doc: jsPDF, y: number, extra: number) {
   const height = doc.internal.pageSize.getHeight();
@@ -42,7 +91,7 @@ function setTextColor(doc: jsPDF, rgb: readonly [number, number, number]) {
   doc.setTextColor(rgb[0], rgb[1], rgb[2]);
 }
 
-function drawHeader(doc: jsPDF, title: string, subtitle: string) {
+function drawHeader(doc: jsPDF, title: string, subtitle: string, opts?: { logoDataUri?: string; lang?: Lang }) {
   const width = doc.internal.pageSize.getWidth();
 
   doc.setFillColor(palette.surface2[0], palette.surface2[1], palette.surface2[2]);
@@ -58,9 +107,10 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string) {
   const logoX = page.margin;
   const logoY = 12;
   let textX = page.margin;
-  if (BRAND_LOGO_DATA_URI) {
+  const logoDataUri = opts?.logoDataUri;
+  if (logoDataUri) {
     try {
-      doc.addImage(BRAND_LOGO_DATA_URI, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'FAST');
+      doc.addImage(logoDataUri, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'FAST');
       textX = page.margin + logoSize + 10;
     } catch {
       // If the image cannot be parsed, fall back to wordmark.
@@ -76,9 +126,7 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   setTextColor(doc, palette.muted);
-  const tagline = (subtitle.includes('Generat') || subtitle.includes('Generado'))
-    ? (subtitle.includes('Generat') ? BRAND.taglineCa : BRAND.taglineEs)
-    : BRAND.taglineCa;
+  const tagline = (opts?.lang || 'ca') === 'ca' ? BRAND.taglineCa : BRAND.taglineEs;
   doc.text(`${tagline} • ${BRAND.website}`, textX, 32);
 
   doc.setFont('helvetica', 'bold');
@@ -241,13 +289,19 @@ function sanitizeFilename(name: string) {
 }
 
 export function downloadDafoPdf(centerName: string, dafo: DafoResult, lang: Lang = 'ca') {
+  // Backward compatible wrapper (older call sites may not await).
+  void downloadDafoPdfAsync(centerName, dafo, lang);
+}
+
+export async function downloadDafoPdfAsync(centerName: string, dafo: DafoResult, lang: Lang = 'ca') {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const title = lang === 'ca' ? `DAFO del centre` : `DAFO del centro`;
   const generatedAt = dafo?.meta?.generatedAt
     ? new Date(dafo.meta.generatedAt).toLocaleString()
     : new Date().toLocaleString();
   const subtitle = `${centerName} • ${(lang === 'ca' ? 'Generat: ' : 'Generado: ') + generatedAt}`;
-  drawHeader(doc, title, subtitle);
+  const logoDataUri = await getBrandLogoDataUri();
+  drawHeader(doc, title, subtitle, { logoDataUri, lang });
 
   let y = page.margin + page.headerHeight;
 
@@ -329,14 +383,15 @@ export function downloadDafoPdf(centerName: string, dafo: DafoResult, lang: Lang
   doc.save(filename);
 }
 
-export function downloadCenterReportPdf(centerName: string, report: CenterReport, lang: Lang = 'ca') {
+export async function downloadCenterReportPdf(centerName: string, report: CenterReport, lang: Lang = 'ca') {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const title = lang === 'ca' ? `Informe del centre` : `Informe del centro`;
   const generatedAt = report?.meta?.generatedAt
     ? new Date(report.meta.generatedAt).toLocaleString()
     : new Date().toLocaleString();
   const subtitle = `${centerName} • ${(lang === 'ca' ? 'Generat: ' : 'Generado: ') + generatedAt}`;
-  drawHeader(doc, title, subtitle);
+  const logoDataUri = await getBrandLogoDataUri();
+  drawHeader(doc, title, subtitle, { logoDataUri, lang });
 
   let y = page.margin + page.headerHeight;
   const pageW = doc.internal.pageSize.getWidth();
