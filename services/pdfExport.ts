@@ -20,6 +20,17 @@ const palette = {
   surface2: [241, 245, 249] as const,
 };
 
+const BRAND = {
+  name: 'Adeptify',
+  taglineCa: 'Consultoria i automatització per a centres educatius',
+  taglineEs: 'Consultoría y automatización para centros educativos',
+  website: 'adeptify.es',
+};
+
+// Optional brand logo (PNG/JPEG data URI). Example:
+// VITE_PDF_LOGO_DATA_URI=data:image/png;base64,iVBORw0...
+const BRAND_LOGO_DATA_URI: string | undefined = (import.meta as any)?.env?.VITE_PDF_LOGO_DATA_URI;
+
 function ensureSpace(doc: jsPDF, y: number, extra: number) {
   const height = doc.internal.pageSize.getHeight();
   if (y + extra <= height - page.margin - page.footerHeight) return y;
@@ -37,15 +48,43 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string) {
   doc.setFillColor(palette.surface2[0], palette.surface2[1], palette.surface2[2]);
   doc.rect(0, 0, width, page.headerHeight, 'F');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  setTextColor(doc, palette.muted);
-  doc.text('ADEPTIFY', page.margin, 18);
+  // Accent line
+  doc.setDrawColor(palette.border[0], palette.border[1], palette.border[2]);
+  doc.setLineWidth(1);
+  doc.line(0, page.headerHeight - 1, width, page.headerHeight - 1);
+
+  // Logo (optional) or typographic wordmark
+  const logoSize = 22;
+  const logoX = page.margin;
+  const logoY = 12;
+  let textX = page.margin;
+  if (BRAND_LOGO_DATA_URI) {
+    try {
+      doc.addImage(BRAND_LOGO_DATA_URI, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'FAST');
+      textX = page.margin + logoSize + 10;
+    } catch {
+      // If the image cannot be parsed, fall back to wordmark.
+      textX = page.margin;
+    }
+  }
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(12);
   setTextColor(doc, palette.text);
-  doc.text(title, page.margin, 34);
+  doc.text(BRAND.name, textX, 20);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  setTextColor(doc, palette.muted);
+  const tagline = (subtitle.includes('Generat') || subtitle.includes('Generado'))
+    ? (subtitle.includes('Generat') ? BRAND.taglineCa : BRAND.taglineEs)
+    : BRAND.taglineCa;
+  doc.text(`${tagline} • ${BRAND.website}`, textX, 32);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  setTextColor(doc, palette.text);
+  doc.text(title, page.margin, 50);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
@@ -53,7 +92,7 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string) {
   const subMax = width - page.margin * 2;
   const subLines = doc.splitTextToSize(subtitle, subMax);
   if (subLines.length) {
-    doc.text(subLines[0], page.margin, 46);
+    doc.text(subLines[0], page.margin, 62);
   }
 }
 
@@ -70,7 +109,9 @@ function addFooters(doc: jsPDF, lang: Lang) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     setTextColor(doc, palette.muted);
-    const left = lang === 'ca' ? 'Adeptify — Informe generat automàticament' : 'Adeptify — Informe generado automáticamente';
+    const left = lang === 'ca'
+      ? `${BRAND.name} — Document generat automàticament`
+      : `${BRAND.name} — Documento generado automáticamente`;
     doc.text(left, page.margin, height - 14);
     doc.text(`${i}/${total}`, width - page.margin, height - 14, { align: 'right' });
   }
