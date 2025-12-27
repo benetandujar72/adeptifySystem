@@ -2,13 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { consultationService } from '../services/consultationService';
 import { supabase } from '../services/supabaseClient';
-import { Consultation, ChatMessage } from '../types';
+import { Consultation, ChatMessage, ProposalData } from '../types';
 import { useLanguage } from '../LanguageContext';
+import { generateCenterDAFO, generateCenterCustomProposal, DafoResult } from '../services/geminiService';
+import { centerInsightsService, normalizeCenterKey } from '../services/centerInsightsService';
 
 type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports';
 
 const AdminRegistry: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [selectedClient, setSelectedClient] = useState<Consultation | null>(null);
@@ -17,10 +19,16 @@ const AdminRegistry: React.FC = () => {
   const [dbMode, setDbMode] = useState<'cloud' | 'local'>('local');
   const [expandedBudgetId, setExpandedBudgetId] = useState<string | null>(null);
   const [showExtendedBudget, setShowExtendedBudget] = useState(false);
+  const [dafoCache, setDafoCache] = useState<Record<string, DafoResult>>({});
+  const [customProposalCache, setCustomProposalCache] = useState<Record<string, ProposalData>>({});
+  const [dafoLoadingKey, setDafoLoadingKey] = useState<string | null>(null);
+  const [customLoadingKey, setCustomLoadingKey] = useState<string | null>(null);
+  const [centerInsightError, setCenterInsightError] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllData();
   }, []);
+
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -41,6 +49,61 @@ const AdminRegistry: React.FC = () => {
   const loadClientChats = async (centerId: string) => {
     const history = await consultationService.getChatHistory(centerId);
     setClientChats(history);
+  };
+
+  const persistDafoCache = (next: Record<string, DafoResult>) => setDafoCache(next);
+  const persistCustomProposalCache = (next: Record<string, ProposalData>) => setCustomProposalCache(next);
+
+  const getCenterHistories = (centerName: string) => {
+    const key = normalizeCenterKey(centerName);
+    return consultations
+      .filter(x => normalizeCenterKey(x.centerName) === key)
+      .map(x => x.consultationHistory || []);
+  };
+
+  const onGenerateDafo = async (centerName: string) => {
+    const key = normalizeCenterKey(centerName);
+    setCenterInsightError(null);
+    setDafoLoadingKey(key);
+    try {
+      const histories = getCenterHistories(centerName);
+      const dafo = await generateCenterDAFO(centerName, histories, language);
+      await centerInsightsService.upsertDafo(centerName, dafo);
+      persistDafoCache({ ...dafoCache, [key]: dafo });
+    } catch (e: any) {
+      setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
+    } finally {
+      setDafoLoadingKey(null);
+    }
+  };
+
+  const onGenerateCustomProposal = async (centerName: string) => {
+    const key = normalizeCenterKey(centerName);
+    setCenterInsightError(null);
+    setCustomLoadingKey(key);
+    try {
+      const histories = getCenterHistories(centerName);
+      let dafo = dafoCache[key];
+      if (!dafo) {
+        const existing = await centerInsightsService.get(centerName);
+        if (existing?.dafo) {
+          dafo = existing.dafo;
+          persistDafoCache({ ...dafoCache, [key]: dafo });
+        }
+      }
+      if (!dafo) {
+        dafo = await generateCenterDAFO(centerName, histories, language);
+        await centerInsightsService.upsertDafo(centerName, dafo);
+        persistDafoCache({ ...dafoCache, [key]: dafo });
+      }
+      const proposal = await generateCenterCustomProposal(centerName, histories, dafo, language);
+      await centerInsightsService.upsertCustomProposal(centerName, proposal);
+      persistCustomProposalCache({ ...customProposalCache, [key]: proposal });
+    } catch (e: any) {
+      setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
+    } finally {
+      setCustomLoadingKey(null);
+    }
   };
 
   useEffect(() => {
@@ -376,6 +439,95 @@ const AdminRegistry: React.FC = () => {
                              </div>
                            </div>
                          )}
+
+                         <div className="pt-4 border-t border-slate-200/50 space-y-3">
+                           <div className="flex items-center justify-between gap-3">
+                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.adminDafoTitle}</p>
+                             <div className="flex items-center gap-2">
+                               <button
+                                 type="button"
+                                 onClick={() => onGenerateDafo(c.centerName)}
+                                 disabled={dafoLoadingKey === normalizeCenterKey(c.centerName)}
+                                 className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                               >
+                                 {dafoLoadingKey === normalizeCenterKey(c.centerName) ? t.adminGeneratingDafo : t.adminGenerateDafo}
+                               </button>
+                               <button
+                                 type="button"
+                                 onClick={() => onGenerateCustomProposal(c.centerName)}
+                                 disabled={customLoadingKey === normalizeCenterKey(c.centerName)}
+                                 className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
+                               >
+                                 {customLoadingKey === normalizeCenterKey(c.centerName) ? t.adminGeneratingCustomProposal : t.adminGenerateCustomProposal}
+                               </button>
+                             </div>
+                           </div>
+
+                           {centerInsightError && (
+                             <p className="text-[10px] text-red-600 font-bold">{centerInsightError}</p>
+                           )}
+
+                           {dafoCache[normalizeCenterKey(c.centerName)] && (
+                             <div className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3">
+                               <p className="text-[10px] text-slate-600 font-medium">{dafoCache[normalizeCenterKey(c.centerName)].summary}</p>
+                               <div className="grid grid-cols-2 gap-3">
+                                 <div>
+                                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Fortaleses' : 'Fortalezas'}</p>
+                                   <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                                     {dafoCache[normalizeCenterKey(c.centerName)].strengths.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                   </ul>
+                                 </div>
+                                 <div>
+                                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Debilitats' : 'Debilidades'}</p>
+                                   <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                                     {dafoCache[normalizeCenterKey(c.centerName)].weaknesses.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                   </ul>
+                                 </div>
+                                 <div>
+                                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Oportunitats' : 'Oportunidades'}</p>
+                                   <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                                     {dafoCache[normalizeCenterKey(c.centerName)].opportunities.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                   </ul>
+                                 </div>
+                                 <div>
+                                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Amenaces' : 'Amenazas'}</p>
+                                   <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
+                                     {dafoCache[normalizeCenterKey(c.centerName)].threats.slice(0, 5).map((s, i) => <li key={i}>{s}</li>)}
+                                   </ul>
+                                 </div>
+                               </div>
+
+                               {dafoCache[normalizeCenterKey(c.centerName)].automationIdeas?.length > 0 && (
+                                 <div className="pt-3 border-t border-slate-100">
+                                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Automatitzacions suggerides' : 'Automatizaciones sugeridas'}</p>
+                                   <div className="space-y-2">
+                                     {dafoCache[normalizeCenterKey(c.centerName)].automationIdeas.slice(0, 4).map((idea, i) => (
+                                       <div key={i} className="flex items-start justify-between gap-4">
+                                         <div className="min-w-0">
+                                           <p className="text-[10px] font-black text-slate-800 uppercase truncate">{idea.title}</p>
+                                           <p className="text-[10px] text-slate-500 font-medium line-clamp-2">{idea.description}</p>
+                                         </div>
+                                         <p className="text-[9px] font-black text-slate-600 whitespace-nowrap">{idea.impact}/{idea.effort}</p>
+                                       </div>
+                                     ))}
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+
+                           {customProposalCache[normalizeCenterKey(c.centerName)] && (
+                             <div className="bg-white border border-slate-100 rounded-2xl p-4">
+                               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Proposta a mida' : 'Propuesta a medida'}</p>
+                               <div className="flex items-start justify-between gap-4">
+                                 <div className="min-w-0">
+                                   <p className="text-[10px] text-slate-600 font-medium line-clamp-2">{customProposalCache[normalizeCenterKey(c.centerName)]?.diagnosis}</p>
+                                 </div>
+                                 <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(customProposalCache[normalizeCenterKey(c.centerName)]?.totalInitial || 0).toLocaleString()}€</p>
+                               </div>
+                             </div>
+                           )}
+                         </div>
                        </div>
                      )}
                   </div>

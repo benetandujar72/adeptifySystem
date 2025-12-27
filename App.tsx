@@ -9,6 +9,7 @@ import AdeptifyChat from './components/AdeptifyChat';
 import DocGenerator from './components/DocGenerator';
 import AdminRegistry from './components/AdminRegistry';
 import Login from './components/Login';
+import Register, { RegistrationData } from './components/Register';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -20,10 +21,12 @@ const AppContent: React.FC = () => {
   const [diagnosis, setDiagnosis] = useState<DiagnosisState>({
     centerName: '',
     contactEmail: '',
+    contactName: '',
     consultationHistory: []
   });
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState<ProductType | null>(null);
 
   // Recuperem sessió d'admin si existeix
   useEffect(() => {
@@ -31,13 +34,60 @@ const AppContent: React.FC = () => {
     if (sessionAuth === 'true') setIsAuthenticated(true);
   }, []);
 
+  // Recuperem registre gratuït si existeix
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('adeptify_registration');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      setDiagnosis(prev => ({
+        ...prev,
+        contactName: typeof parsed?.contactName === 'string' ? parsed.contactName : prev.contactName,
+        contactEmail: typeof parsed?.contactEmail === 'string' ? parsed.contactEmail : prev.contactEmail,
+        centerName: typeof parsed?.centerName === 'string' ? parsed.centerName : prev.centerName,
+      }));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const isRegistered = (d: DiagnosisState) => {
+    return !!d.centerName?.trim() && !!d.contactEmail?.trim() && !!d.contactName?.trim();
+  };
+
   const handleProductChoice = (product: ProductType | 'DOCS') => {
     if (product === 'DOCS') {
       setPhase(Phase.DOC_GENERATOR);
       return;
     }
+
+    // Require free registration before starting the consultant.
+    if (!isRegistered(diagnosis)) {
+      setPendingProduct(product);
+      setPhase(Phase.REGISTER);
+      return;
+    }
+
     setDiagnosis(prev => ({ ...prev, selectedProduct: product, consultationHistory: [] }));
     setPhase(Phase.DYNAMIC_DIAGNOSIS);
+  };
+
+  const handleRegistered = (reg: RegistrationData) => {
+    setDiagnosis(prev => ({
+      ...prev,
+      contactName: reg.contactName,
+      contactEmail: reg.contactEmail,
+      centerName: reg.centerName,
+    }));
+
+    if (pendingProduct) {
+      setDiagnosis(prev => ({ ...prev, selectedProduct: pendingProduct, consultationHistory: [] }));
+      setPendingProduct(null);
+      setPhase(Phase.DYNAMIC_DIAGNOSIS);
+      return;
+    }
+
+    setPhase(Phase.LANDING);
   };
 
   const handleAuditComplete = async (history: { question: string; answer: string[] }[]) => {
@@ -141,6 +191,17 @@ const AppContent: React.FC = () => {
 
       <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
         {phase === Phase.LANDING && <SelectionScreen onChoice={handleProductChoice} />}
+
+        {phase === Phase.REGISTER && (
+          <Register
+            initial={{
+              contactName: diagnosis.contactName || '',
+              contactEmail: diagnosis.contactEmail || '',
+              centerName: diagnosis.centerName || '',
+            }}
+            onRegistered={handleRegistered}
+          />
+        )}
 
         {phase === Phase.DYNAMIC_DIAGNOSIS && (
           isProcessing ? (

@@ -106,6 +106,18 @@ export const translations = {
     consultantContinue: "Continuar →",
     modelLabel: "Model",
 
+    // Registration (free)
+    registerTitle: "Registre gratuït",
+    registerSubtitle: "Accés per a centres educatius",
+    registerName: "Nom i cognoms",
+    registerEmail: "Correu electrònic",
+    registerCenter: "Centre educatiu",
+    registerNamePlaceholder: "Nom del responsable",
+    registerEmailPlaceholder: "correu@centre.cat",
+    registerCenterPlaceholder: "Nom del centre",
+    registerContinue: "Continuar →",
+    registerFreeNote: "Gratuït • Sense targeta",
+
     // Chat
     chatTitle: "AL TEU ASSISTENT ADEPTIFY",
     chatSubtitle: "Sempre al teu costat",
@@ -269,6 +281,11 @@ export const translations = {
     adminHideBudgetExtended: "Amagar pressupost estès",
     adminBudgetItemsTitle: "Partides del pressupost",
     adminBudgetPhasesTitle: "Fases i entregables",
+    adminDafoTitle: "DAFO del centre",
+    adminGenerateDafo: "Generar DAFO",
+    adminGeneratingDafo: "Generant...",
+    adminGenerateCustomProposal: "Generar proposta a mida",
+    adminGeneratingCustomProposal: "Generant...",
 
     // Chat a11y
     chatOpen: "Obrir chat",
@@ -378,6 +395,18 @@ export const translations = {
     consultantTellMore: "Cuéntenos más...",
     consultantContinue: "Continuar →",
     modelLabel: "Modelo",
+
+    // Registration (free)
+    registerTitle: "Registro gratuito",
+    registerSubtitle: "Acceso para centros educativos",
+    registerName: "Nombre y apellidos",
+    registerEmail: "Correo electrónico",
+    registerCenter: "Centro educativo",
+    registerNamePlaceholder: "Nombre del responsable",
+    registerEmailPlaceholder: "correo@centro.es",
+    registerCenterPlaceholder: "Nombre del centro",
+    registerContinue: "Continuar →",
+    registerFreeNote: "Gratis • Sin tarjeta",
 
     // Chat
     chatTitle: "A TU ASISTENTE ADEPTIFY",
@@ -542,6 +571,11 @@ export const translations = {
     adminHideBudgetExtended: "Ocultar presupuesto extendido",
     adminBudgetItemsTitle: "Partidas del presupuesto",
     adminBudgetPhasesTitle: "Fases y entregables",
+    adminDafoTitle: "DAFO del centro",
+    adminGenerateDafo: "Generar DAFO",
+    adminGeneratingDafo: "Generando...",
+    adminGenerateCustomProposal: "Generar propuesta a medida",
+    adminGeneratingCustomProposal: "Generando...",
 
     // Chat a11y
     chatOpen: "Abrir chat",

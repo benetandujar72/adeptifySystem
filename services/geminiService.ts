@@ -345,7 +345,6 @@ Genera un JSON que compleixi EXACTAMENT aquesta estructura (ProposalData):
   }],
   "meta": {"generatedAt": string}
 }
-
 Recomanacions:
 - A "solution" inclou una secció final de "Crida a l'acció" amb pròxims passos.
 - Pressupost: especifica què inclou / què no inclou.
@@ -473,6 +472,168 @@ Recomendaciones:
       ? "Error generant la proposta. (Revisa la clau/API i possibles restriccions de domini)"
       : "Error generando la propuesta. (Revisa la clave/API y posibles restricciones de dominio)");
   }
+}
+
+export type DafoResult = {
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+  automationIdeas: Array<{ title: string; description: string; impact: 'low' | 'medium' | 'high'; effort: 'low' | 'medium' | 'high' }>;
+  quickWins: string[];
+  risksAndMitigations: Array<{ risk: string; mitigation: string }>;
+  meta?: { modelUsed?: string; generatedAt?: string };
+};
+
+const compactCenterHistoryForPrompt = (
+  histories: Array<{ question: string; answer: string[] }[]>,
+  lang: Language,
+) => {
+  const rows: Array<{ q: string; a: string[] }> = [];
+  for (const h of histories) {
+    for (const item of h || []) {
+      const q = String(item?.question ?? '').trim();
+      const a = Array.isArray(item?.answer) ? item.answer.map(x => String(x).trim()).filter(Boolean) : [];
+      if (!q || a.length === 0) continue;
+      rows.push({ q, a });
+    }
+  }
+
+  // Simple compression: group by question, merge unique answers.
+  const grouped = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (!grouped.has(r.q)) grouped.set(r.q, new Set());
+    const set = grouped.get(r.q)!;
+    for (const ans of r.a) {
+      if (set.size >= 12) break;
+      set.add(ans);
+    }
+  }
+
+  const lines: string[] = [];
+  for (const [q, answers] of grouped.entries()) {
+    const list = Array.from(answers).slice(0, 10);
+    const labelQ = lang === 'ca' ? 'P' : 'P';
+    const labelA = lang === 'ca' ? 'R' : 'R';
+    lines.push(`${labelQ}: ${q}`);
+    lines.push(`${labelA}: ${list.join(' | ')}`);
+  }
+  return lines.slice(0, 220).join('\n');
+};
+
+export async function generateCenterDAFO(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, lang: Language = 'ca'): Promise<DafoResult> {
+  const ai = getAi();
+  if (!ai) {
+    throw new Error(lang === 'ca'
+      ? 'Falta configuració del sistema (API).'
+      : 'Falta configuración del sistema (API).');
+  }
+
+  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const compact = compactCenterHistoryForPrompt(histories, lang);
+  const prompt = lang === 'ca'
+    ? `ETS UN CONSULTOR SÈNIOR D'INNOVACIÓ EDUCATIVA.
+Objectiu: generar un DAFO complet del centre i propostes d'automatització a mida.
+
+REGLES:
+- Escriu estrictament en ${langName}.
+- Retorna NOMÉS JSON vàlid (sense Markdown, sense text extra).
+- Sigues pràctic i orientat a direcció (prioritza impacte i rapidesa).
+
+CENTRE: "${centerName}".
+RESUM DE RESPOSTES AGREGADES (de diferents usuaris del mateix centre):
+${compact}
+
+Retorna EXACTAMENT aquest JSON:
+{
+  "summary": string,
+  "strengths": string[],
+  "weaknesses": string[],
+  "opportunities": string[],
+  "threats": string[],
+  "automationIdeas": [{"title": string, "description": string, "impact": "low"|"medium"|"high", "effort": "low"|"medium"|"high"}],
+  "quickWins": string[],
+  "risksAndMitigations": [{"risk": string, "mitigation": string}],
+  "meta": {"generatedAt": string}
+}`
+    : `ERES UN CONSULTOR SÉNIOR DE INNOVACIÓN EDUCATIVA.
+Objetivo: generar un DAFO completo del centro y propuestas de automatización a medida.
+
+REGLAS:
+- Escribe estrictamente en ${langName}.
+- Devuelve SOLO JSON válido (sin Markdown, sin texto extra).
+- Sé práctico y orientado a dirección (prioriza impacto y rapidez).
+
+CENTRO: "${centerName}".
+RESUMEN DE RESPUESTAS AGREGADAS (de distintos usuarios del mismo centro):
+${compact}
+
+Devuelve EXACTAMENTE este JSON:
+{
+  "summary": string,
+  "strengths": string[],
+  "weaknesses": string[],
+  "opportunities": string[],
+  "threats": string[],
+  "automationIdeas": [{"title": string, "description": string, "impact": "low"|"medium"|"high", "effort": "low"|"medium"|"high"}],
+  "quickWins": string[],
+  "risksAndMitigations": [{"risk": string, "mitigation": string}],
+  "meta": {"generatedAt": string}
+}`;
+
+  const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+    contents: prompt,
+    config: { responseMimeType: 'application/json', temperature: 0.4 },
+  });
+
+  const data = JSON.parse(response.text || '{}');
+  return {
+    summary: data.summary || '',
+    strengths: Array.isArray(data.strengths) ? data.strengths : [],
+    weaknesses: Array.isArray(data.weaknesses) ? data.weaknesses : [],
+    opportunities: Array.isArray(data.opportunities) ? data.opportunities : [],
+    threats: Array.isArray(data.threats) ? data.threats : [],
+    automationIdeas: Array.isArray(data.automationIdeas) ? data.automationIdeas : [],
+    quickWins: Array.isArray(data.quickWins) ? data.quickWins : [],
+    risksAndMitigations: Array.isArray(data.risksAndMitigations) ? data.risksAndMitigations : [],
+    meta: {
+      ...(data?.meta || {}),
+      modelUsed,
+      generatedAt: data?.meta?.generatedAt || new Date().toISOString(),
+    },
+  };
+}
+
+export async function generateCenterCustomProposal(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, dafo: DafoResult, lang: Language = 'ca'): Promise<ProposalData> {
+  const aggregatedHistory: { question: string; answer: string[] }[] = [];
+  for (const h of histories) {
+    for (const item of h || []) aggregatedHistory.push(item);
+  }
+
+  const diagnosis: DiagnosisState = {
+    centerName,
+    contactEmail: '',
+    contactName: '',
+    consultationHistory: aggregatedHistory,
+    category: 'CENTRO',
+  };
+
+  // Reuse the standard proposal generator, but add DAFO context by appending it into the history as a synthetic item.
+  const dafoText = JSON.stringify({
+    summary: dafo.summary,
+    strengths: dafo.strengths,
+    weaknesses: dafo.weaknesses,
+    opportunities: dafo.opportunities,
+    threats: dafo.threats,
+    automationIdeas: dafo.automationIdeas,
+  });
+  diagnosis.consultationHistory = [
+    ...diagnosis.consultationHistory,
+    { question: lang === 'ca' ? 'DAFO agregat del centre (intern)' : 'DAFO agregado del centro (interno)', answer: [dafoText] },
+  ];
+
+  return generateEducationalProposal(diagnosis, lang);
 }
 
 export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca'): Chat {

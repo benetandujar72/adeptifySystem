@@ -5,6 +5,8 @@ import { supabase } from './supabaseClient';
 const LOCAL_STORAGE_KEY = 'adeptify_fallback_consultations';
 const LOCAL_CHAT_KEY = 'adeptify_fallback_chats';
 
+const normalizeCenterKey = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' ');
+
 /**
  * CONSULTATION SERVICE - HÍBRID (Supabase Cloud + LocalStorage Redundancy)
  */
@@ -35,7 +37,9 @@ export const consultationService = {
           {
             id: consultationId,
             center_name: diagnosis.centerName,
+            center_key: normalizeCenterKey(diagnosis.centerName || ''),
             contact_email: diagnosis.contactEmail,
+            contact_name: diagnosis.contactName ?? null,
             product_type: diagnosis.selectedProduct,
             audit_history: diagnosis.consultationHistory,
             proposal_data: normalizedProposal
@@ -75,6 +79,7 @@ export const consultationService = {
           return data.map(dbItem => ({
             id: dbItem.id,
             centerName: dbItem.center_name,
+            contactName: dbItem.contact_name ?? undefined,
             contactEmail: dbItem.contact_email,
             selectedProduct: dbItem.product_type,
             consultationHistory: Array.isArray(dbItem.audit_history)

@@ -1,6 +1,7 @@
 
 export enum Phase {
   LANDING = 'LANDING',
+  REGISTER = 'REGISTER',
   DIAGNOSIS = 'DIAGNOSIS',
   DYNAMIC_DIAGNOSIS = 'DYNAMIC_DIAGNOSIS',
   PROPOSAL = 'PROPOSAL',
@@ -42,6 +43,7 @@ export interface DiagnosisState {
   selectedProduct?: ProductType;
   centerName: string;
   contactEmail: string;
+  contactName?: string;
   consultationHistory: { question: string; answer: string[] }[];
   category?: string;
 }
