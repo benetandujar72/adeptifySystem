@@ -99,23 +99,37 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
           <section>
             <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-10">{t.proposalRecapTitle}</h4>
             {(data?.consultationRecap || []).length > 0 ? (
-              <div className="space-y-6">
-                {data.consultationRecap!.map((row, idx) => (
-                  <div key={idx} className="bg-white border border-slate-100 rounded-xl p-8">
-                    <p className="text-xs font-bold text-slate-900 mb-3">{row.question}</p>
-                    <div className="space-y-2">
-                      {(row.answers || []).length > 0 ? (
-                        <ul className="text-xs text-slate-600 list-disc pl-5 space-y-1">
-                          {row.answers.map((a, j) => (
-                            <li key={j}>{a}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">—</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="border border-slate-100 rounded-xl overflow-hidden">
+                <table className="w-full table-fixed">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th scope="col" className="w-1/2 px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        {language === 'ca' ? 'Pregunta' : 'Pregunta'}
+                      </th>
+                      <th scope="col" className="w-1/2 px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        {language === 'ca' ? 'Respostes' : 'Respuestas'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.consultationRecap!.map((row, idx) => {
+                      const answers = Array.isArray(row.answers)
+                        ? row.answers.map(a => String(a || '').trim()).filter(Boolean)
+                        : [];
+
+                      return (
+                        <tr key={idx} className="border-b border-slate-100 last:border-b-0">
+                          <td className="align-top px-6 py-4 text-xs font-bold text-slate-900 break-words">
+                            {row.question}
+                          </td>
+                          <td className="align-top px-6 py-4 text-xs text-slate-600 break-words">
+                            {answers.length > 0 ? answers.join(' · ') : <span className="text-slate-400 italic">—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="bg-white border border-slate-100 rounded-xl p-8 text-center text-slate-400 italic text-sm">
