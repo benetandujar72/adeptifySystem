@@ -37,10 +37,10 @@ steps:
         set -euo pipefail
         mkdir -p /workspace/db_backups
         BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
-        echo "Creating Supabase backup: ${BACKUP_FILE}"
+        echo "Creating Supabase backup: $BACKUP_FILE"
         # Do NOT echo the URL (contains credentials).
-        pg_dump "$$SUPABASE_DB_URL" --format=custom | gzip -c > "${BACKUP_FILE}"
-        echo "Backup created (bytes): $(wc -c < "${BACKUP_FILE}")"
+        pg_dump "$$SUPABASE_DB_URL" --format=custom | gzip -c > "$BACKUP_FILE"
+        echo "Backup created (bytes): $(wc -c < "$BACKUP_FILE")"
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
@@ -49,9 +49,9 @@ steps:
       - |
         set -euo pipefail
         BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
-        DEST="gs://${_BACKUP_BUCKET}/${_SERVICE}/${BUILD_ID}/$(basename "${BACKUP_FILE}")"
-        echo "Uploading backup to ${DEST}"
-        gsutil -q cp "${BACKUP_FILE}" "${DEST}"
+        DEST="gs://${_BACKUP_BUCKET}/${_SERVICE}/${BUILD_ID}/$(basename "$BACKUP_FILE")"
+        echo "Uploading backup to $DEST"
+        gsutil -q cp "$BACKUP_FILE" "$DEST"
         echo "Backup uploaded."
 
   # 0.5) Apply Supabase DB schema (non-interactive, idempotent)
