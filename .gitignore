@@ -16,6 +16,7 @@ dist-ssr
 
 # Local data imports / assets not meant for git
 totcat-centres-educatius.csv
+centres.md
 LOGO_*.png
 
 
