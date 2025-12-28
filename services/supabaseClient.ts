@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { getRuntimeEnvString } from './runtimeEnv';
 
 /**
  * CONFIGURACIÓN DE NODO CLOUD - ADEPTIFY SYSTEMS
@@ -9,13 +10,13 @@ import { createClient } from '@supabase/supabase-js';
  */
 
 const supabaseUrl =
+  getRuntimeEnvString('SUPABASE_URL') ||
   import.meta.env.VITE_SUPABASE_URL ||
-  (process.env as any).SUPABASE_URL ||
   'https://cqqifwjzljxtiphdcyyi.supabase.co';
 
 const supabaseAnonKey =
+  getRuntimeEnvString('SUPABASE_ANON_KEY') ||
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  (process.env as any).SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxcWlmd2p6bGp4dGlwaGRjeXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0NTYxMjUsImV4cCI6MjA4MjAzMjEyNX0.3IXdHciSW0haFqzk2amaxCdb3RnmBlxg32lnhiINfBQ';
 
 let supabaseInstance = null;

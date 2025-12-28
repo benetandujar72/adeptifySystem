@@ -2,10 +2,14 @@
 import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ProposalData, DiagnosisState, Task, ProductType } from "../types";
 import { Language } from "../translations";
+import { getRuntimeEnvString } from "./runtimeEnv";
 
 type EnvLike = Record<string, unknown> | undefined;
 
 const getApiKey = (): string | undefined => {
+  const fromRuntime = getRuntimeEnvString('GEMINI_API_KEY');
+  if (typeof fromRuntime === 'string' && fromRuntime.trim()) return fromRuntime.trim();
+
   // IMPORTANT: Vite injects custom env vars only when accessed via
   // `import.meta.env.VITE_*` (static property access). Avoid computed access.
   const fromVite = import.meta.env.VITE_GEMINI_API_KEY;

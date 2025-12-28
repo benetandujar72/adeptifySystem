@@ -11,6 +11,7 @@ substitutions:
 
 steps:
   # 0) Create .env.production from Secret Manager for Vite build (bundle-time)
+  # Note: This avoids passing secrets via Dockerfile ARG/ENV.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     secretEnv: ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
@@ -80,15 +81,10 @@ steps:
   # 1) Build image
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
-    secretEnv: ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
     args:
       - '-c'
       - |
         docker build \
-          --build-arg VITE_GEMINI_API_KEY="$$GEMINI_API_KEY" \
-          --build-arg VITE_SUPABASE_URL="$$SUPABASE_URL" \
-          --build-arg VITE_SUPABASE_ANON_KEY="$$SUPABASE_ANON_KEY" \
-          --build-arg VITE_SB_PUBLISHABLE_KEY="$$SB_PUBLISHABLE_KEY" \
           -t "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:$BUILD_ID" \
           -t "${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_SERVICE}:latest" \
           .
