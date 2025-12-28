@@ -19,6 +19,17 @@ function normalizeSearchText(input: string): string {
     .trim();
 }
 
+function sanitizePostgrestOrToken(input: string): string {
+  // `.or()` uses a comma-separated syntax; remove characters that can break parsing.
+  // Keep unicode letters (including accents), numbers, and whitespace.
+  return (input || '')
+    .trim()
+    .replace(/[%]/g, ' ')
+    .replace(/[(),]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export async function searchCatEducationCenters(query: string, limit = 12): Promise<CatEducationCenter[]> {
   const qRaw = (query || '').trim();
   if (!supabase) return [];
@@ -28,14 +39,17 @@ export async function searchCatEducationCenters(query: string, limit = 12): Prom
   // so avoid `%` and unsafe punctuation. Use `*` wildcards and a normalized fallback
   // so searches work with/without accents (e.g., "banús" vs "banus").
   const qNorm = normalizeSearchText(qRaw);
-
-  const patterns = Array.from(new Set([qRaw, qNorm].filter((p) => p && p.length >= 2)));
+  const patterns = Array.from(
+    new Set([
+      sanitizePostgrestOrToken(qRaw),
+      sanitizePostgrestOrToken(qNorm),
+    ].filter((p) => p && p.length >= 2))
+  );
 
   const orParts: string[] = [];
   for (const p of patterns) {
-    const safe = normalizeSearchText(p) || p;
     // PostgREST uses `*` as wildcard for LIKE/ILIKE.
-    const like = `*${safe}*`;
+    const like = `*${p}*`;
     orParts.push(
       `denominacio_completa.ilike.${like}`,
       `nom_municipi.ilike.${like}`,
