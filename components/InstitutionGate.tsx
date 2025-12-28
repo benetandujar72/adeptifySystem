@@ -111,7 +111,7 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
               autoComplete="off"
             />
 
-            {open && (loading || options.length > 0) && (
+            {open && (loading || options.length > 0 || canUseTyped) && (
               <div className="absolute z-20 mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
                 {loading && (
                   <div className="px-5 py-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
