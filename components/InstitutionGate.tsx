@@ -3,7 +3,7 @@ import { useLanguage } from '../LanguageContext';
 import { CatEducationCenter, searchCatEducationCenters } from '../services/educationCentersService';
 
 type Props = {
-  onSelected: (sel: { tenantSlug: string; centerName: string; needsRegistration?: boolean }) => void;
+  onSelected: (sel: { tenantSlug: string; centerName: string; needsRegistration?: boolean; freeAccess?: boolean }) => void;
 };
 
 function slugifyTenant(input: string): string {
@@ -22,26 +22,21 @@ function slugifyTenant(input: string): string {
 }
 
 const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
 
   const labels = useMemo(() => {
     return {
-      title: language === 'ca' ? 'Selecciona el teu institut' : 'Selecciona tu instituto',
-      subtitle: language === 'ca'
-        ? "Per iniciar sessió, indica a quin centre pertany aquesta sessió."
-        : 'Para iniciar sesión, indica a qué centro pertenece esta sesión.',
-      field: language === 'ca' ? 'Institut / centre educatiu' : 'Instituto / centro educativo',
-      placeholder: language === 'ca' ? "Escriu el nom (mín. 2 caràcters)" : 'Escribe el nombre (mín. 2 caracteres)',
-      loading: language === 'ca' ? 'Carregant...' : 'Cargando...',
-      hint: language === 'ca'
-        ? 'Comença a escriure i selecciona un centre de la llista.'
-        : 'Empieza a escribir y selecciona un centro de la lista.',
-      notFound: language === 'ca'
-        ? "No surt a la llista? Pots continuar amb el nom escrit."
-        : '¿No aparece en la lista? Puedes continuar con el nombre escrito.',
-      useTyped: language === 'ca' ? 'Continuar amb aquest nom →' : 'Continuar con este nombre →',
+      title: t.institutionGateTitle,
+      subtitle: t.institutionGateSubtitle,
+      field: t.institutionGateField,
+      placeholder: t.institutionGatePlaceholder,
+      loading: t.institutionGateLoading,
+      hint: t.institutionGateHint,
+      notFound: t.institutionGateNotFound,
+      useTyped: t.institutionGateUseTyped,
+      freeCta: t.institutionGateFreeCta,
     };
-  }, [language]);
+  }, [t]);
 
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<CatEducationCenter[]>([]);
@@ -77,10 +72,14 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
   }, [query]);
 
   const canUseTyped = query.trim().length >= 2;
+  const makeFreeTenantSlug = () => {
+    const suffix = Math.random().toString(36).slice(2, 8);
+    return `free-${suffix}`;
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] fade-up px-4">
-      <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-2xl space-y-8 relative overflow-hidden">
+      <div className="bg-white p-12 rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-2xl space-y-8 relative overflow-visible">
         <div className="absolute top-0 left-0 w-full h-1.5 bg-indigo-600" />
 
         <div className="text-center space-y-2">
@@ -112,7 +111,7 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
             />
 
             {open && (loading || options.length > 0 || canUseTyped) && (
-              <div className="absolute z-20 mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
+              <div className="absolute z-20 mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden max-h-[50vh] overflow-y-auto">
                 {loading && (
                   <div className="px-5 py-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                     {labels.loading}
@@ -159,6 +158,18 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
           </div>
 
           <p className="text-[10px] text-slate-400 font-bold italic ml-4">{labels.hint}</p>
+
+          <div className="mt-4">
+            <button
+              type="button"
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-slate-900 transition-all"
+              onClick={() => {
+                onSelected({ tenantSlug: makeFreeTenantSlug(), centerName: '', needsRegistration: true, freeAccess: true });
+              }}
+            >
+              {labels.freeCta}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -82,9 +82,9 @@ function formatHistoryForPrompt(
   history: { question: string; answer: string[] }[],
   lang: Language
 ): string {
-  const qLabel = lang === 'ca' ? 'Pregunta' : 'Pregunta';
-  const aLabel = lang === 'ca' ? 'Respostes' : 'Respuestas';
-  const noneLabel = lang === 'ca' ? '(sense resposta)' : '(sin respuesta)';
+  const qLabel = lang === 'eu' ? 'Galdera' : 'Pregunta';
+  const aLabel = lang === 'ca' ? 'Respostes' : lang === 'eu' ? 'Erantzunak' : 'Respuestas';
+  const noneLabel = lang === 'ca' ? '(sense resposta)' : lang === 'eu' ? '(erantzunik gabe)' : '(sin respuesta)';
 
   return (history || [])
     .map(h => {
@@ -128,15 +128,17 @@ export async function getNextConsultantQuestion(
     return {
       question: lang === 'ca'
         ? "Falta configuració del sistema. Pots tornar-ho a provar més tard?"
-        : "Falta configuración del sistema. ¿Puedes volver a intentarlo más tarde?",
-      options: [lang === 'ca' ? 'Reintentar' : 'Reintentar'],
+        : lang === 'eu'
+          ? "Sistema ez dago konfiguratuta. Geroago berriro saiatu nahi duzu?"
+          : "Falta configuración del sistema. ¿Puedes volver a intentarlo más tarde?",
+      options: [lang === 'eu' ? 'Berriro saiatu' : 'Reintentar'],
       isMultiSelect: false,
       isComplete: false,
       confidence: 0,
     };
   }
   const historyStr = formatHistoryForPrompt(history, lang);
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const audience = detectAudience(diagnosis, history);
   
   const prompt = lang === 'ca'
@@ -224,14 +226,14 @@ Responde en este formato JSON (y solo JSON):
 }`);
 
   try {
-      const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
-        contents: prompt,
-        config: { responseMimeType: "application/json", temperature: 0.4 },
-      });
+    const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+      contents: prompt,
+      config: { responseMimeType: "application/json", temperature: 0.4 },
+    });
     
     const data = JSON.parse(response.text || '{}');
     return {
-      question: data.question || (lang === 'ca' ? "Com podem ajudar?" : "¿Cómo podemos ayudar?"),
+      question: data.question || (lang === 'ca' ? "Com podem ajudar?" : lang === 'eu' ? "Nola lagun dezakegu?" : "¿Cómo podemos ayudar?"),
       options: Array.isArray(data.options) ? data.options : ["Continuar", "Altres..."],
       isMultiSelect: !!data.isMultiSelect,
       isComplete: !!data.isComplete,
@@ -241,8 +243,12 @@ Responde en este formato JSON (y solo JSON):
   } catch (e) {
       console.error('Gemini error (getNextConsultantQuestion):', e);
     return {
-      question: lang === 'ca' ? "Hi ha un petit problema. Continuem?" : "Hay un pequeño problema. ¿Continuamos?",
-      options: ["Reintentar"],
+      question: lang === 'ca'
+        ? "Hi ha un petit problema. Continuem?"
+        : lang === 'eu'
+          ? "Ara ara arazo txiki bat dago. Jarraitu?"
+          : "Hay un pequeño problema. ¿Continuamos?",
+      options: [lang === 'eu' ? 'Berriro saiatu' : "Reintentar"],
       isMultiSelect: false,
       isComplete: false,
       confidence: 0
@@ -255,10 +261,12 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
   if (!ai) {
     throw new Error(lang === 'ca'
       ? 'Falta configuració del sistema (API).'
-      : 'Falta configuración del sistema (API).');
+      : lang === 'eu'
+        ? 'Sistema ez dago konfiguratuta (API).'
+        : 'Falta configuración del sistema (API).');
   }
   const historyStr = formatHistoryForPrompt(diagnosis.consultationHistory || [], lang);
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   
   const prompt = lang === 'ca'
     ? `ETS UN CONSULTOR ESTRATÈGIC SÈNIOR PER A CENTRES EDUCATIUS.
@@ -610,7 +618,7 @@ export async function generateCenterDAFO(centerName: string, histories: Array<{ 
       : 'Falta configuración del sistema (API).');
   }
 
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const compact = compactCenterHistoryForPrompt(histories, lang);
   const prompt = lang === 'ca'
     ? `ETS UN CONSULTOR SÈNIOR D'INNOVACIÓ EDUCATIVA.
@@ -727,7 +735,7 @@ export async function generateCenterReport(centerName: string, histories: Array<
       : 'Falta configuración del sistema (API).');
   }
 
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const compact = compactCenterHistoryWithCountsForPrompt(histories, lang);
   const prompt = lang === 'ca'
     ? `ETS UN CONSULTOR SÈNIOR D'EFICIÈNCIA I TRANSFORMACIÓ DIGITAL PER A CENTRES EDUCATIUS.
@@ -850,11 +858,13 @@ export function createAdeptifyChat(clientContext: string = '', lang: Language = 
       sendMessage: async () => ({
         text: lang === 'ca'
           ? 'El xat no està configurat (API).'
-          : 'El chat no está configurado (API).',
+          : lang === 'eu'
+            ? 'Txata ez dago konfiguratuta (API).'
+            : 'El chat no está configurado (API).',
       }),
     } as unknown as Chat;
   }
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   for (const model of MODEL_FALLBACK_ORDER) {
     try {
       return ai.chats.create({
@@ -871,7 +881,9 @@ export function createAdeptifyChat(clientContext: string = '', lang: Language = 
     sendMessage: async () => ({
       text: lang === 'ca'
         ? 'El xat no està configurat (API).'
-        : 'El chat no está configurado (API).',
+        : lang === 'eu'
+          ? 'Txata ez dago konfiguratuta (API).'
+          : 'El chat no está configurado (API).',
     }),
   } as unknown as Chat;
 }
@@ -881,9 +893,11 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
   if (!ai) {
     return lang === 'ca'
       ? 'Falta configuració del sistema (API).'
-      : 'Falta configuración del sistema (API).';
+      : lang === 'eu'
+        ? 'Sistema ez dago konfiguratuta (API).'
+        : 'Falta configuración del sistema (API).';
   }
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const { response } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
     contents: `Ajuda'm a redactar un esborrany de ${type} escolar en ${langName}. Que soni oficial però fàcil de llegir. Context: ${context}. Dades: ${indicators}.`,
   });
@@ -894,11 +908,11 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
 export async function analyzeTasksIntelligence(tasks: Task[], lang: Language = 'ca'): Promise<string> {
   const ai = getAi();
   if (!ai) {
-    return lang === 'ca' ? 'Sistema no configurat.' : 'Sistema no configurado.';
+    return lang === 'ca' ? 'Sistema no configurat.' : lang === 'eu' ? 'Sistema ez dago konfiguratuta.' : 'Sistema no configurado.';
   }
   const tasksStr = tasks.map(t => `- [${t.status}] ${t.title} (Responsable: ${t.assignee}, Plazo: ${t.deadline})`).join('\n');
 
-  const langName = lang === 'ca' ? 'CATALÀ' : 'CASTELLÀ';
+  const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const prompt = `ACTUA COM UN CONSULTOR D'EFICIÈNCIA ESCOLAR.
 Analitza la següent llista de tasques i dona un consell breu (màxim 20 paraules) per millorar la productivitat del claustre.
 Sigues directe i pràctic.

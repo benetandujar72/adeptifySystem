@@ -28,9 +28,9 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       .filter(Boolean);
   };
 
-  const getOtherLabel = () => (language === 'ca' ? 'Altres…' : 'Otros…');
+  const getOtherLabel = () => (language === 'ca' ? 'Altres…' : language === 'eu' ? 'Besteak…' : 'Otros…');
 
-  const isOtherOption = (option: string) => /(^|\b)(altres|otros)(\b|\.|…|\.)/i.test(option);
+  const isOtherOption = (option: string) => /(^|\b)(altres|otros|besteak)(\b|\.|…|\.)/i.test(option);
 
   const ensureOtherOption = (options?: string[]) => {
     const base = Array.isArray(options) ? options.filter(Boolean) : [];
@@ -40,8 +40,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
 
   type WizardStep = {
     id: string;
-    question: { ca: string; es: string };
-    options: { ca: string; es: string }[];
+    question: { ca: string; es: string; eu: string };
+    options: { ca: string; es: string; eu: string }[];
     isMultiSelect: boolean;
     next: (answers: string[]) => string | null;
     applyToDiagnosis?: (answers: string[]) => Partial<DiagnosisState>;
@@ -53,23 +53,24 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: "Abans de començar: qui demana ajuda avui?",
         es: "Antes de empezar: ¿quién solicita ayuda hoy?",
+        eu: "Hasi aurretik: nork eskatzen du laguntza gaur?",
       },
       options: [
-        { ca: 'Centre educatiu', es: 'Centro educativo' },
-        { ca: 'Família', es: 'Familia' },
-        { ca: 'Altres…', es: 'Otros…' },
+        { ca: 'Centre educatiu', es: 'Centro educativo', eu: 'Ikastetxea' },
+        { ca: 'Família', es: 'Familia', eu: 'Familia' },
+        { ca: 'Altres…', es: 'Otros…', eu: 'Besteak…' },
       ],
       isMultiSelect: false,
       next: (answers) => {
         const a = answers.join(' ').toLowerCase();
         if (a.includes('fam')) return 'goal_family';
-        if (a.includes('centre') || a.includes('coleg') || a.includes('instit')) return 'goal_school';
+        if (a.includes('centre') || a.includes('coleg') || a.includes('instit') || a.includes('ikast') || a.includes('eskola')) return 'goal_school';
         return 'goal_generic';
       },
       applyToDiagnosis: (answers) => {
         const a = answers.join(' ').toLowerCase();
         if (a.includes('fam')) return { category: 'FAMILIA' };
-        if (a.includes('centre') || a.includes('coleg') || a.includes('instit')) return { category: 'CENTRO' };
+        if (a.includes('centre') || a.includes('coleg') || a.includes('instit') || a.includes('ikast') || a.includes('eskola')) return { category: 'CENTRO' };
         return { category: 'OTRO' };
       },
     };
@@ -84,13 +85,14 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: "Què us agradaria millorar primer? (Pots marcar més d'una opció)",
         es: "¿Qué te gustaría mejorar primero? (Puedes marcar más de una opción)",
+        eu: "Zer hobetu nahi zenuke lehenengo? (Aukera bat baino gehiago marka dezakezu)",
       },
       options: [
-        { ca: 'Reduir paperassa i burocràcia', es: 'Reducir papeleo y burocracia' },
-        { ca: 'Comunicació amb famílies', es: 'Comunicación con familias' },
-        { ca: "Seguiment de l'alumnat", es: 'Seguimiento del alumnado' },
-        { ca: 'Organitzar reunions i tasques', es: 'Organizar reuniones y tareas' },
-        { ca: 'Altres…', es: 'Otros…' },
+        { ca: 'Reduir paperassa i burocràcia', es: 'Reducir papeleo y burocracia', eu: 'Paper-lana eta burokrazia murriztea' },
+        { ca: 'Comunicació amb famílies', es: 'Comunicación con familias', eu: 'Familiekin komunikazioa' },
+        { ca: "Seguiment de l'alumnat", es: 'Seguimiento del alumnado', eu: 'Ikasleen jarraipena' },
+        { ca: 'Organitzar reunions i tasques', es: 'Organizar reuniones y tareas', eu: 'Bilerak eta zereginak antolatzea' },
+        { ca: 'Altres…', es: 'Otros…', eu: 'Besteak…' },
       ],
       ...goalCommon,
     };
@@ -100,13 +102,14 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: "Quina és la necessitat principal a casa? (Pots marcar més d'una opció)",
         es: "¿Cuál es la necesidad principal en casa? (Puedes marcar más de una opción)",
+        eu: "Zein da etxean dagoen behar nagusia? (Aukera bat baino gehiago marka dezakezu)",
       },
       options: [
-        { ca: 'Organització i rutines', es: 'Organización y rutinas' },
-        { ca: 'Comunicació familiar', es: 'Comunicación familiar' },
-        { ca: "Acompanyament a l'estudi", es: 'Acompañamiento en el estudio' },
-        { ca: 'Gestió emocional i convivència', es: 'Gestión emocional y convivencia' },
-        { ca: 'Altres…', es: 'Otros…' },
+        { ca: 'Organització i rutines', es: 'Organización y rutinas', eu: 'Antolaketa eta errutinak' },
+        { ca: 'Comunicació familiar', es: 'Comunicación familiar', eu: 'Familia-komunikazioa' },
+        { ca: "Acompanyament a l'estudi", es: 'Acompañamiento en el estudio', eu: 'Ikasketetan laguntza' },
+        { ca: 'Gestió emocional i convivència', es: 'Gestión emocional y convivencia', eu: 'Emozioen kudeaketa eta elkarbizitza' },
+        { ca: 'Altres…', es: 'Otros…', eu: 'Besteak…' },
       ],
       ...goalCommon,
     };
@@ -116,12 +119,13 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: "Quin objectiu voleu assolir? (Pots marcar més d'una opció)",
         es: "¿Qué objetivo queréis conseguir? (Puedes marcar más de una opción)",
+        eu: "Zein helburu lortu nahi duzue? (Aukera bat baino gehiago marka dezakezu)",
       },
       options: [
-        { ca: 'Estalviar temps', es: 'Ahorrar tiempo' },
-        { ca: 'Millorar organització', es: 'Mejorar organización' },
-        { ca: 'Millorar comunicació', es: 'Mejorar comunicación' },
-        { ca: 'Altres…', es: 'Otros…' },
+        { ca: 'Estalviar temps', es: 'Ahorrar tiempo', eu: 'Denbora aurreztea' },
+        { ca: 'Millorar organització', es: 'Mejorar organización', eu: 'Antolaketa hobetzea' },
+        { ca: 'Millorar comunicació', es: 'Mejorar comunicación', eu: 'Komunikazioa hobetzea' },
+        { ca: 'Altres…', es: 'Otros…', eu: 'Besteak…' },
       ],
       ...goalCommon,
     };
@@ -131,12 +135,13 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: 'Quina urgència té?',
         es: '¿Qué urgencia tiene?',
+        eu: 'Zer urgentzia dauka?',
       },
       options: [
-        { ca: 'Aquesta setmana', es: 'Esta semana' },
-        { ca: 'Aquest mes', es: 'Este mes' },
-        { ca: 'Aquest trimestre', es: 'Este trimestre' },
-        { ca: 'Sense urgència', es: 'Sin urgencia' },
+        { ca: 'Aquesta setmana', es: 'Esta semana', eu: 'Aste honetan' },
+        { ca: 'Aquest mes', es: 'Este mes', eu: 'Hilabete honetan' },
+        { ca: 'Aquest trimestre', es: 'Este trimestre', eu: 'Hiruhileko honetan' },
+        { ca: 'Sense urgència', es: 'Sin urgencia', eu: 'Premiarik gabe' },
       ],
       isMultiSelect: false,
       next: () => 'constraints',
@@ -147,13 +152,14 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       question: {
         ca: "Hi ha alguna limitació important? (Pots marcar més d'una opció)",
         es: "¿Hay alguna limitación importante? (Puedes marcar más de una opción)",
+        eu: "Badago muga garrantzitsuren bat? (Aukera bat baino gehiago marka dezakezu)",
       },
       options: [
-        { ca: 'Poc temps', es: 'Poco tiempo' },
-        { ca: 'Pressupost ajustat', es: 'Presupuesto ajustado' },
-        { ca: 'Resistència al canvi', es: 'Resistencia al cambio' },
-        { ca: 'Privacitat i dades sensibles', es: 'Privacidad y datos sensibles' },
-        { ca: 'Altres…', es: 'Otros…' },
+        { ca: 'Poc temps', es: 'Poco tiempo', eu: 'Denbora gutxi' },
+        { ca: 'Pressupost ajustat', es: 'Presupuesto ajustado', eu: 'Aurrekontu estua' },
+        { ca: 'Resistència al canvi', es: 'Resistencia al cambio', eu: 'Aldaketarekiko erresistentzia' },
+        { ca: 'Privacitat i dades sensibles', es: 'Privacidad y datos sensibles', eu: 'Pribatutasuna eta datu sentikorrak' },
+        { ca: 'Altres…', es: 'Otros…', eu: 'Besteak…' },
       ],
       isMultiSelect: true,
       next: () => null,
@@ -168,8 +174,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
   };
 
   const pushWizardQuestion = (step: WizardStep) => {
-    const q = language === 'ca' ? step.question.ca : step.question.es;
-    const opts = step.options.map(o => (language === 'ca' ? o.ca : o.es));
+    const q = language === 'ca' ? step.question.ca : language === 'eu' ? step.question.eu : step.question.es;
+    const opts = step.options.map(o => (language === 'ca' ? o.ca : language === 'eu' ? o.eu : o.es));
     setCurrentQuestion({
       question: q,
       options: opts,

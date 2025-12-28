@@ -14,9 +14,17 @@ interface RegisterProps {
 }
 
 const LOCAL_REG_KEY = 'adeptify_registration';
+const SESSION_FREE_ACCESS_KEY = 'adeptify_free_access';
 
 const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
   const { t, language } = useLanguage();
+  const isFreeAccess = (() => {
+    try {
+      return sessionStorage.getItem(SESSION_FREE_ACCESS_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  })();
   const [contactName, setContactName] = useState(initial?.contactName ?? '');
   const [contactEmail, setContactEmail] = useState(initial?.contactEmail ?? '');
   const [centerName, setCenterName] = useState(initial?.centerName ?? '');
@@ -94,8 +102,12 @@ const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 1.657-1.79 3-4 3S4 12.657 4 11s1.79-3 4-3 4 1.343 4 3zm0 0c0 1.657 1.79 3 4 3s4-1.343 4-3-1.79-3-4-3-4 1.343-4 3zM4 20v-1a4 4 0 014-4h0m8 5v-1a4 4 0 00-4-4h0" />
             </svg>
           </div>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">{t.registerTitle}</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">{t.registerSubtitle}</p>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+            {isFreeAccess ? t.registerTitlePersonalized : t.registerTitle}
+          </h2>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+            {isFreeAccess ? t.registerSubtitlePersonalized : t.registerSubtitle}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -153,7 +165,7 @@ const Register: React.FC<RegisterProps> = ({ initial, onRegistered }) => {
                 <div className="absolute z-20 mt-2 w-full bg-white rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
                   {centerLoading && (
                     <div className="px-5 py-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                      {language === 'ca' ? 'Carregant...' : 'Cargando...'}
+                      {language === 'ca' ? 'Carregant...' : language === 'eu' ? 'Kargatzen...' : 'Cargando...'}
                     </div>
                   )}
 

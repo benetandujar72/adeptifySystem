@@ -1,8 +1,7 @@
 
-export type Language = 'ca' | 'es';
+export type Language = 'ca' | 'es' | 'eu';
 
-export const translations = {
-  ca: {
+const ca = {
     appTitle: "Adeptify Systems",
     navDocs: "Generador de Docs",
     navAdmin: "Accés Administració",
@@ -117,6 +116,8 @@ export const translations = {
     registerCenterPlaceholder: "Nom del centre",
     registerContinue: "Continuar →",
     registerFreeNote: "Gratuït • Sense targeta",
+    registerTitlePersonalized: "Registre personalitzat",
+    registerSubtitlePersonalized: "Accés gratuït sense centre del catàleg",
 
     // Chat
     chatTitle: "AL TEU ASSISTENT ADEPTIFY",
@@ -290,9 +291,21 @@ export const translations = {
     // Chat a11y
     chatOpen: "Obrir chat",
     chatClose: "Tancar chat",
-    chatSend: "Enviar missatge"
-  },
-  es: {
+    chatSend: "Enviar missatge",
+
+    // Institution Gate
+    institutionGateTitle: "Selecciona el teu centre",
+    institutionGateSubtitle: "Cerca pel nom i continua",
+    institutionGateField: "Centre educatiu",
+    institutionGatePlaceholder: "Escriu el nom del centre...",
+    institutionGateLoading: "Cercant...",
+    institutionGateHint: "Si no el trobes, pots continuar amb el nom escrit.",
+    institutionGateNotFound: "No trobat.",
+    institutionGateUseTyped: "Continuar amb aquest nom →",
+    institutionGateFreeCta: "Accés gratuït (sense centre)"
+};
+
+const es = {
     appTitle: "Adeptify Systems",
     navDocs: "Generador de Docs",
     navAdmin: "Acceso Administración",
@@ -407,6 +420,8 @@ export const translations = {
     registerCenterPlaceholder: "Nombre del centro",
     registerContinue: "Continuar →",
     registerFreeNote: "Gratis • Sin tarjeta",
+    registerTitlePersonalized: "Registro personalizado",
+    registerSubtitlePersonalized: "Acceso gratuito sin centro del catálogo",
 
     // Chat
     chatTitle: "A TU ASISTENTE ADEPTIFY",
@@ -580,6 +595,78 @@ export const translations = {
     // Chat a11y
     chatOpen: "Abrir chat",
     chatClose: "Cerrar chat",
-    chatSend: "Enviar mensaje"
-  }
+    chatSend: "Enviar mensaje",
+
+    // Institution Gate
+    institutionGateTitle: "Selecciona tu centro",
+    institutionGateSubtitle: "Busca por nombre y continúa",
+    institutionGateField: "Centro educativo",
+    institutionGatePlaceholder: "Escribe el nombre del centro...",
+    institutionGateLoading: "Buscando...",
+    institutionGateHint: "Si no lo encuentras, puedes continuar con el nombre escrito.",
+    institutionGateNotFound: "No encontrado.",
+    institutionGateUseTyped: "Continuar con este nombre →",
+    institutionGateFreeCta: "Acceso gratuito (sin centro)"
 };
+
+const eu: typeof ca = {
+  ...es,
+
+  // Institution Gate
+  institutionGateTitle: "Aukeratu zure ikastetxea",
+  institutionGateSubtitle: "Bilatu izenaren arabera eta jarraitu",
+  institutionGateField: "Ikastetxea",
+  institutionGatePlaceholder: "Idatzi ikastetxearen izena...",
+  institutionGateLoading: "Bilatzen...",
+  institutionGateHint: "Ez baduzu aurkitzen, idatzitako izenarekin jarrai dezakezu.",
+  institutionGateNotFound: "Ez da aurkitu.",
+  institutionGateUseTyped: "Jarraitu izen honekin →",
+  institutionGateFreeCta: "Doako sarbidea (ikastetxerik gabe)",
+
+  // Selection Screen
+  heroTitle: "Irakatsi pasioz.",
+  heroSubtitle: "Gu arduratzen gara paper-lanaz.",
+  heroDesc: "Aukeratu zure taldea gehien itotzen duen arloa, eta hasi gaur bertan denbora berreskuratzen.",
+  btnStart: "Hasi orain",
+
+  // Processing
+  processingTitle: "Zure lasaitasuna marrazten...",
+  processingDesc: "Zure beharrak aztertzen ari gara merezi duzun denbora itzultzeko.",
+
+  // Consultant
+  consultantTitle: "Eraginkortasun plana",
+  consultantSubtitle: "Adeptify Consulting",
+  consultantPreparing: "Hurrengo urratsa prestatzen...",
+  consultantTellMore: "Kontatu gehiago...",
+  consultantContinue: "Jarraitu →",
+  modelLabel: "Modeloa",
+
+  // Registration
+  registerTitle: "Doako erregistroa",
+  registerSubtitle: "Ikastetxeentzako sarbidea",
+  registerTitlePersonalized: "Erregistro pertsonalizatua",
+  registerSubtitlePersonalized: "Doako sarbidea, katalogoko ikastetxerik gabe",
+  registerName: "Izen-abizenak",
+  registerEmail: "Helbide elektronikoa",
+  registerCenter: "Ikastetxea",
+  registerNamePlaceholder: "Arduradunaren izena",
+  registerEmailPlaceholder: "posta@ikastetxea.eus",
+  registerCenterPlaceholder: "Ikastetxearen izena",
+  registerContinue: "Jarraitu →",
+  registerFreeNote: "Doan • Txartelik gabe",
+
+  // Chat
+  chatTitle: "ZURE ADEPTIFY LAGUNTZAILEA",
+  chatSubtitle: "Beti zure ondoan",
+  chatPlaceholder: "Idatzi hemen behar duzuna...",
+  chatThinking: "Zuri laguntzeko pentsatzen...",
+  chatWelcome: "Egun on. Ulertzen dut zuzendari gisa zure egunerokoa etengabeko puzzle bat dela: irakasle taldea kudeatzea, familien eskaerak, administrazio-burokrazia eta, batez ere, ikasleen ongizatea.\n\nBadakit presioa nekagarria izan daitekeela eta askotan denbora falta dela benetan garrantzitsua denarentzat: **proiektu pedagogikoa**.\n\nNi naiz **Adeptify**-ren zure laguntzaile pertsonala, eta karga hori arintzeko nago hemen. Pentsa nazazu zure eskuineko beso digital gisa. Lagun zaitzaket: \n\n* Oharrak, zirkularrak edo komunikatuak idazten.\n* Klaustrorako ideiak antolatzen.\n* Araudi ofizialak aztertzen.\n* IA modu etikoan ezartzeko moduak bilatzen.\n\nZertan lagun diezazuket gaur, zure eguna pixka bat errazagoa izan dadin?",
+  chatErrorConnection: "Konexio-errorea.",
+
+  // Chat a11y
+  chatOpen: "Txata ireki",
+  chatClose: "Txata itxi",
+  chatSend: "Mezua bidali"
+};
+
+export const translations = { ca, es, eu };

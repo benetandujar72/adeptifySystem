@@ -104,10 +104,10 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                   <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
                       <th scope="col" className="w-1/2 px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        {language === 'ca' ? 'Pregunta' : 'Pregunta'}
+                        {language === 'eu' ? 'Galdera' : 'Pregunta'}
                       </th>
                       <th scope="col" className="w-1/2 px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        {language === 'ca' ? 'Respostes' : 'Respuestas'}
+                        {language === 'ca' ? 'Respostes' : language === 'eu' ? 'Erantzunak' : 'Respuestas'}
                       </th>
                     </tr>
                   </thead>

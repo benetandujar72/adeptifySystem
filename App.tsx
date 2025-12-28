@@ -18,6 +18,7 @@ import { getTenantSlugFromWindow } from './services/tenant';
 
 const SESSION_TENANT_KEY = 'adeptify_active_tenant_slug';
 const SESSION_TENANT_CENTER_NAME_KEY = 'adeptify_active_tenant_center_name';
+const SESSION_FREE_ACCESS_KEY = 'adeptify_free_access';
 
 const AppContent: React.FC = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -123,6 +124,12 @@ const AppContent: React.FC = () => {
       centerName: reg.centerName,
     }));
 
+    try {
+      sessionStorage.removeItem(SESSION_FREE_ACCESS_KEY);
+    } catch {
+      // ignore
+    }
+
     if (pendingProduct) {
       setDiagnosis(prev => ({ ...prev, selectedProduct: pendingProduct, consultationHistory: [] }));
       setPendingProduct(null);
@@ -153,7 +160,7 @@ const AppContent: React.FC = () => {
       setPhase(Phase.PROPOSAL);
     } catch (error) {
       console.error(error);
-      alert(language === 'ca' ? "Error de connexió." : "Error de conexión.");
+      alert(language === 'ca' ? "Error de connexió." : language === 'eu' ? "Konexio-errorea." : "Error de conexión.");
     } finally { setIsProcessing(false); }
   };
 
@@ -203,7 +210,7 @@ const AppContent: React.FC = () => {
             <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-slate-900 leading-none">{t.appTitle}</span>
           </div>
           <div className="flex items-center gap-3 md:gap-6">
-            <div className="hidden md:flex bg-slate-100 p-1 rounded-xl gap-1">
+            <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
               <button
                 onClick={() => setLanguage('ca')}
                 className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'ca' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -216,6 +223,12 @@ const AppContent: React.FC = () => {
               >
                 ESP
               </button>
+              <button
+                onClick={() => setLanguage('eu')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'eu' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                EU
+              </button>
             </div>
           </div>
         </header>
@@ -226,6 +239,8 @@ const AppContent: React.FC = () => {
               try {
                 sessionStorage.setItem(SESSION_TENANT_KEY, sel.tenantSlug);
                 sessionStorage.setItem(SESSION_TENANT_CENTER_NAME_KEY, sel.centerName);
+                if (sel.freeAccess) sessionStorage.setItem(SESSION_FREE_ACCESS_KEY, 'true');
+                else sessionStorage.removeItem(SESSION_FREE_ACCESS_KEY);
               } catch {
                 // ignore
               }
@@ -262,7 +277,7 @@ const AppContent: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3 md:gap-6">
-           <div className="hidden md:flex bg-slate-100 p-1 rounded-xl gap-1">
+           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
              <button 
                onClick={() => setLanguage('ca')}
                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'ca' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -274,6 +289,12 @@ const AppContent: React.FC = () => {
                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'es' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
              >
                ESP
+             </button>
+             <button 
+               onClick={() => setLanguage('eu')}
+               className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'eu' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+             >
+               EU
              </button>
            </div>
            
@@ -287,9 +308,9 @@ const AppContent: React.FC = () => {
            <button
              onClick={clearTenantSession}
              className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
-             title={language === 'ca' ? 'Canviar institut' : 'Cambiar instituto'}
+             title={language === 'ca' ? 'Canviar institut' : language === 'eu' ? 'Ikastetxea aldatu' : 'Cambiar instituto'}
            >
-             {language === 'ca' ? 'Canviar institut' : 'Cambiar instituto'}
+             {language === 'ca' ? 'Canviar institut' : language === 'eu' ? 'Ikastetxea aldatu' : 'Cambiar instituto'}
            </button>
 
            {isAuthenticated ? (

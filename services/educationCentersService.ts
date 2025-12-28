@@ -50,11 +50,8 @@ export async function searchCatEducationCenters(query: string, limit = 12): Prom
   for (const p of patterns) {
     // PostgREST uses `*` as wildcard for LIKE/ILIKE.
     const like = `*${p}*`;
-    orParts.push(
-      `denominacio_completa.ilike.${like}`,
-      `nom_municipi.ilike.${like}`,
-      `nom_comarca.ilike.${like}`
-    );
+    // Requirement: search across the full center name.
+    orParts.push(`denominacio_completa.ilike.${like}`);
   }
 
   const { data, error } = await supabase

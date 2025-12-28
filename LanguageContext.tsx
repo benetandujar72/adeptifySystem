@@ -11,7 +11,23 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('ca');
+  const [language, setLanguage] = useState<Language>(() => {
+    try {
+      const saved = (localStorage.getItem('adeptify_language') || '').trim() as Language;
+      if (saved === 'ca' || saved === 'es' || saved === 'eu') return saved;
+    } catch {
+      // ignore
+    }
+    return 'eu';
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('adeptify_language', language);
+    } catch {
+      // ignore
+    }
+  }, [language]);
 
   const t = translations[language];
 

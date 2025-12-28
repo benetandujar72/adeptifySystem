@@ -59,7 +59,13 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
     const consultations = await consultationService.getAll(tenantSlug);
     const clientData = consultations.find(c => c.centerName === centerName) || consultations[0];
     
-    if (!clientData) return language === 'ca' ? "Parlem d'ajudar l'escola." : "Hablemos de ayudar al colegio.";
+    if (!clientData) {
+      return language === 'ca'
+        ? "Parlem d'ajudar l'escola."
+        : language === 'eu'
+          ? "Ikastetxeari laguntzeaz hitz egin dezagun."
+          : "Hablemos de ayudar al colegio.";
+    }
 
     return `
       CENTRO: ${clientData.centerName}
@@ -125,7 +131,11 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
       const response = result as GenerateContentResponse;
       const modelMsg: ChatMessage = { 
         role: 'model', 
-        text: response.text || (language === 'ca' ? "Ho sento, em pots repetir?" : "Lo siento, ¿me puedes repetir?"), 
+        text: response.text || (language === 'ca'
+          ? "Ho sento, em pots repetir?"
+          : language === 'eu'
+            ? "Barkatu, errepika dezakezu?"
+            : "Lo siento, ¿me puedes repetir?"), 
         timestamp: new Date().toISOString() 
       };
       setMessages(prev => [...prev, modelMsg]);
