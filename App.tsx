@@ -239,7 +239,8 @@ const AppContent: React.FC = () => {
                 tenantSlug: sel.tenantSlug,
                 centerName: sel.centerName,
               }));
-              setPhase(Phase.LANDING);
+              // If the center was entered manually (not found in catalogue), enforce the mandatory free registration.
+              setPhase(sel.needsRegistration ? Phase.REGISTER : Phase.LANDING);
             }}
           />
         </main>

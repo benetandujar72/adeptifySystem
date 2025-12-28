@@ -3,8 +3,23 @@ import { useLanguage } from '../LanguageContext';
 import { CatEducationCenter, searchCatEducationCenters } from '../services/educationCentersService';
 
 type Props = {
-  onSelected: (sel: { tenantSlug: string; centerName: string }) => void;
+  onSelected: (sel: { tenantSlug: string; centerName: string; needsRegistration?: boolean }) => void;
 };
+
+function slugifyTenant(input: string): string {
+  const base = (input || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const suffix = Math.random().toString(36).slice(2, 8);
+  const core = (base || 'centre').slice(0, 35);
+  return `m-${core}-${suffix}`.slice(0, 50);
+}
 
 const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
   const { language } = useLanguage();
@@ -21,6 +36,10 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
       hint: language === 'ca'
         ? 'Comença a escriure i selecciona un centre de la llista.'
         : 'Empieza a escribir y selecciona un centro de la lista.',
+      notFound: language === 'ca'
+        ? "No surt a la llista? Pots continuar amb el nom escrit."
+        : '¿No aparece en la lista? Puedes continuar con el nombre escrito.',
+      useTyped: language === 'ca' ? 'Continuar amb aquest nom →' : 'Continuar con este nombre →',
     };
   }, [language]);
 
@@ -56,6 +75,8 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
       window.clearTimeout(handle);
     };
   }, [query]);
+
+  const canUseTyped = query.trim().length >= 2;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] fade-up px-4">
@@ -114,6 +135,25 @@ const InstitutionGate: React.FC<Props> = ({ onSelected }) => {
                     </p>
                   </button>
                 ))}
+
+                {!loading && canUseTyped && (
+                  <div className="border-t border-slate-50 px-5 py-4 bg-white">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">
+                      {labels.notFound}
+                    </p>
+                    <button
+                      type="button"
+                      className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-600 transition-all"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        const name = query.trim();
+                        onSelected({ tenantSlug: slugifyTenant(name), centerName: name, needsRegistration: true });
+                      }}
+                    >
+                      {labels.useTyped}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
