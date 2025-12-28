@@ -19,6 +19,10 @@ totcat-centres-educatius.csv
 centres.md
 LOGO_*.png
 
+# Generated SQL import artifacts (do not commit)
+supabase/cat_education_centers_import.sql
+supabase/import_chunks/
+
 
 # Editor directories and files
 .vscode/*
