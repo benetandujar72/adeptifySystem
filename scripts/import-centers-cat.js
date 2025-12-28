@@ -57,6 +57,16 @@ const BOOLEAN_COLUMNS = new Set([
   'muse', 'musp', 'muss', 'tegm', 'tegs', 'estr', 'adults',
 ]);
 
+function parseBooleanLoose(value) {
+  const s = String(value ?? '').trim().toLowerCase();
+  if (!s) return false;
+  if (['1', 'true', 't', 'yes', 'y', 'si', 's', 'x'].includes(s)) return true;
+  if (['0', 'false', 'f', 'no', 'n'].includes(s)) return false;
+  const num = Number(s.replace(',', '.'));
+  if (Number.isFinite(num)) return num !== 0;
+  return true;
+}
+
 function mapRowToDbRecord(row) {
   // row is already keyed by normalized snake_case headers.
   const rec = {
@@ -88,7 +98,7 @@ function mapRowToDbRecord(row) {
   };
 
   for (const col of BOOLEAN_COLUMNS) {
-    rec[col] = Boolean(String(row[col] ?? '').trim());
+    rec[col] = parseBooleanLoose(row[col]);
   }
 
   return rec;
@@ -165,7 +175,16 @@ async function main() {
     }
   }
 
-  console.log('Done.');
+  const { count, error: countError } = await supabase
+    .from(TABLE)
+    .select('codi_centre', { count: 'exact', head: true });
+
+  if (countError) {
+    console.warn('Done, but could not fetch count:', countError.message || countError);
+    return;
+  }
+
+  console.log(`Done. Supabase count(${TABLE}): ${count}`);
 }
 
 main().catch((e) => {
