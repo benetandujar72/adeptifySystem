@@ -3,6 +3,7 @@ set -eu
 
 HTML_DIR="/usr/share/nginx/html"
 ENV_JS="$HTML_DIR/env.js"
+INDEX_HTML="$HTML_DIR/index.html"
 
 js_escape() {
   # Minimal JS string escape (handles backslash, quotes, newlines, CR)
@@ -15,6 +16,9 @@ SUPABASE_URL_VALUE="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
 SUPABASE_ANON_KEY_VALUE="${SUPABASE_ANON_KEY:-${VITE_SUPABASE_ANON_KEY:-}}"
 SB_PUBLISHABLE_KEY_VALUE="${SB_PUBLISHABLE_KEY:-${VITE_SB_PUBLISHABLE_KEY:-}}"
 
+# Used to bust browser/service-worker caches for env.js across deployments.
+STARTUP_TS="$(date +%s)"
+
 {
   printf '%s\n' "// Generated at container start; do not commit.";
   printf '%s\n' "window.__ADEPTIFY_ENV__ = {";
@@ -24,5 +28,12 @@ SB_PUBLISHABLE_KEY_VALUE="${SB_PUBLISHABLE_KEY:-${VITE_SB_PUBLISHABLE_KEY:-}}"
   printf '%s\n' "  SB_PUBLISHABLE_KEY: \"$(js_escape "$SB_PUBLISHABLE_KEY_VALUE")\"";
   printf '%s\n' "};";
 } > "$ENV_JS"
+
+# Force index.html to reference a fresh env.js URL on each container start.
+# This mitigates stale SW caches that might keep serving an older /env.js.
+if [ -f "$INDEX_HTML" ]; then
+  # Replace any existing /env.js or /env.js?... reference.
+  sed -i -E "s#src=\"/env\\.js[^\"]*\"#src=\"/env.js?v=${STARTUP_TS}\"#g" "$INDEX_HTML" || true
+fi
 
 exec "$@"
