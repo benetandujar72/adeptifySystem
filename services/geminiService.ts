@@ -158,20 +158,28 @@ export async function getNextConsultantQuestion(
   
   const prompt = intakeMode === 'clear_need'
     ? (lang === 'ca'
-      ? `ETS UN CONSULTOR SÈNIOR D'ANÀLISI DE REQUISITS PER A PROJECTES DE PROGRAMACIÓ EN CENTRES EDUCATIUS.
-OBJECTIU: obtenir informació suficient per passar-la a l'equip de programació i fer un pressupost realista.
+      ? `ETS UN ANALISTA SÈNIOR DE REQUISITS DE PROGRAMARI I EXPERT EN GESTIÓ I ADMINISTRACIÓ EDUCATIVA.
+OBJECTIU: aclarir els detalls fins a poder fer un pressupost el més ajustat possible (sense inventar res).
 
 REGLLES CRÍTIQUES:
 - PARLA SEMPRE EN ${langName}.
-- Fes preguntes de consultor: concretes, orientades a decisió i a reduir riscos.
-- Pots parlar de "pantalles", "rols", "permisos", "notificacions", "integracions" i "dades" (sense entrar en tecnicismes innecessaris).
-- Prioritza entendre: fluxos (pas a pas), actors (qui fa què), dades necessàries, comunicacions (emails), casos especials, privacitat (menors) i criteris d'èxit.
+- SIGUES DINÀMIC I ADAPTATIU: pregunta només allò que falta segons l'historial.
+- Fes preguntes de consultor: concretes, orientades a decisió i a reduir riscos (1 pregunta per torn).
+- Pots parlar de "pantalles", "rols", "permisos", "notificacions", "integracions" i "dades" (sense tecnicismes innecessaris).
+- Prioritza entendre (si aplica):
+  - Fitxatge: qui fitxa, com (mòbil/web/kiosk/QR), validació i incidències.
+  - Guàrdies: regles d'assignació, excepcions, calendari, disponibilitat, confirmacions.
+  - Comunicacions: emails (a qui, quan, plantilla, adjunts), traçabilitat i reintents.
+  - Dades d'alumnat: mínim necessari, privacitat de menors, accés per rol.
+  - Operació del centre: rols (direcció, cap d'estudis, professorat, administració), permisos, auditories.
+  - Integracions (si n'hi ha): calendari, plataforma educativa, LDAP/Google/Microsoft, etc.
+  - Criteris d'èxit i límits (fora d'abast).
 
 HISTORIAL:
 ${historyStr}
 
 QUAN MARCAR "isComplete":
-- Només marca isComplete=true quan ja tinguis: rols/usuaris, flux principal, regles de guàrdies, sistema de fitxatge (mètode), comunicacions (a qui/quan/què), dades d'alumnat (mínim necessari) i restriccions/termini.
+- Només marca isComplete=true quan ja tinguis prou per estimar: rols/usuaris, flux principal, regles de guàrdies, sistema de fitxatge (mètode), comunicacions (a qui/quan/què), dades d'alumnat (mínim necessari), restriccions/termini i criteris d'acceptació.
 
 Respon en aquest format JSON (i només JSON):
 {
@@ -182,20 +190,21 @@ Respon en aquest format JSON (i només JSON):
   "confidence": 0-100
 }`
       : lang === 'eu'
-        ? `HEZKUNTZA-ZENTROETAKO PROGRAMAZIO PROIEKTUETARAKO ESKAKIZUN-ANALISIKO AHOLKULARI SENIORRA ZARA.
-HELBURUA: programazio-taldeari pasatzeko eta aurrekontu errealista egiteko behar den informazioa biltzea.
+        ? `SOFTWARE-ESKAKIZUNEN ANALISTA SENIORRA ETA HEZKUNTZA ADMINISTRAZIOKO ADITUA ZARA.
+HELBURUA: xehetasunak argitzea, ahal den aurrekontu doituena egiteko (ezer asmatu gabe).
 
 ARAU KRITIKOAK:
 - BETI ${langName}-N HITZ EGIN.
-- Aholkulari galderak egin: zehatzak, erabakiak hartzera bideratuak eta arriskuak murrizteko.
+- DINAMIKOA ETA EGOKITUA: historiaren arabera falta dena bakarrik galdetu.
+- Aholkulari galdera zehatzak egin (txanda bakoitzean galdera 1).
 - "pantailak", "rolak", "baimenak", "jakinarazpenak", "integrazioak" eta "datuak" aipa ditzakezu (teknizismo gehiegirik gabe).
-- Lehentasunak: fluxuak (pausoz pauso), aktoreak (nork zer egiten duen), datu beharrezkoak, komunikazioak (emailak), kasu bereziak, pribatutasuna (adingabeak) eta arrakasta-irizpideak.
+- Lehentasunak (aplikatzen bada): fitxaketa, guardien arauak, email komunikazioak, adingabeen pribatutasuna, rolak/baimenak, integrazioak, arrakasta-irizpideak eta kanpo geratzen dena.
 
 HISTORIALA:
 ${historyStr}
 
 NOIZ MARKATU "isComplete":
-- isComplete=true bakarrik markatu honakoa baduzu: rolak/erabiltzaileak, fluxu nagusia, guardien arauak, fitxaketa-sistema (modua), komunikazioak (nori/noiz/zer), ikasleen datuak (beharrezko minimoa) eta murrizketak/epea.
+- isComplete=true bakarrik markatu estimatzeko nahikoa baduzu: rolak/erabiltzaileak, fluxu nagusia, guardien arauak, fitxaketa-sistema (modua), komunikazioak (nori/noiz/zer), ikasleen datuak (beharrezko minimoa), murrizketak/epea eta onarpen-irizpideak.
 
 Erantzun JSON formatu honetan (eta JSON bakarrik):
 {
@@ -205,20 +214,28 @@ Erantzun JSON formatu honetan (eta JSON bakarrik):
   "isComplete": boolean,
   "confidence": 0-100
 }`
-        : `ERES UN CONSULTOR SÉNIOR DE ANÁLISIS DE REQUISITOS PARA PROYECTOS DE PROGRAMACIÓN EN CENTROS EDUCATIVOS.
-OBJETIVO: obtener información suficiente para pasarla al equipo de programación y hacer un presupuesto realista.
+        : `ERES UN ANALISTA SÉNIOR DE REQUISITOS DE SOFTWARE Y EXPERTO EN GESTIÓN/ADMINISTRACIÓN EDUCATIVA.
+OBJETIVO: aclarar los detalles hasta poder dar un presupuesto lo más ajustado posible (sin inventar).
 
 REGLAS CRÍTICAS:
 - HABLA SIEMPRE EN ${langName}.
-- Haz preguntas de consultor: concretas, orientadas a decidir y a reducir riesgos.
+- SÉ DINÁMICO Y ADAPTATIVO: pregunta solo lo que falte según el historial.
+- Haz preguntas de consultor: concretas, orientadas a decidir y a reducir riesgos (1 pregunta por turno).
 - Puedes hablar de "pantallas", "roles", "permisos", "notificaciones", "integraciones" y "datos" (sin tecnicismos innecesarios).
-- Prioriza entender: flujos (paso a paso), actores (quién hace qué), datos necesarios, comunicaciones (emails), casos especiales, privacidad (menores) y criterios de éxito.
+- Prioriza entender (si aplica):
+  - Fichaje: quién ficha, cómo (móvil/web/kiosco/QR), validación e incidencias.
+  - Guardias: reglas de asignación, excepciones, calendario, disponibilidad, confirmaciones.
+  - Comunicaciones: emails (a quién, cuándo, plantilla, adjuntos), trazabilidad y reintentos.
+  - Datos del alumnado: mínimo necesario, privacidad de menores, acceso por rol.
+  - Operación del centro: roles (dirección, jefatura de estudios, profesorado, administración), permisos y auditoría.
+  - Integraciones: calendario, plataforma educativa, LDAP/Google/Microsoft, etc.
+  - Criterios de éxito y límites (fuera de alcance).
 
 HISTORIAL:
 ${historyStr}
 
 CUÁNDO MARCAR "isComplete":
-- Solo marca isComplete=true cuando ya tengas: roles/usuarios, flujo principal, reglas de guardias, sistema de fichaje (método), comunicaciones (a quién/cuándo/qué), datos del alumnado (mínimo necesario) y restricciones/plazo.
+- Solo marca isComplete=true cuando ya tengas suficiente para estimar: roles/usuarios, flujo principal, reglas de guardias, sistema de fichaje (método), comunicaciones (a quién/cuándo/qué), datos del alumnado (mínimo necesario), restricciones/plazo y criterios de aceptación.
 
 Responde en este formato JSON (y solo JSON):
 {

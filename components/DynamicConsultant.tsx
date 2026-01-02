@@ -114,40 +114,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
         eu: 'Azaldu zer behar duzuen (zure hitzekin). Adib.: fitxaketa-app + guardien kudeaketa, ordezkoari/ordezkatuari email automatikoak, ikasleen informazioa eta guardiaren jarraibideak.',
       },
       type: 'freeText',
-      next: () => 'clear_need_users',
-    };
-
-    const clearNeedUsers: WizardStep = {
-      id: 'clear_need_users',
-      question: {
-        ca: 'Qui ho farà servir? (rols i quantitats aproximades)',
-        es: '¿Quién lo va a usar? (roles y cantidades aproximadas)',
-        eu: 'Nork erabiliko du? (rolak eta gutxi gorabeherako kopuruak)',
-      },
-      type: 'freeText',
-      next: () => 'clear_need_rules',
-    };
-
-    const clearNeedRules: WizardStep = {
-      id: 'clear_need_rules',
-      question: {
-        ca: 'Quines regles o casos especials hi ha? (ex.: com s’assignen guàrdies, excepcions, substitucions, horaris)',
-        es: '¿Qué reglas o casos especiales hay? (ej.: cómo se asignan guardias, excepciones, sustituciones, horarios)',
-        eu: 'Zein arau edo kasu berezi daude? (adib.: guardiak nola esleitzen diren, salbuespenak, ordezkapenak, ordutegiak)',
-      },
-      type: 'freeText',
-      next: () => 'clear_need_comms',
-    };
-
-    const clearNeedComms: WizardStep = {
-      id: 'clear_need_comms',
-      question: {
-        ca: "Com s'han d'enviar les comunicacions? (canal, contingut mínim, quan s'envia, i a qui)",
-        es: '¿Cómo deben enviarse las comunicaciones? (canal, contenido mínimo, cuándo se envía y a quién)',
-        eu: 'Nola bidali behar dira komunikazioak? (kanala, gutxieneko edukia, noiz bidaltzen den eta nori)',
-      },
-      type: 'freeText',
-      next: () => 'urgency',
+      // After the brief, switch to fully dynamic (Gemini) requirements intake.
+      next: () => null,
     };
 
     const goalCommon = {
@@ -243,7 +211,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       next: () => null,
     };
 
-    return [entryMode, audienceStep, clearNeedBrief, clearNeedUsers, clearNeedRules, clearNeedComms, goalSchool, goalFamily, goalGeneric, urgency, constraints];
+    return [entryMode, audienceStep, clearNeedBrief, goalSchool, goalFamily, goalGeneric, urgency, constraints];
   };
 
   const getWizardStep = (id: string | null): WizardStep | null => {
@@ -333,7 +301,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
     setIsLoading(true);
     try {
       const next = await getNextConsultantQuestion(newHistory, diagnosisForAi, language);
-      const maxQuestions = diagnosisForAi?.intakeMode === 'clear_need' ? 12 : 7;
+      const maxQuestions = diagnosisForAi?.intakeMode === 'clear_need' ? 25 : 7;
       if (next.isComplete || history.length >= maxQuestions) {
         onComplete(newHistory);
       } else {
