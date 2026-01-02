@@ -28,15 +28,39 @@ app.use((req, res, next) => {
       "object-src 'none'",
       "frame-ancestors 'self'",
       "script-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: https: blob:",
-      "font-src 'self' data: https:",
+      "font-src 'self' data: https: https://fonts.gstatic.com",
       "connect-src 'self' https: wss:",
       "worker-src 'self' blob:",
     ].join('; ')
   );
 
   next();
+});
+
+// Serve a real service worker script.
+// This prevents legacy service workers (from older deployments) from persisting and breaking POST /api-proxy calls.
+// The script unregisters itself on activation.
+app.get('/service-worker.js', (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+
+  res.status(200).send(
+    [
+      "/* Adeptify service worker (disable legacy SW) */",
+      "self.addEventListener('install', (event) => { self.skipWaiting(); });",
+      "self.addEventListener('activate', (event) => {",
+      "  event.waitUntil((async () => {",
+      "    try { await self.registration.unregister(); } catch (e) {}",
+      "    try {",
+      "      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });",
+      "      for (const client of clients) { client.navigate(client.url); }",
+      "    } catch (e) {}",
+      "  })());",
+      "});",
+    ].join('\n')
+  );
 });
 
 // Health
