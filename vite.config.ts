@@ -42,6 +42,10 @@ export default defineConfig(({ command }) => {
       });
     },
     define: undefined,
+    build: {
+      // Keep vendor-prefixed properties that Safari/iOS Safari require (e.g. -webkit-backdrop-filter).
+      cssTarget: ['safari9'],
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
