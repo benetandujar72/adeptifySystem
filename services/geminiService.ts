@@ -1,35 +1,64 @@
 
-import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { ProposalData, DiagnosisState, Task, ProductType } from "../types";
 import { Language } from "../translations";
-import { getRuntimeEnvString } from "./runtimeEnv";
 
-type EnvLike = Record<string, unknown> | undefined;
-
-const getApiKey = (): string | undefined => {
-  const fromRuntime = getRuntimeEnvString('GEMINI_API_KEY');
-  if (typeof fromRuntime === 'string' && fromRuntime.trim()) return fromRuntime.trim();
-
-  // IMPORTANT: Vite injects custom env vars only when accessed via
-  // `import.meta.env.VITE_*` (static property access). Avoid computed access.
-  const fromVite = import.meta.env.VITE_GEMINI_API_KEY;
-  if (typeof fromVite === 'string' && fromVite.trim()) return fromVite.trim();
-
-  // Backward-compatible fallback for older builds.
-  const env = (process.env as EnvLike) || {};
-  const key = (env as any).GEMINI_API_KEY || (env as any).API_KEY;
-  return typeof key === 'string' && key.trim() ? key.trim() : undefined;
+type GenerateContentConfig = {
+  responseMimeType?: string;
+  temperature?: number;
 };
 
-const getAi = (): GoogleGenAI | null => {
-  const apiKey = getApiKey();
-  if (!apiKey) return null;
-  try {
-    return new GoogleGenAI({ apiKey });
-  } catch {
-    return null;
+type GenerateContentRequest = {
+  contents: unknown;
+  config?: GenerateContentConfig;
+};
+
+type GenerateContentResponseLike = {
+  text?: string;
+  raw?: unknown;
+};
+
+const toGeminiContents = (contents: unknown) => {
+  if (Array.isArray(contents)) return contents;
+  const text = typeof contents === 'string' ? contents : String(contents ?? '');
+  return [{ role: 'user', parts: [{ text }] }];
+};
+
+const extractTextFromGeminiResponse = (raw: any): string => {
+  const parts = raw?.candidates?.[0]?.content?.parts;
+  if (Array.isArray(parts)) {
+    return parts.map((p: any) => (typeof p?.text === 'string' ? p.text : '')).join('');
   }
+  const text = raw?.candidates?.[0]?.content?.text;
+  return typeof text === 'string' ? text : '';
 };
+
+async function generateContentViaProxy(model: string, request: GenerateContentRequest): Promise<GenerateContentResponseLike> {
+  const url = `/api-proxy/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const body = {
+    contents: toGeminiContents(request.contents),
+    generationConfig: request.config || undefined,
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const raw = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    const msg = typeof raw?.error?.message === 'string' ? raw.error.message : `Gemini proxy error (${resp.status})`;
+    const err: any = new Error(msg);
+    err.status = resp.status;
+    err.raw = raw;
+    throw err;
+  }
+
+  return {
+    raw,
+    text: extractTextFromGeminiResponse(raw),
+  };
+}
 
 // Required preferred order (falls back if a model isn't available for the API key/project).
 const MODEL_FALLBACK_ORDER = [
@@ -54,14 +83,13 @@ const shouldTryNextModel = (err: unknown): boolean => {
 };
 
 async function generateContentWithFallback(
-  ai: GoogleGenAI,
   models: string[],
-  request: Omit<Parameters<GoogleGenAI['models']['generateContent']>[0], 'model'> & { model?: string }
+  request: GenerateContentRequest
 ) {
   let lastError: unknown;
   for (const model of models) {
     try {
-      const response = await ai.models.generateContent({ ...request, model } as any);
+      const response = await generateContentViaProxy(model, request);
       return { response, modelUsed: model };
     } catch (e) {
       lastError = e;
@@ -123,20 +151,6 @@ export async function getNextConsultantQuestion(
   diagnosis: DiagnosisState,
   lang: Language = 'ca'
 ): Promise<DynamicQuestion> {
-  const ai = getAi();
-  if (!ai) {
-    return {
-      question: lang === 'ca'
-        ? "Falta configuració del sistema. Pots tornar-ho a provar més tard?"
-        : lang === 'eu'
-          ? "Sistema ez dago konfiguratuta. Geroago berriro saiatu nahi duzu?"
-          : "Falta configuración del sistema. ¿Puedes volver a intentarlo más tarde?",
-      options: [lang === 'eu' ? 'Berriro saiatu' : 'Reintentar'],
-      isMultiSelect: false,
-      isComplete: false,
-      confidence: 0,
-    };
-  }
   const historyStr = formatHistoryForPrompt(history, lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const audience = detectAudience(diagnosis, history);
@@ -226,7 +240,7 @@ Responde en este formato JSON (y solo JSON):
 }`);
 
   try {
-    const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+    const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
       config: { responseMimeType: "application/json", temperature: 0.4 },
     });
@@ -257,14 +271,6 @@ Responde en este formato JSON (y solo JSON):
 }
 
 export async function generateEducationalProposal(diagnosis: DiagnosisState, lang: Language = 'ca'): Promise<ProposalData> {
-  const ai = getAi();
-  if (!ai) {
-    throw new Error(lang === 'ca'
-      ? 'Falta configuració del sistema (API).'
-      : lang === 'eu'
-        ? 'Sistema ez dago konfiguratuta (API).'
-        : 'Falta configuración del sistema (API).');
-  }
   const historyStr = formatHistoryForPrompt(diagnosis.consultationHistory || [], lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   
@@ -464,7 +470,7 @@ Recomendaciones:
 - En "addons" propone extras con más funcionalidades.`;
 
   try {
-    const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+    const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
@@ -611,13 +617,6 @@ const compactCenterHistoryWithCountsForPrompt = (
 };
 
 export async function generateCenterDAFO(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, lang: Language = 'ca'): Promise<DafoResult> {
-  const ai = getAi();
-  if (!ai) {
-    throw new Error(lang === 'ca'
-      ? 'Falta configuració del sistema (API).'
-      : 'Falta configuración del sistema (API).');
-  }
-
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const compact = compactCenterHistoryForPrompt(histories, lang);
   const prompt = lang === 'ca'
@@ -670,7 +669,7 @@ Devuelve EXACTAMENTE este JSON:
   "meta": {"generatedAt": string}
 }`;
 
-  const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+  const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: prompt,
     config: { responseMimeType: 'application/json', temperature: 0.4 },
   });
@@ -728,13 +727,6 @@ export async function generateCenterCustomProposal(centerName: string, histories
 }
 
 export async function generateCenterReport(centerName: string, histories: Array<{ question: string; answer: string[] }[]>, lang: Language = 'ca'): Promise<CenterReport> {
-  const ai = getAi();
-  if (!ai) {
-    throw new Error(lang === 'ca'
-      ? 'Falta configuració del sistema (API).'
-      : 'Falta configuración del sistema (API).');
-  }
-
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const compact = compactCenterHistoryWithCountsForPrompt(histories, lang);
   const prompt = lang === 'ca'
@@ -813,7 +805,7 @@ Devuelve EXACTAMENTE este JSON:
   "meta": {"generatedAt": string}
 }`;
 
-  const { response, modelUsed } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+  const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: prompt,
     config: { responseMimeType: 'application/json', temperature: 0.25 },
   });
@@ -850,55 +842,37 @@ Devuelve EXACTAMENTE este JSON:
   };
 }
 
-export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca'): Chat {
-  const ai = getAi();
-  if (!ai) {
-    // Minimal shim so the UI can still operate and show a helpful message.
-    return {
-      sendMessage: async () => ({
-        text: lang === 'ca'
-          ? 'El xat no està configurat (API).'
-          : lang === 'eu'
-            ? 'Txata ez dago konfiguratuta (API).'
-            : 'El chat no está configurado (API).',
-      }),
-    } as unknown as Chat;
-  }
+export function createAdeptifyChat(clientContext: string = '', lang: Language = 'ca') {
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
-  for (const model of MODEL_FALLBACK_ORDER) {
-    try {
-      return ai.chats.create({
-        model,
-        config: {
-          systemInstruction: `Ets l'ajudant personal d'Adeptify per a escoles. Parla sempre en ${langName}. Ets empàtic, educat i entens l'estrès d'un director escolar.`,
-        },
-      });
-    } catch {
-      // Try next model
-    }
-  }
+  const systemInstruction = `Ets l'ajudant personal d'Adeptify per a escoles. Parla sempre en ${langName}. Ets empàtic, educat i entens l'estrès d'un director escolar.`;
+
+  const history: Array<{ role: 'user' | 'model'; text: string }> = [];
+
   return {
-    sendMessage: async () => ({
-      text: lang === 'ca'
-        ? 'El xat no està configurat (API).'
-        : lang === 'eu'
-          ? 'Txata ez dago konfiguratuta (API).'
-          : 'El chat no está configurado (API).',
-    }),
-  } as unknown as Chat;
+    sendMessage: async ({ message }: { message: string }) => {
+      history.push({ role: 'user', text: String(message ?? '') });
+      const contextBlock = clientContext ? `CONTEXT CLIENT:\n${clientContext}\n\n` : '';
+      const convo = history
+        .slice(-14)
+        .map(m => (m.role === 'user' ? `USUARI: ${m.text}` : `ASSISTENT: ${m.text}`))
+        .join('\n');
+
+      const prompt = `${systemInstruction}\n\n${contextBlock}${convo}\nASSISTENT:`;
+      const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
+        contents: prompt,
+        config: { temperature: 0.35 },
+      });
+
+      const text = response.text || '';
+      history.push({ role: 'model', text });
+      return { text };
+    },
+  };
 }
 
 export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context: string, indicators: string, preview: boolean, lang: Language = 'ca'): Promise<string> {
-  const ai = getAi();
-  if (!ai) {
-    return lang === 'ca'
-      ? 'Falta configuració del sistema (API).'
-      : lang === 'eu'
-        ? 'Sistema ez dago konfiguratuta (API).'
-        : 'Falta configuración del sistema (API).';
-  }
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
-  const { response } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+  const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: `Ajuda'm a redactar un esborrany de ${type} escolar en ${langName}. Que soni oficial però fàcil de llegir. Context: ${context}. Dades: ${indicators}.`,
   });
   return response.text || "Generant...";
@@ -906,10 +880,6 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
 
 // Fix: Implementación de analyzeTasksIntelligence para TaskManager.tsx
 export async function analyzeTasksIntelligence(tasks: Task[], lang: Language = 'ca'): Promise<string> {
-  const ai = getAi();
-  if (!ai) {
-    return lang === 'ca' ? 'Sistema no configurat.' : lang === 'eu' ? 'Sistema ez dago konfiguratuta.' : 'Sistema no configurado.';
-  }
   const tasksStr = tasks.map(t => `- [${t.status}] ${t.title} (Responsable: ${t.assignee}, Plazo: ${t.deadline})`).join('\n');
 
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
@@ -924,7 +894,7 @@ ${tasksStr}
 \n\nRespon directament amb el consell.`;
 
   try {
-    const { response } = await generateContentWithFallback(ai, MODEL_FALLBACK_ORDER, {
+    const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
     });
     return response.text || "No hi ha suggeriments en aquest moment.";

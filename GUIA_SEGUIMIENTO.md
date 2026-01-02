@@ -36,7 +36,7 @@ Esta guía sirve como checklist práctico para **monitorizar** el estado del ser
 ### B. Validación técnica rápida (bundle/config)
 
 - Confirmar que el JS principal **no contiene placeholders** tipo `$GEMINI_API_KEY`.
-- Confirmar que el bundle contiene el prefijo `AIza` (solo check booleano; no copiar el secreto).
+- Confirmar que **ni el bundle ni `/env.js`** contienen el prefijo `AIza` (la API key ya no debe estar en el navegador).
 
 Ejemplo (PowerShell, boolean-only):
 
@@ -45,12 +45,13 @@ $base='https://adeptify-consultor-1061852826388.europe-west1.run.app'
 $html=(Invoke-WebRequest -UseBasicParsing "$base/").Content
 if($html -match '(?<path>/assets/index-[^\"]+\.js)'){ $assetPath=$Matches.path } else { throw 'asset not found' }
 $js=(Invoke-WebRequest -UseBasicParsing "$base$assetPath").Content
-"HasAIza=$($js.Contains('AIza'))"
+"HasAIzaInBundle=$($js.Contains('AIza'))"
+"HasAIzaInEnvJs=$((Invoke-WebRequest -UseBasicParsing "$base/env.js").Content.Contains('AIza'))"
 "HasDollarGemini=$($js.Contains('$GEMINI_API_KEY'))"
 ```
 
 Interpretación:
-- `HasAIza=True` y `HasDollarGemini=False` es lo esperado.
+- `HasAIzaInBundle=False`, `HasAIzaInEnvJs=False` y `HasDollarGemini=False` es lo esperado.
 
 ## 4) Indicadores de “incidencia crítica”
 
@@ -67,13 +68,14 @@ Escalar/actuar de inmediato si ocurre cualquiera:
 ### A) Gemini devuelve `API_KEY_INVALID`
 
 Causas típicas:
-- El build se ha hecho sin expandir secretos (placeholders en el bundle).
+- `GEMINI_API_KEY` no está presente en el runtime (Cloud Run env var/secret binding).
 - El secreto no corresponde al proyecto/permiso actual.
+- Restricciones del API key (si se usa) o permisos del proyecto.
 
 Acciones:
-1. Revisar el bundle (sección 3B).
-2. Verificar que Cloud Build expande secretos en `cloudbuild.yaml` (paso de `docker build` ejecutado en shell).
-3. Verificar que el secreto en Secret Manager es el correcto y está en el proyecto activo.
+1. Revisar que NO haya key en el navegador (sección 3B).
+2. Revisar logs de Cloud Run del servicio (errores en `/api-proxy`).
+3. Verificar que Cloud Run tiene `GEMINI_API_KEY` configurada (Secret Manager -> env var).
 
 ### B) Supabase “cloud no disponible” / fallback local
 

@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createAdeptifyChat } from '../services/geminiService';
 import { consultationService } from '../services/consultationService';
-import { GenerateContentResponse } from '@google/genai';
 import { ChatMessage } from '../types';
 import { useLanguage } from '../LanguageContext';
 
@@ -128,7 +127,7 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
 
     try {
       const result = await chatRef.current.sendMessage({ message: userText });
-      const response = result as GenerateContentResponse;
+      const response = result as { text?: string };
       const modelMsg: ChatMessage = { 
         role: 'model', 
         text: response.text || (language === 'ca'

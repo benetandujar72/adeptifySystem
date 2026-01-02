@@ -44,6 +44,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       // 3. Validació de contrasenya (Cadena exacta)
       if (inputPassword === TARGET_PASS) {
         console.info("Protocol de seguretat validat. Benvingut, Consultor.");
+
+        // Persist admin identity/scope for this session.
+        // NOTE: scope=all enables cross-tenant admin views.
+        try {
+          sessionStorage.setItem('adeptify_admin_email', inputEmail);
+          sessionStorage.setItem('adeptify_admin_scope', inputEmail === TARGET_EMAIL.toLowerCase() ? 'all' : 'tenant');
+        } catch {
+          // ignore
+        }
+
         onLoginSuccess();
       } else {
         throw new Error("INVALID_PASSWORD");

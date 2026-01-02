@@ -10,17 +10,17 @@ substitutions:
   # _BACKUP_BUCKET: adeptify-supabase-backups
 
 steps:
-  # 0) Create .env.production from Secret Manager for Vite build (bundle-time)
+  # 0) Create .env.production for Vite build (bundle-time)
   # Note: This avoids passing secrets via Dockerfile ARG/ENV.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
-    secretEnv: ['GEMINI_API_KEY', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
+    secretEnv: ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SB_PUBLISHABLE_KEY']
     args:
       - '-c'
       - |
         : > .env.production
         # Vite only exposes variables prefixed with VITE_ to the browser bundle.
-        printf 'VITE_GEMINI_API_KEY=%s\n' "$$GEMINI_API_KEY" >> .env.production
+        # IMPORTANT: Do NOT put GEMINI_API_KEY into the bundle.
         printf 'VITE_SUPABASE_URL=%s\n' "$$SUPABASE_URL" >> .env.production
         printf 'VITE_SUPABASE_ANON_KEY=%s\n' "$$SUPABASE_ANON_KEY" >> .env.production
         printf 'VITE_SB_PUBLISHABLE_KEY=%s\n' "$$SB_PUBLISHABLE_KEY" >> .env.production

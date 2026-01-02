@@ -25,6 +25,13 @@ const AppContent: React.FC = () => {
   const [tenantSlug, setTenantSlug] = useState<string | null>(() => getTenantSlugFromWindow());
   const [phase, setPhase] = useState<Phase>(Phase.LANDING);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminScope, setAdminScope] = useState<'tenant' | 'all'>(() => {
+    try {
+      return sessionStorage.getItem('adeptify_admin_scope') === 'all' ? 'all' : 'tenant';
+    } catch {
+      return 'tenant';
+    }
+  });
   const [diagnosis, setDiagnosis] = useState<DiagnosisState>({
     tenantSlug: getTenantSlugFromWindow() ?? undefined,
     centerName: '',
@@ -39,7 +46,14 @@ const AppContent: React.FC = () => {
   // Recuperem sessió d'admin si existeix
   useEffect(() => {
     const sessionAuth = sessionStorage.getItem('adeptify_admin_auth');
-    if (sessionAuth === 'true') setIsAuthenticated(true);
+    if (sessionAuth === 'true') {
+      setIsAuthenticated(true);
+      try {
+        setAdminScope(sessionStorage.getItem('adeptify_admin_scope') === 'all' ? 'all' : 'tenant');
+      } catch {
+        // ignore
+      }
+    }
   }, []);
 
   // Resolve tenant from URL (supports /t/{tenantSlug}/...).
@@ -175,14 +189,22 @@ const AppContent: React.FC = () => {
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
     sessionStorage.setItem('adeptify_admin_auth', 'true');
+    try {
+      setAdminScope(sessionStorage.getItem('adeptify_admin_scope') === 'all' ? 'all' : 'tenant');
+    } catch {
+      // ignore
+    }
     setPhase(Phase.ADMIN);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     sessionStorage.removeItem('adeptify_admin_auth');
+    sessionStorage.removeItem('adeptify_admin_email');
+    sessionStorage.removeItem('adeptify_admin_scope');
     sessionStorage.removeItem(SESSION_TENANT_KEY);
     sessionStorage.removeItem(SESSION_TENANT_CENTER_NAME_KEY);
+    setAdminScope('tenant');
     setPhase(Phase.LANDING);
   };
 
@@ -355,7 +377,7 @@ const AppContent: React.FC = () => {
         )}
 
         {phase === Phase.DOC_GENERATOR && <DocGenerator />}
-        {phase === Phase.ADMIN && <AdminRegistry tenantSlug={tenantSlug ?? undefined} />}
+        {phase === Phase.ADMIN && <AdminRegistry tenantSlug={tenantSlug ?? undefined} adminScope={adminScope} />}
         {phase === Phase.LOGIN && <Login onLoginSuccess={handleLoginSuccess} />}
 
         {phase === Phase.PROPOSAL && proposal && (

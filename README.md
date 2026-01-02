@@ -16,18 +16,18 @@ View your app in AI Studio: https://ai.studio/apps/drive/1YfXdRqaoIcF3QDGL4UD6GV
 1. Install dependencies:
    `npm install`
 2. Create a `.env.local` with these variables:
-   - `VITE_GEMINI_API_KEY`
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_SB_PUBLISHABLE_KEY` (optional)
+   - `GEMINI_API_KEY` (server-side only; required for AI features when running the runtime server)
+   - `VITE_SUPABASE_URL` (or `SUPABASE_URL`)
+   - `VITE_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`)
+   - `VITE_SB_PUBLISHABLE_KEY` (or `SB_PUBLISHABLE_KEY`, optional)
 3. Run the app:
    `npm run dev`
 
 ## Docker / Cloud Run
 
-- The container serves a runtime config file at `/env.js`.
-- At container start, [docker-entrypoint.sh](docker-entrypoint.sh) generates `/usr/share/nginx/html/env.js` from environment variables (prefers `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SB_PUBLISHABLE_KEY`).
-- Build-time injection via Dockerfile `ARG`/`ENV` is intentionally not used (avoids Docker DX warnings).
+- The container serves a runtime config file at `/env.js` (no secrets).
+- AI requests go through a same-origin server proxy at `/api-proxy/...` which injects `GEMINI_API_KEY` server-side.
+- Build-time injection via Dockerfile `ARG`/`ENV` is intentionally not used.
 
 ## Operación / seguimiento
 

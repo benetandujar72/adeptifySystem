@@ -13,9 +13,10 @@ type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports';
 
 type AdminRegistryProps = {
   tenantSlug?: string;
+  adminScope?: 'tenant' | 'all';
 };
 
-const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
+const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 'tenant' }) => {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [consultations, setConsultations] = useState<Consultation[]>([]);
@@ -37,6 +38,13 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
+  const getTenantForConsultation = (c: Consultation) => (c.tenantSlug || tenantSlug || 'global');
+  const getClientKey = (c: Consultation) => {
+    const centerKey = normalizeCenterKey(c.centerName);
+    if (adminScope === 'all') return `${getTenantForConsultation(c)}::${centerKey}`;
+    return centerKey;
+  };
+
   const getAdminClientKeyFromPath = (pathname: string): string | null => {
     let path = pathname;
     if (tenantSlug) {
@@ -51,29 +59,30 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
   useEffect(() => {
     loadAllData();
-  }, [tenantSlug]);
+  }, [tenantSlug, adminScope]);
 
   useEffect(() => {
     const syncSelectionFromUrl = () => {
       const keyFromUrl = getAdminClientKeyFromPath(window.location.pathname);
       if (!keyFromUrl) return;
       setActiveTab('clients');
-      const wantedKey = normalizeCenterKey(keyFromUrl);
-      const match = consultations.find(c => normalizeCenterKey(c.centerName) === wantedKey);
+      const wantedKey = adminScope === 'all' ? keyFromUrl : normalizeCenterKey(keyFromUrl);
+      const match = consultations.find(c => getClientKey(c) === wantedKey);
       if (match) setSelectedClient(match);
     };
 
     syncSelectionFromUrl();
     window.addEventListener('popstate', syncSelectionFromUrl);
     return () => window.removeEventListener('popstate', syncSelectionFromUrl);
-  }, [consultations, tenantSlug]);
+  }, [consultations, tenantSlug, adminScope]);
 
 
   const loadAllData = async () => {
     setIsLoading(true);
     try {
       setDbMode(supabase ? 'cloud' : 'local');
-      const data = await consultationService.getAll(tenantSlug);
+      const scopeTenant = adminScope === 'all' ? undefined : tenantSlug;
+      const data = await consultationService.getAll(scopeTenant);
       setConsultations(data);
       if (data.length > 0 && !selectedClient) {
         setSelectedClient(data[0]);
@@ -93,21 +102,23 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
   const persistDafoCache = (next: Record<string, DafoResult>) => setDafoCache(next);
   const persistCustomProposalCache = (next: Record<string, ProposalData>) => setCustomProposalCache(next);
 
-  const getCenterHistories = (centerName: string) => {
-    const key = normalizeCenterKey(centerName);
+  const getCenterHistories = (c: Consultation) => {
+    const wanted = getClientKey(c);
     return consultations
-      .filter(x => normalizeCenterKey(x.centerName) === key)
+      .filter(x => getClientKey(x) === wanted)
       .map(x => x.consultationHistory || []);
   };
 
-  const onGenerateDafo = async (centerName: string) => {
-    const key = normalizeCenterKey(centerName);
+  const onGenerateDafo = async (c: Consultation) => {
+    const key = getClientKey(c);
+    const centerName = c.centerName;
+    const scopeTenant = adminScope === 'all' ? c.tenantSlug : tenantSlug;
     setCenterInsightError(null);
     setDafoLoadingKey(key);
     try {
-      const histories = getCenterHistories(centerName);
+      const histories = getCenterHistories(c);
       const dafo = await generateCenterDAFO(centerName, histories, language);
-      await centerInsightsService.upsertDafo(centerName, dafo, tenantSlug);
+      await centerInsightsService.upsertDafo(centerName, dafo, scopeTenant);
       persistDafoCache({ ...dafoCache, [key]: dafo });
     } catch (e: any) {
       setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
@@ -116,15 +127,17 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
     }
   };
 
-  const onGenerateCustomProposal = async (centerName: string) => {
-    const key = normalizeCenterKey(centerName);
+  const onGenerateCustomProposal = async (c: Consultation) => {
+    const key = getClientKey(c);
+    const centerName = c.centerName;
+    const scopeTenant = adminScope === 'all' ? c.tenantSlug : tenantSlug;
     setCenterInsightError(null);
     setCustomLoadingKey(key);
     try {
-      const histories = getCenterHistories(centerName);
+      const histories = getCenterHistories(c);
       let dafo = dafoCache[key];
       if (!dafo) {
-        const existing = await centerInsightsService.get(centerName, tenantSlug);
+        const existing = await centerInsightsService.get(centerName, scopeTenant);
         if (existing?.dafo) {
           dafo = existing.dafo;
           persistDafoCache({ ...dafoCache, [key]: dafo });
@@ -132,11 +145,11 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
       }
       if (!dafo) {
         dafo = await generateCenterDAFO(centerName, histories, language);
-        await centerInsightsService.upsertDafo(centerName, dafo, tenantSlug);
+        await centerInsightsService.upsertDafo(centerName, dafo, scopeTenant);
         persistDafoCache({ ...dafoCache, [key]: dafo });
       }
       const proposal = await generateCenterCustomProposal(centerName, histories, dafo, language);
-      await centerInsightsService.upsertCustomProposal(centerName, proposal, tenantSlug);
+      await centerInsightsService.upsertCustomProposal(centerName, proposal, scopeTenant);
       persistCustomProposalCache({ ...customProposalCache, [key]: proposal });
     } catch (e: any) {
       setCenterInsightError(typeof e?.message === 'string' ? e.message : String(e));
@@ -147,7 +160,9 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
 
   useEffect(() => {
     if (selectedClient && activeTab === 'chats') {
-      const centerId = tenantSlug ? `${tenantSlug}::${selectedClient.centerName}` : selectedClient.centerName;
+      const centerId = selectedClient.tenantSlug
+        ? `${selectedClient.tenantSlug}::${selectedClient.centerName}`
+        : (tenantSlug ? `${tenantSlug}::${selectedClient.centerName}` : selectedClient.centerName);
       loadClientChats(centerId);
     }
   }, [selectedClient, activeTab]);
@@ -230,7 +245,12 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                     <tbody className="divide-y divide-slate-50">
                       {consultations.slice(0, 5).map(c => (
                         <tr key={c.id} className="group hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 font-bold text-slate-800 text-sm">{c.centerName}</td>
+                          <td className="py-4 font-bold text-slate-800 text-sm">
+                            {c.centerName}
+                            {adminScope === 'all' && c.tenantSlug && (
+                              <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">{c.tenantSlug}</div>
+                            )}
+                          </td>
                           <td className="py-4 text-[10px] font-black text-indigo-600 uppercase tracking-widest">{c.selectedProduct}</td>
                           <td className="py-4 text-xs text-slate-400 font-medium">{new Date(c.date).toLocaleDateString()}</td>
                           <td className="py-4 text-right">
@@ -254,7 +274,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                    key={c.id}
                    onClick={() => {
                      setSelectedClient(c);
-                     navigateAdmin(`/admin/clients/${encodeURIComponent(normalizeCenterKey(c.centerName))}`);
+                     navigateAdmin(`/admin/clients/${encodeURIComponent(getClientKey(c))}`);
                    }}
                    className={`w-full text-left p-6 rounded-3xl border-2 transition-all ${
                      selectedClient?.id === c.id 
@@ -464,19 +484,19 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                              <div className="flex items-center gap-2">
                                <button
                                  type="button"
-                                 onClick={() => onGenerateDafo(c.centerName)}
-                                 disabled={dafoLoadingKey === normalizeCenterKey(c.centerName)}
+                                 onClick={() => onGenerateDafo(c)}
+                                 disabled={dafoLoadingKey === getClientKey(c)}
                                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
                                >
-                                 {dafoLoadingKey === normalizeCenterKey(c.centerName) ? t.adminGeneratingDafo : t.adminGenerateDafo}
+                                 {dafoLoadingKey === getClientKey(c) ? t.adminGeneratingDafo : t.adminGenerateDafo}
                                </button>
                                <button
                                  type="button"
-                                 onClick={() => onGenerateCustomProposal(c.centerName)}
-                                 disabled={customLoadingKey === normalizeCenterKey(c.centerName)}
+                                 onClick={() => onGenerateCustomProposal(c)}
+                                 disabled={customLoadingKey === getClientKey(c)}
                                  className="text-[9px] font-black uppercase tracking-widest px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700 transition-all disabled:opacity-60"
                                >
-                                 {customLoadingKey === normalizeCenterKey(c.centerName) ? t.adminGeneratingCustomProposal : t.adminGenerateCustomProposal}
+                                 {customLoadingKey === getClientKey(c) ? t.adminGeneratingCustomProposal : t.adminGenerateCustomProposal}
                                </button>
                              </div>
                            </div>
@@ -485,41 +505,41 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                              <p className="text-[10px] text-red-600 font-bold">{centerInsightError}</p>
                            )}
 
-                           {dafoCache[normalizeCenterKey(c.centerName)] && (
+                           {dafoCache[getClientKey(c)] && (
                              <div className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3">
-                                 <p className="text-[10px] text-slate-600 font-medium break-words">{dafoCache[normalizeCenterKey(c.centerName)].summary}</p>
+                                 <p className="text-[10px] text-slate-600 font-medium break-words">{dafoCache[getClientKey(c)].summary}</p>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Fortaleses' : 'Fortalezas'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                       {dafoCache[normalizeCenterKey(c.centerName)].strengths.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
+                                       {dafoCache[getClientKey(c)].strengths.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Debilitats' : 'Debilidades'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                       {dafoCache[normalizeCenterKey(c.centerName)].weaknesses.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
+                                       {dafoCache[getClientKey(c)].weaknesses.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Oportunitats' : 'Oportunidades'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                       {dafoCache[normalizeCenterKey(c.centerName)].opportunities.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
+                                       {dafoCache[getClientKey(c)].opportunities.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                  <div>
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{language === 'ca' ? 'Amenaces' : 'Amenazas'}</p>
                                    <ul className="text-[10px] text-slate-600 list-disc pl-4 space-y-1">
-                                       {dafoCache[normalizeCenterKey(c.centerName)].threats.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
+                                       {dafoCache[getClientKey(c)].threats.slice(0, 5).map((s, i) => <li key={i} className="break-words">{s}</li>)}
                                    </ul>
                                  </div>
                                </div>
 
-                               {dafoCache[normalizeCenterKey(c.centerName)].automationIdeas?.length > 0 && (
+                               {dafoCache[getClientKey(c)].automationIdeas?.length > 0 && (
                                  <div className="pt-3 border-t border-slate-100">
                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Automatitzacions suggerides' : 'Automatizaciones sugeridas'}</p>
                                    <div className="space-y-2">
-                                     {dafoCache[normalizeCenterKey(c.centerName)].automationIdeas.slice(0, 4).map((idea, i) => (
+                                     {dafoCache[getClientKey(c)].automationIdeas.slice(0, 4).map((idea, i) => (
                                        <div key={i} className="flex items-start justify-between gap-4">
                                          <div className="min-w-0">
                                            <p className="text-[10px] font-black text-slate-800 uppercase line-clamp-2 break-words">{idea.title}</p>
@@ -534,14 +554,14 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug }) => {
                              </div>
                            )}
 
-                           {customProposalCache[normalizeCenterKey(c.centerName)] && (
+                           {customProposalCache[getClientKey(c)] && (
                              <div className="bg-white border border-slate-100 rounded-2xl p-4">
                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{language === 'ca' ? 'Proposta a mida' : 'Propuesta a medida'}</p>
                                <div className="flex items-start justify-between gap-4">
                                  <div className="min-w-0">
-                                   <p className="text-[10px] text-slate-600 font-medium line-clamp-3 break-words">{customProposalCache[normalizeCenterKey(c.centerName)]?.diagnosis}</p>
+                                   <p className="text-[10px] text-slate-600 font-medium line-clamp-3 break-words">{customProposalCache[getClientKey(c)]?.diagnosis}</p>
                                  </div>
-                                 <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(customProposalCache[normalizeCenterKey(c.centerName)]?.totalInitial || 0).toLocaleString()}€</p>
+                                 <p className="text-[10px] font-black text-slate-900 whitespace-nowrap">{(customProposalCache[getClientKey(c)]?.totalInitial || 0).toLocaleString()}€</p>
                                </div>
                              </div>
                            )}

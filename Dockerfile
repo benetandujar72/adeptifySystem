@@ -11,22 +11,16 @@ COPY . .
 
 RUN npm run build
 
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM node:22-alpine AS runtime
 
-USER root
-RUN apk update && apk upgrade --no-cache
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
+ENV NODE_ENV=production
 
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
 
-# Allow the unprivileged nginx user to write env.js at container start.
-RUN chown -R nginx:nginx /usr/share/nginx/html \
-	&& chmod +x /docker-entrypoint.sh
-
-USER nginx
+COPY --from=build /app/dist ./dist
+COPY server.mjs ./server.mjs
 
 EXPOSE 8080
-
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["node", "server.mjs"]
