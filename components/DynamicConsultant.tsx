@@ -12,7 +12,11 @@ interface DynamicConsultantProps {
 const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis, onComplete }) => {
   const { language, t } = useLanguage();
   const [history, setHistory] = useState<{ question: string; answer: string[] }[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState<Partial<DynamicQuestion>>({});
+  type CurrentQuestionState = Partial<DynamicQuestion> & {
+    inputMode?: 'freeText';
+    placeholder?: string;
+  };
+  const [currentQuestion, setCurrentQuestion] = useState<CurrentQuestionState>({});
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [customAnswer, setCustomAnswer] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -41,13 +45,39 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
   type WizardStep = {
     id: string;
     question: { ca: string; es: string; eu: string };
-    options: { ca: string; es: string; eu: string }[];
-    isMultiSelect: boolean;
+    type: 'select' | 'freeText';
+    options?: { ca: string; es: string; eu: string }[];
+    isMultiSelect?: boolean;
     next: (answers: string[]) => string | null;
     applyToDiagnosis?: (answers: string[]) => Partial<DiagnosisState>;
   };
 
   const getWizardSteps = (): WizardStep[] => {
+    const entryMode: WizardStep = {
+      id: 'entry_mode',
+      question: {
+        ca: 'Com vols començar? ',
+        es: '¿Cómo quieres empezar?',
+        eu: 'Nola hasi nahi duzu?',
+      },
+      type: 'select',
+      options: [
+        { ca: 'Vull que em guieu per definir-ho', es: 'Quiero que me guiéis para definirlo', eu: 'Definitzen laguntzea nahi dut' },
+        { ca: 'Ho tinc clar i vull concretar requisits', es: 'Lo tengo claro y quiero concretar requisitos', eu: 'Argi daukat eta eskakizunak zehaztu nahi ditut' },
+      ],
+      isMultiSelect: false,
+      next: (answers) => {
+        const a = answers.join(' ').toLowerCase();
+        if (a.includes('clar') || a.includes('requis') || a.includes('concret')) return 'clear_need_brief';
+        return 'audience';
+      },
+      applyToDiagnosis: (answers) => {
+        const a = answers.join(' ').toLowerCase();
+        if (a.includes('clar') || a.includes('requis') || a.includes('concret')) return { intakeMode: 'clear_need' };
+        return { intakeMode: 'discovery' };
+      },
+    };
+
     const audienceStep: WizardStep = {
       id: 'audience',
       question: {
@@ -55,6 +85,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
         es: "Antes de empezar: ¿quién solicita ayuda hoy?",
         eu: "Hasi aurretik: nork eskatzen du laguntza gaur?",
       },
+      type: 'select',
       options: [
         { ca: 'Centre educatiu', es: 'Centro educativo', eu: 'Ikastetxea' },
         { ca: 'Família', es: 'Familia', eu: 'Familia' },
@@ -75,7 +106,52 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       },
     };
 
+    const clearNeedBrief: WizardStep = {
+      id: 'clear_need_brief',
+      question: {
+        ca: "Descriu què necessiteu (amb les teves paraules). Exemple: app de fitxatge + gestió de guàrdies, correus automàtics a substitut/substituït, informació d'alumnes i instruccions de guàrdia.",
+        es: 'Describe lo que necesitáis (con tus palabras). Ejemplo: app de fichaje + gestión de guardias, emails automáticos a sustituto/sustituido, info del alumnado y las instrucciones de guardia.',
+        eu: 'Azaldu zer behar duzuen (zure hitzekin). Adib.: fitxaketa-app + guardien kudeaketa, ordezkoari/ordezkatuari email automatikoak, ikasleen informazioa eta guardiaren jarraibideak.',
+      },
+      type: 'freeText',
+      next: () => 'clear_need_users',
+    };
+
+    const clearNeedUsers: WizardStep = {
+      id: 'clear_need_users',
+      question: {
+        ca: 'Qui ho farà servir? (rols i quantitats aproximades)',
+        es: '¿Quién lo va a usar? (roles y cantidades aproximadas)',
+        eu: 'Nork erabiliko du? (rolak eta gutxi gorabeherako kopuruak)',
+      },
+      type: 'freeText',
+      next: () => 'clear_need_rules',
+    };
+
+    const clearNeedRules: WizardStep = {
+      id: 'clear_need_rules',
+      question: {
+        ca: 'Quines regles o casos especials hi ha? (ex.: com s’assignen guàrdies, excepcions, substitucions, horaris)',
+        es: '¿Qué reglas o casos especiales hay? (ej.: cómo se asignan guardias, excepciones, sustituciones, horarios)',
+        eu: 'Zein arau edo kasu berezi daude? (adib.: guardiak nola esleitzen diren, salbuespenak, ordezkapenak, ordutegiak)',
+      },
+      type: 'freeText',
+      next: () => 'clear_need_comms',
+    };
+
+    const clearNeedComms: WizardStep = {
+      id: 'clear_need_comms',
+      question: {
+        ca: "Com s'han d'enviar les comunicacions? (canal, contingut mínim, quan s'envia, i a qui)",
+        es: '¿Cómo deben enviarse las comunicaciones? (canal, contenido mínimo, cuándo se envía y a quién)',
+        eu: 'Nola bidali behar dira komunikazioak? (kanala, gutxieneko edukia, noiz bidaltzen den eta nori)',
+      },
+      type: 'freeText',
+      next: () => 'urgency',
+    };
+
     const goalCommon = {
+      type: 'select',
       isMultiSelect: true,
       next: () => 'urgency',
     } as const;
@@ -137,6 +213,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
         es: '¿Qué urgencia tiene?',
         eu: 'Zer urgentzia dauka?',
       },
+      type: 'select',
       options: [
         { ca: 'Aquesta setmana', es: 'Esta semana', eu: 'Aste honetan' },
         { ca: 'Aquest mes', es: 'Este mes', eu: 'Hilabete honetan' },
@@ -154,6 +231,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
         es: "¿Hay alguna limitación importante? (Puedes marcar más de una opción)",
         eu: "Badago muga garrantzitsuren bat? (Aukera bat baino gehiago marka dezakezu)",
       },
+      type: 'select',
       options: [
         { ca: 'Poc temps', es: 'Poco tiempo', eu: 'Denbora gutxi' },
         { ca: 'Pressupost ajustat', es: 'Presupuesto ajustado', eu: 'Aurrekontu estua' },
@@ -165,7 +243,7 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
       next: () => null,
     };
 
-    return [audienceStep, goalSchool, goalFamily, goalGeneric, urgency, constraints];
+    return [entryMode, audienceStep, clearNeedBrief, clearNeedUsers, clearNeedRules, clearNeedComms, goalSchool, goalFamily, goalGeneric, urgency, constraints];
   };
 
   const getWizardStep = (id: string | null): WizardStep | null => {
@@ -175,13 +253,15 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
 
   const pushWizardQuestion = (step: WizardStep) => {
     const q = language === 'ca' ? step.question.ca : language === 'eu' ? step.question.eu : step.question.es;
-    const opts = step.options.map(o => (language === 'ca' ? o.ca : language === 'eu' ? o.eu : o.es));
+    const opts = step.options?.map(o => (language === 'ca' ? o.ca : language === 'eu' ? o.eu : o.es));
     setCurrentQuestion({
       question: q,
       options: opts,
-      isMultiSelect: step.isMultiSelect,
+      isMultiSelect: !!step.isMultiSelect,
       isComplete: false,
       confidence: 100,
+      inputMode: step.type === 'freeText' ? 'freeText' : undefined,
+      placeholder: step.type === 'freeText' ? t.consultantTellMore : undefined,
     });
   };
 
@@ -192,8 +272,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
     setCustomAnswer('');
     setShowCustomInput(false);
     setDiagnosisForAi(initialDiagnosis);
-    setWizardStepId('audience');
-    const step = getWizardStep('audience');
+    setWizardStepId('entry_mode');
+    const step = getWizardStep('entry_mode');
     if (step) pushWizardQuestion(step);
     setIsLoading(false);
   }, [initialDiagnosis.selectedProduct, language]);
@@ -253,7 +333,8 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
     setIsLoading(true);
     try {
       const next = await getNextConsultantQuestion(newHistory, diagnosisForAi, language);
-      if (next.isComplete || history.length >= 7) {
+      const maxQuestions = diagnosisForAi?.intakeMode === 'clear_need' ? 12 : 7;
+      if (next.isComplete || history.length >= maxQuestions) {
         onComplete(newHistory);
       } else {
         setCurrentQuestion(next);
@@ -313,45 +394,63 @@ const DynamicConsultant: React.FC<DynamicConsultantProps> = ({ initialDiagnosis,
               <h4 className="text-2xl font-serif italic text-slate-900 leading-tight tracking-tight">
                 {currentQuestion.question}
               </h4>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ensureOtherOption(currentQuestion.options)?.map((option, idx) => {
-                  const other = isOtherOption(option);
-                  const isSelected = selectedOptions.includes(option) || (other && showCustomInput);
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        if (other) { setShowCustomInput(!showCustomInput); return; }
-                        // Multichoice: always toggle selection; advance only via "Continuar".
-                        setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
-                      }}
-                      className={`text-left p-6 rounded-xl border transition-all duration-300 flex items-center justify-between group ${
-                        isSelected 
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl scale-[1.02]' 
-                          : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-600 hover:bg-indigo-50'
-                      }`}
-                    >
-                      <span className="text-xs font-bold uppercase tracking-tight">{option}</span>
-                      <div className={`h-4 w-4 rounded-full border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-400' : 'border-slate-200'}`} />
-                    </button>
-                  );
-                })}
-              </div>
 
-              {showCustomInput && (
+              {currentQuestion.inputMode === 'freeText' || !(currentQuestion.options && currentQuestion.options.length) ? (
                 <textarea
                   autoFocus
-                  className="w-full p-6 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-600 transition-all font-medium text-sm text-slate-800 h-32"
-                  placeholder={t.consultantTellMore}
+                  className="w-full p-6 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-600 transition-all font-medium text-sm text-slate-800 h-40"
+                  placeholder={currentQuestion.placeholder || t.consultantTellMore}
                   value={customAnswer}
                   onChange={(e) => setCustomAnswer(e.target.value)}
                 />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {ensureOtherOption(currentQuestion.options)?.map((option, idx) => {
+                      const other = isOtherOption(option);
+                      const isSelected = selectedOptions.includes(option) || (other && showCustomInput);
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (other) { setShowCustomInput(!showCustomInput); return; }
+                            // Multichoice: always toggle selection; advance only via "Continuar".
+                            setSelectedOptions(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
+                          }}
+                          className={`text-left p-6 rounded-xl border transition-all duration-300 flex items-center justify-between group ${
+                            isSelected 
+                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl scale-[1.02]' 
+                              : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-600 hover:bg-indigo-50'
+                          }`}
+                        >
+                          <span className="text-xs font-bold uppercase tracking-tight">{option}</span>
+                          <div className={`h-4 w-4 rounded-full border transition-all ${isSelected ? 'border-indigo-400 bg-indigo-400' : 'border-slate-200'}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {showCustomInput && (
+                    <textarea
+                      autoFocus
+                      className="w-full p-6 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-600 transition-all font-medium text-sm text-slate-800 h-32"
+                      placeholder={t.consultantTellMore}
+                      value={customAnswer}
+                      onChange={(e) => setCustomAnswer(e.target.value)}
+                    />
+                  )}
+                </>
               )}
 
               <div className="flex flex-col items-end gap-4 pt-6 border-t border-slate-100">
                   <button
-                    onClick={() => handleFinalSubmit()}
+                    onClick={() => {
+                      if (currentQuestion.inputMode === 'freeText' || !(currentQuestion.options && currentQuestion.options.length)) {
+                        handleFinalSubmit(customAnswer);
+                        return;
+                      }
+                      handleFinalSubmit();
+                    }}
                     disabled={selectedOptions.length === 0 && !customAnswer.trim()}
                     className="bg-slate-950 text-white px-12 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-30 shadow-xl"
                   >

@@ -47,6 +47,7 @@ export interface DiagnosisState {
   contactName?: string;
   consultationHistory: { question: string; answer: string[] }[];
   category?: string;
+  intakeMode?: 'discovery' | 'clear_need';
 }
 
 export interface Consultation extends DiagnosisState {

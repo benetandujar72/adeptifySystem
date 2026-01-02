@@ -154,8 +154,81 @@ export async function getNextConsultantQuestion(
   const historyStr = formatHistoryForPrompt(history, lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const audience = detectAudience(diagnosis, history);
+  const intakeMode = (diagnosis as any)?.intakeMode === 'clear_need' ? 'clear_need' : 'discovery';
   
-  const prompt = lang === 'ca'
+  const prompt = intakeMode === 'clear_need'
+    ? (lang === 'ca'
+      ? `ETS UN CONSULTOR SÈNIOR D'ANÀLISI DE REQUISITS PER A PROJECTES DE PROGRAMACIÓ EN CENTRES EDUCATIUS.
+OBJECTIU: obtenir informació suficient per passar-la a l'equip de programació i fer un pressupost realista.
+
+REGLLES CRÍTIQUES:
+- PARLA SEMPRE EN ${langName}.
+- Fes preguntes de consultor: concretes, orientades a decisió i a reduir riscos.
+- Pots parlar de "pantalles", "rols", "permisos", "notificacions", "integracions" i "dades" (sense entrar en tecnicismes innecessaris).
+- Prioritza entendre: fluxos (pas a pas), actors (qui fa què), dades necessàries, comunicacions (emails), casos especials, privacitat (menors) i criteris d'èxit.
+
+HISTORIAL:
+${historyStr}
+
+QUAN MARCAR "isComplete":
+- Només marca isComplete=true quan ja tinguis: rols/usuaris, flux principal, regles de guàrdies, sistema de fitxatge (mètode), comunicacions (a qui/quan/què), dades d'alumnat (mínim necessari) i restriccions/termini.
+
+Respon en aquest format JSON (i només JSON):
+{
+  "question": "Pregunta de consultor en ${langName}",
+  "options": ["Opció 1 en ${langName}", "Opció 2", "Opció 3", "Altres..."],
+  "isMultiSelect": boolean,
+  "isComplete": boolean,
+  "confidence": 0-100
+}`
+      : lang === 'eu'
+        ? `HEZKUNTZA-ZENTROETAKO PROGRAMAZIO PROIEKTUETARAKO ESKAKIZUN-ANALISIKO AHOLKULARI SENIORRA ZARA.
+HELBURUA: programazio-taldeari pasatzeko eta aurrekontu errealista egiteko behar den informazioa biltzea.
+
+ARAU KRITIKOAK:
+- BETI ${langName}-N HITZ EGIN.
+- Aholkulari galderak egin: zehatzak, erabakiak hartzera bideratuak eta arriskuak murrizteko.
+- "pantailak", "rolak", "baimenak", "jakinarazpenak", "integrazioak" eta "datuak" aipa ditzakezu (teknizismo gehiegirik gabe).
+- Lehentasunak: fluxuak (pausoz pauso), aktoreak (nork zer egiten duen), datu beharrezkoak, komunikazioak (emailak), kasu bereziak, pribatutasuna (adingabeak) eta arrakasta-irizpideak.
+
+HISTORIALA:
+${historyStr}
+
+NOIZ MARKATU "isComplete":
+- isComplete=true bakarrik markatu honakoa baduzu: rolak/erabiltzaileak, fluxu nagusia, guardien arauak, fitxaketa-sistema (modua), komunikazioak (nori/noiz/zer), ikasleen datuak (beharrezko minimoa) eta murrizketak/epea.
+
+Erantzun JSON formatu honetan (eta JSON bakarrik):
+{
+  "question": "Aholkulari-galdera ${langName}-n",
+  "options": ["1. aukera ${langName}-n", "2. aukera", "3. aukera", "Besteak..."],
+  "isMultiSelect": boolean,
+  "isComplete": boolean,
+  "confidence": 0-100
+}`
+        : `ERES UN CONSULTOR SÉNIOR DE ANÁLISIS DE REQUISITOS PARA PROYECTOS DE PROGRAMACIÓN EN CENTROS EDUCATIVOS.
+OBJETIVO: obtener información suficiente para pasarla al equipo de programación y hacer un presupuesto realista.
+
+REGLAS CRÍTICAS:
+- HABLA SIEMPRE EN ${langName}.
+- Haz preguntas de consultor: concretas, orientadas a decidir y a reducir riesgos.
+- Puedes hablar de "pantallas", "roles", "permisos", "notificaciones", "integraciones" y "datos" (sin tecnicismos innecesarios).
+- Prioriza entender: flujos (paso a paso), actores (quién hace qué), datos necesarios, comunicaciones (emails), casos especiales, privacidad (menores) y criterios de éxito.
+
+HISTORIAL:
+${historyStr}
+
+CUÁNDO MARCAR "isComplete":
+- Solo marca isComplete=true cuando ya tengas: roles/usuarios, flujo principal, reglas de guardias, sistema de fichaje (método), comunicaciones (a quién/cuándo/qué), datos del alumnado (mínimo necesario) y restricciones/plazo.
+
+Responde en este formato JSON (y solo JSON):
+{
+  "question": "Pregunta de consultor en ${langName}",
+  "options": ["Opción 1 en ${langName}", "Opción 2", "Opción 3", "Otros..."],
+  "isMultiSelect": boolean,
+  "isComplete": boolean,
+  "confidence": 0-100
+}`)
+      : lang === 'ca'
     ? (audience === 'family'
       ? `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA I ORGANITZACIÓ PER A FAMÍLIES.
 OBJECTIU: entendre què està generant tensió, desordre o manca de temps a casa per proposar una solució de "vida fàcil".
@@ -197,7 +270,7 @@ Respon en aquest format JSON (i només JSON):
   "isComplete": boolean,
   "confidence": 0-100
 }`)
-    : (audience === 'family'
+      : audience === 'family'
       ? `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA Y ORGANIZACIÓN PARA FAMILIAS.
 OBJETIVO: entender qué genera tensión, desorden o falta de tiempo en casa para proponer una solución de "vida fácil".
 
@@ -237,7 +310,7 @@ Responde en este formato JSON (y solo JSON):
   "isMultiSelect": boolean,
   "isComplete": boolean,
   "confidence": 0-100
-}`);
+  }`;
 
   try {
     const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
@@ -273,6 +346,13 @@ Responde en este formato JSON (y solo JSON):
 export async function generateEducationalProposal(diagnosis: DiagnosisState, lang: Language = 'ca'): Promise<ProposalData> {
   const historyStr = formatHistoryForPrompt(diagnosis.consultationHistory || [], lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
+  const intakeMode = (diagnosis as any)?.intakeMode === 'clear_need' ? 'clear_need' : 'discovery';
+  const programmingSummaryNoteCa = intakeMode === 'clear_need'
+    ? `\n- A "solution" inclou també una secció "Resumen para programación" (títol exactament així), amb 6–10 punts molt concrets per a l'equip de programació: rols, pantalles, fluxos, dades, notificacions, integracions, permisos i criteris d'acceptació.`
+    : '';
+  const programmingSummaryNoteEs = intakeMode === 'clear_need'
+    ? `\n- En "solution" incluye también una sección "Resumen para programación" (título exactamente así), con 6–10 puntos muy concretos para el equipo de programación: roles, pantallas, flujos, datos, notificaciones, integraciones, permisos y criterios de aceptación.`
+    : '';
   
   const prompt = lang === 'ca'
     ? `ETS UN CONSULTOR ESTRATÈGIC SÈNIOR PER A CENTRES EDUCATIUS.
@@ -370,7 +450,7 @@ Recomanacions:
 - Pressupost (CONTROL DE COST): prioritza el mínim viable i quick-wins en 2–4 setmanes si el cas ho permet.
 - Fases: entregables i criteris d'èxit per fase.
 - A la "subscription" descriu clarament manteniment, suport i millores.
-- A "addons" proposa opcions extra amb més funcionalitats.`
+- A "addons" proposa opcions extra amb més funcionalitats.${programmingSummaryNoteCa}`
     : `ERES UN CONSULTOR ESTRATÉGICO SÉNIOR PARA CENTROS EDUCATIVOS.
 Objetivo: generar un INFORME FINAL Y PRESUPUESTO muy minucioso, exhaustivo, elegante y profesional.
 
@@ -467,7 +547,7 @@ Recomendaciones:
 - Presupuesto (CONTROL DE COSTES): prioriza el mínimo viable y quick-wins en 2–4 semanas si el caso lo permite.
 - Fases: entregables y criterios de éxito por fase.
 - En "subscription" describe claramente mantenimiento, soporte y mejoras.
-- En "addons" propone extras con más funcionalidades.`;
+- En "addons" propone extras con más funcionalidades.${programmingSummaryNoteEs}`;
 
   try {
     const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
