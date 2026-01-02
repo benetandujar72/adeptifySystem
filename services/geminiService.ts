@@ -39,11 +39,21 @@ async function generateContentViaProxy(model: string, request: GenerateContentRe
     generationConfig: request.config || undefined,
   };
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e: any) {
+    const err: any = new Error(
+      'Gemini proxy network/decode error. If this persists, the /api-proxy response encoding may be mismatched.'
+    );
+    err.isNetworkError = true;
+    err.cause = e;
+    throw err;
+  }
 
   const raw = await resp.json().catch(() => ({}));
   if (!resp.ok) {
@@ -69,6 +79,7 @@ const MODEL_FALLBACK_ORDER = [
 ];
 
 const shouldTryNextModel = (err: unknown): boolean => {
+  if ((err as any)?.isNetworkError) return false;
   const message = (err as any)?.message;
   if (typeof message !== 'string') return true;
   // Common cases where retrying with another model can help.

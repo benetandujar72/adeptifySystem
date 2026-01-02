@@ -11,8 +11,45 @@ const STARTUP_TS = Date.now();
 
 const app = express();
 
+// Basic security headers (kept permissive enough for SPA + Supabase).
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+
+  // Helps prevent unexpected third-party scripts from executing.
+  // Note: connect-src allows https/wss because Supabase/other APIs are runtime-configured.
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https: blob:",
+      "font-src 'self' data: https:",
+      "connect-src 'self' https: wss:",
+      "worker-src 'self' blob:",
+    ].join('; ')
+  );
+
+  next();
+});
+
 // Health
 app.get('/healthz', (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
+// Some Google frontends may intercept /healthz; expose alternatives too.
+app.get('/health', (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
+app.get('/readyz', (_req, res) => {
   res.status(200).json({ ok: true });
 });
 
@@ -68,8 +105,13 @@ app.all('/api-proxy/*', async (req, res) => {
       const key = k.toLowerCase();
       if (hopByHopHeaders.has(key)) continue;
       if (key === 'host') continue;
+      // Prevent upstream compression to avoid Content-Encoding/body mismatches.
+      if (key === 'accept-encoding') continue;
       headers[key] = v;
     }
+
+    // Explicitly request an uncompressed upstream response.
+    headers['accept-encoding'] = 'identity';
 
     const body = req.method === 'GET' || req.method === 'HEAD' ? undefined : await readRawBody(req);
 
@@ -85,6 +127,9 @@ app.all('/api-proxy/*', async (req, res) => {
       if (hopByHopHeaders.has(k)) return;
       // Prevent caching of model responses.
       if (k === 'cache-control') return;
+      // Avoid browser decode errors if the body/length doesn't match upstream headers.
+      if (k === 'content-encoding') return;
+      if (k === 'content-length') return;
       res.setHeader(key, value);
     });
     res.setHeader('Cache-Control', 'no-store');
