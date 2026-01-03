@@ -418,7 +418,7 @@ const ca = {
     consultorFaqA4: "Sí: la clau de Gemini no es mostra al navegador i la connexió és segura.",
 
     consultorContactTitle: "Contacte",
-    consultorContactDesc: "Explica'ns què necessites i et respondrem. En enviar, s'obrirà el teu client de correu amb el missatge preparat.",
+    consultorContactDesc: "Explica'ns què necessites i et respondrem per correu. En enviar, el missatge s'envia directament des del servidor.",
     consultorContactPhoneLabel: "Telèfon",
     consultorContactAddressLabel: "Adreça",
     consultorContactEmailLabel: "Email",
@@ -855,7 +855,7 @@ const es = {
     consultorFaqA4: "Sí: la clave de Gemini no se expone en el navegador y la conexión es segura.",
 
     consultorContactTitle: "Contacto",
-    consultorContactDesc: "Cuéntanos qué necesitas y te respondemos. Al enviar, se abrirá tu cliente de correo con el mensaje preparado.",
+    consultorContactDesc: "Cuéntanos qué necesitas y te respondemos por correo. Al enviar, el mensaje se envía directamente desde el servidor.",
     consultorContactPhoneLabel: "Teléfono",
     consultorContactAddressLabel: "Dirección",
     consultorContactEmailLabel: "Email",
