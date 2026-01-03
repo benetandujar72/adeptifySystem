@@ -243,6 +243,67 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
       </section>
 
       <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
+        <div className="bg-white border border-slate-100 rounded-2xl p-10 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.06)] grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-10 items-center">
+          <div className="max-w-xl">
+            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-indigo-700">Perfil</div>
+            <h2 className="mt-3 text-2xl md:text-3xl font-serif text-slate-900 italic">Benet Andújar Guardado</h2>
+            <p className="mt-3 text-slate-500 font-medium leading-relaxed">
+              Consultor educativo y coach con más de 20 años acompañando a centros, equipos y familias. Enfoque humano,
+              match con las personas y tecnología al servicio del vínculo.
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.location.href = '/consultor/benet';
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className="bg-slate-900 text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg"
+              >
+                Ver perfil
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const el = document.getElementById('contacto');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } catch {
+                    // ignore
+                  }
+                }}
+                className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
+              >
+                Contactar
+              </button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-indigo-200/60 via-slate-100 to-indigo-100 blur-2xl" />
+            <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white">
+              <img
+                src="/benet/benet-main.svg"
+                alt="Benet Andújar"
+                className="w-full h-64 md:h-72 object-cover bg-slate-50"
+                loading="lazy"
+              />
+              <div className="p-4 border-t border-slate-100">
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Frase</div>
+                <p className="mt-2 text-sm text-slate-700 font-semibold">
+                  “La tecnología tiene sentido cuando libera tiempo para cuidar a las personas.”
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
         <div className="text-left md:text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorPlansTitle}</h2>
           <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-3xl md:mx-auto">{t.consultorPlansDesc}</p>
@@ -359,7 +420,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
         </div>
       </section>
 
-      <section className="w-full max-w-6xl mx-auto">
+      <section id="contacto" className="w-full max-w-6xl mx-auto">
         <div className="bg-white border border-slate-100 rounded-2xl p-10 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.06)] grid grid-cols-1 md:grid-cols-2 gap-10">
           <div className="max-w-xl">
             <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorContactTitle}</h2>

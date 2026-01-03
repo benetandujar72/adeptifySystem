@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" fill="#f8fafc"/>
+  <rect x="90" y="90" width="1420" height="820" rx="40" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="140" y="220" font-family="ui-sans-serif, system-ui" font-size="44" font-weight="800" fill="#0f172a">Taller</text>
+  <text x="140" y="290" font-family="ui-sans-serif, system-ui" font-size="26" font-weight="700" fill="#4f46e5">Imagen (placeholder)</text>
+  <text x="140" y="360" font-family="ui-sans-serif, system-ui" font-size="22" font-weight="500" fill="#475569">Sustituye por foto real en /public/benet/benet-taller-1.jpg (o cambia el src).</text>
+</svg>

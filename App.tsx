@@ -12,6 +12,7 @@ import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
 import InstitutionGate from './components/InstitutionGate';
 import ConsultorLanding from './components/ConsultorLanding';
+import BenetProfilePage from './components/BenetProfilePage';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -232,6 +233,14 @@ const AppContent: React.FC = () => {
 
   // Marketing landing route: accessible without selecting a tenant.
   if (isConsultorRoute) {
+    const path = (() => {
+      try {
+        return window.location.pathname || '/consultor';
+      } catch {
+        return '/consultor';
+      }
+    })();
+
     const openApp = () => {
       // Return to root (tenant gate / app entry).
       window.location.href = '/';
@@ -302,7 +311,20 @@ const AppContent: React.FC = () => {
         </header>
 
         <main className="w-full px-6 md:px-12 mt-32 mb-20 max-w-[1600px]">
-          <ConsultorLanding onOpenApp={openApp} onOpenDocs={openDocs} />
+          {path === '/consultor/benet' ? (
+            <BenetProfilePage
+              onBack={() => {
+                try {
+                  window.history.replaceState({}, '', '/consultor');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                } catch {
+                  window.location.href = '/consultor';
+                }
+              }}
+            />
+          ) : (
+            <ConsultorLanding onOpenApp={openApp} onOpenDocs={openDocs} />
+          )}
         </main>
 
         <footer className="w-full p-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
