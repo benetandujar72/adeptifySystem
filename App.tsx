@@ -355,7 +355,12 @@ const AppContent: React.FC = () => {
       </header>
 
       <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
-        {phase === Phase.LANDING && <SelectionScreen onChoice={handleProductChoice} />}
+        {phase === Phase.LANDING && (
+          <SelectionScreen
+            centerName={diagnosis.centerName}
+            onChoice={handleProductChoice}
+          />
+        )}
 
         {phase === Phase.REGISTER && (
           <Register
