@@ -187,13 +187,17 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({ onChoice, centerName 
         <div className="space-y-3">
           {faqs.map((item, idx) => {
             const isOpen = openFaq === idx;
+            const buttonId = `landing-faq-${idx}-button`;
+            const panelId = `landing-faq-${idx}-panel`;
             return (
               <div key={item.q} className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
                 <button
                   type="button"
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
                   className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
-                  aria-expanded={isOpen}
+                  id={buttonId}
+                  aria-controls={panelId}
+                  aria-expanded={isOpen ? 'true' : 'false'}
                 >
                   <span className="text-sm md:text-base font-black text-slate-900 tracking-tight">{item.q}</span>
                   <span className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-100 text-slate-700 transition-transform ${isOpen ? 'rotate-45 bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50'}`}>
@@ -201,7 +205,7 @@ const SelectionScreen: React.FC<SelectionScreenProps> = ({ onChoice, centerName 
                   </span>
                 </button>
                 {isOpen ? (
-                  <div className="px-6 pb-6 -mt-1">
+                  <div id={panelId} role="region" aria-labelledby={buttonId} className="px-6 pb-6 -mt-1">
                     <p className="text-sm text-slate-500 leading-relaxed font-medium">{item.a}</p>
                   </div>
                 ) : null}

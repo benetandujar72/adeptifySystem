@@ -12,6 +12,7 @@
     "react-dom": "^19.0.0",
     "@supabase/supabase-js": "^2.45.4",
     "express": "^4.19.2",
+    "nodemailer": "^6.9.16",
     "jspdf": "^3.0.4",
     "html2canvas": "^1.4.1"
   },

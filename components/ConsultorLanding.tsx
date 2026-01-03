@@ -13,6 +13,8 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactMessage, setContactMessage] = useState('');
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [contactError, setContactError] = useState('');
 
   const faqs = useMemo(
     () => [
@@ -24,20 +26,46 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
     [t]
   );
 
-  const openMailto = () => {
-    const subject = encodeURIComponent(t.consultorContactMailSubject);
-    const body = encodeURIComponent(
-      `${t.consultorContactMailIntro}\n\n` +
-        `${t.consultorContactFieldName}: ${contactName.trim()}\n` +
-        `${t.consultorContactFieldEmail}: ${contactEmail.trim()}\n\n` +
-        `${t.consultorContactFieldMessage}:\n${contactMessage.trim()}\n\n` +
-        `${t.consultorContactMailFooter}\n${window.location.origin}/consultor\n`
-    );
-
-    window.location.href = `mailto:${encodeURIComponent(ADEPTIFY_INFO.email)}?subject=${subject}&body=${body}`;
-  };
-
   const canSubmit = !!contactName.trim() && !!contactEmail.trim() && !!contactMessage.trim();
+
+  const submitContact = async () => {
+    if (!canSubmit || contactStatus === 'sending') return;
+
+    setContactStatus('sending');
+    setContactError('');
+
+    try {
+      const resp = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: contactName.trim(),
+          email: contactEmail.trim(),
+          message: contactMessage.trim(),
+          page: window.location.href,
+          lang: document.documentElement.lang || undefined,
+        }),
+      });
+
+      if (!resp.ok) {
+        let msg = t.consultorContactError;
+        try {
+          const data = await resp.json();
+          const serverMsg = data?.error?.message;
+          if (typeof serverMsg === 'string' && serverMsg.trim()) msg = serverMsg.trim();
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
+      }
+
+      setContactStatus('sent');
+      setContactMessage('');
+    } catch (e) {
+      setContactStatus('error');
+      setContactError(e instanceof Error ? e.message : t.consultorContactError);
+    }
+  };
 
   return (
     <div className="fade-up">
@@ -294,6 +322,8 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
         <div className="space-y-3">
           {faqs.map((item, idx) => {
             const isOpen = openFaq === idx;
+            const buttonId = `consultor-faq-${idx}-button`;
+            const panelId = `consultor-faq-${idx}-panel`;
             return (
               <div
                 key={item.q}
@@ -303,7 +333,9 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                   type="button"
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
                   className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
-                  aria-expanded={isOpen}
+                  id={buttonId}
+                  aria-controls={panelId}
+                  aria-expanded={isOpen ? 'true' : 'false'}
                 >
                   <span className="text-sm md:text-base font-black text-slate-900 tracking-tight">{item.q}</span>
                   <span
@@ -317,7 +349,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                   </span>
                 </button>
                 {isOpen ? (
-                  <div className="px-6 pb-6 -mt-1">
+                  <div id={panelId} role="region" aria-labelledby={buttonId} className="px-6 pb-6 -mt-1">
                     <p className="text-sm text-slate-500 leading-relaxed font-medium">{item.a}</p>
                   </div>
                 ) : null}
@@ -407,16 +439,24 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
 
               <button
                 type="button"
-                onClick={openMailto}
-                disabled={!canSubmit}
+                onClick={submitContact}
+                disabled={!canSubmit || contactStatus === 'sending'}
                 className={`mt-2 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${
-                  canSubmit
+                  canSubmit && contactStatus !== 'sending'
                     ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                 }`}
               >
-                {t.consultorContactSubmit}
+                {contactStatus === 'sending' ? t.consultorContactSending : t.consultorContactSubmit}
               </button>
+
+              {contactStatus === 'sent' ? (
+                <p className="text-[11px] text-emerald-700 font-semibold leading-relaxed">{t.consultorContactSuccess}</p>
+              ) : null}
+
+              {contactStatus === 'error' ? (
+                <p className="text-[11px] text-rose-700 font-semibold leading-relaxed">{contactError || t.consultorContactError}</p>
+              ) : null}
 
               <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
                 {t.consultorContactNote}

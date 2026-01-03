@@ -20,6 +20,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/1YfXdRqaoIcF3QDGL4UD6GV
    - `VITE_SUPABASE_URL` (or `SUPABASE_URL`)
    - `VITE_SUPABASE_ANON_KEY` (or `SUPABASE_ANON_KEY`)
    - `VITE_SB_PUBLISHABLE_KEY` (or `SB_PUBLISHABLE_KEY`, optional)
+   - Contact email (optional locally; required in production for the /consultor form):
+     - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE` (`true` for 465, `false` for 587)
+     - `SMTP_USER`, `SMTP_PASS`
+     - `CONTACT_TO` (recipient), `CONTACT_FROM` (sender), `CONTACT_FROM_NAME` (display name)
 3. Run the app:
    `npm run dev`
 

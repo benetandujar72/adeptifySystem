@@ -429,7 +429,10 @@ const ca = {
     consultorContactEmailPlaceholder: "correu@centre.cat",
     consultorContactMessagePlaceholder: "Què vols aconseguir? En quin termini?",
     consultorContactSubmit: "Enviar",
-    consultorContactNote: "No guardem aquest formulari: s'envia via correu per defecte.",
+    consultorContactSending: "Enviant...",
+    consultorContactSuccess: "Missatge enviat. Et respondrem al més aviat possible.",
+    consultorContactError: "No s'ha pogut enviar. Torna-ho a provar en uns minuts.",
+    consultorContactNote: "Enviem el missatge per correu des del servidor.",
     consultorContactMailSubject: "Sol·licitud de consultoria online",
     consultorContactMailIntro: "Dades de contacte:",
     consultorContactMailFooter: "Enviat des de:"
@@ -863,7 +866,10 @@ const es = {
     consultorContactEmailPlaceholder: "correo@centro.es",
     consultorContactMessagePlaceholder: "¿Qué quieres conseguir? ¿En qué plazo?",
     consultorContactSubmit: "Enviar",
-    consultorContactNote: "No guardamos este formulario: se envía por correo por defecto.",
+    consultorContactSending: "Enviando...",
+    consultorContactSuccess: "Mensaje enviado. Te responderemos lo antes posible.",
+    consultorContactError: "No se ha podido enviar. Inténtalo de nuevo en unos minutos.",
+    consultorContactNote: "Enviamos el mensaje por correo desde el servidor.",
     consultorContactMailSubject: "Solicitud de consultoría online",
     consultorContactMailIntro: "Datos de contacto:",
     consultorContactMailFooter: "Enviado desde:"

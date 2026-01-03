@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
+import nodemailer from 'nodemailer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +11,42 @@ const PORT = Number(process.env.PORT || 8080);
 const STARTUP_TS = Date.now();
 
 const app = express();
+
+const isValidEmail = (value) => {
+  if (typeof value !== 'string') return false;
+  const v = value.trim();
+  if (!v || v.length > 320) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+};
+
+const sanitizeText = (value, maxLen) => {
+  if (typeof value !== 'string') return '';
+  const v = value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  if (!v) return '';
+  return v.length > maxLen ? v.slice(0, maxLen) : v;
+};
+
+let cachedTransporter = null;
+const getTransporter = () => {
+  if (cachedTransporter) return cachedTransporter;
+
+  const host = (process.env.SMTP_HOST || '').trim();
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = process.env.SMTP_PASS || '';
+
+  if (!host) return null;
+
+  cachedTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: user ? { user, pass } : undefined,
+  });
+
+  return cachedTransporter;
+};
 
 // Basic security headers (kept permissive enough for SPA + Supabase).
 app.use((req, res, next) => {
@@ -90,6 +127,69 @@ app.get('/env.js', (_req, res) => {
   };
 
   res.status(200).send(`// Generated at request time; do not commit.\nwindow.__ADEPTIFY_ENV__ = ${JSON.stringify(safeEnv)};\n`);
+});
+
+// Contact form email (server-side) - sends an email via SMTP.
+// Configure with:
+// - SMTP_HOST, SMTP_PORT, SMTP_SECURE (true/false), SMTP_USER, SMTP_PASS
+// - CONTACT_TO (recipient), CONTACT_FROM (from email), CONTACT_FROM_NAME
+app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
+  try {
+    const transporter = getTransporter();
+    if (!transporter) {
+      res.status(503).json({ error: { message: 'Email service not configured' } });
+      return;
+    }
+
+    const name = sanitizeText(req.body?.name, 120);
+    const email = sanitizeText(req.body?.email, 320);
+    const message = sanitizeText(req.body?.message, 4000);
+    const page = sanitizeText(req.body?.page, 500);
+    const lang = sanitizeText(req.body?.lang, 10);
+
+    if (!name || !email || !message) {
+      res.status(400).json({ error: { message: 'Missing required fields' } });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      res.status(400).json({ error: { message: 'Invalid email' } });
+      return;
+    }
+
+    const to = (process.env.CONTACT_TO || process.env.ADEPTIFY_CONTACT_EMAIL || 'bandujar@edutac.es').trim();
+    const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
+    const fromName = sanitizeText(process.env.CONTACT_FROM_NAME || 'Adeptify Consultor', 120);
+    if (!to) {
+      res.status(503).json({ error: { message: 'Recipient email not configured' } });
+      return;
+    }
+    if (!fromEmail || !isValidEmail(fromEmail)) {
+      res.status(503).json({ error: { message: 'Sender email not configured' } });
+      return;
+    }
+
+    const subject = `Nuevo contacto web: ${name}`;
+    const text =
+      `Nuevo mensaje desde /consultor\n\n` +
+      `Nombre: ${name}\n` +
+      `Email: ${email}\n` +
+      (lang ? `Idioma: ${lang}\n` : '') +
+      (page ? `Página: ${page}\n` : '') +
+      `\nMensaje:\n${message}\n`;
+
+    await transporter.sendMail({
+      to,
+      from: { name: fromName, address: fromEmail },
+      replyTo: email,
+      subject,
+      text,
+    });
+
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('contact email error:', e);
+    res.status(502).json({ error: { message: 'Email send failed' } });
+  }
 });
 
 const readRawBody = async (req) => {

@@ -5,6 +5,13 @@ substitutions:
   _RUN_REGION: europe-west1
   _SERVICE: adeptify-consultor
   _AR_REPO: adeptify
+  # Contact email (SMTP) runtime configuration
+  _SMTP_HOST: smtp.gmail.com
+  _SMTP_PORT: '587'
+  _SMTP_SECURE: 'false'
+  _SMTP_USER: bandujar@edutac.es
+  _CONTACT_TO: bandujar@edutac.es
+  _CONTACT_FROM_NAME: Adeptify Consultor
   # (Testing phase) DB backup steps are currently disabled below.
   # When re-enabling backups, you can restore:
   # _BACKUP_BUCKET: adeptify-supabase-backups
@@ -115,7 +122,9 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-secrets'
-      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest,SMTP_PASS=SMTP_PASS:latest'
+      - '--set-env-vars'
+      - 'SMTP_HOST=${_SMTP_HOST},SMTP_PORT=${_SMTP_PORT},SMTP_SECURE=${_SMTP_SECURE},SMTP_USER=${_SMTP_USER},CONTACT_TO=${_CONTACT_TO},CONTACT_FROM_NAME=${_CONTACT_FROM_NAME}'
       - '--port'
       - '8080'
       - '--quiet'
@@ -132,6 +141,9 @@ availableSecrets:
       env: 'SUPABASE_ANON_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SB_PUBLISHABLE_KEY/versions/latest
       env: 'SB_PUBLISHABLE_KEY'
+    # Contact email (SMTP)
+    - versionName: projects/$PROJECT_ID/secrets/SMTP_PASS/versions/latest
+      env: 'SMTP_PASS'
     # (Testing phase) Disabled until we re-enable DB backup/migrations.
     # - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
     #   env: 'SUPABASE_DB_URL'
