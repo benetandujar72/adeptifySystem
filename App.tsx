@@ -11,6 +11,7 @@ import AdminRegistry from './components/AdminRegistry';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
 import InstitutionGate from './components/InstitutionGate';
+import ConsultorLanding from './components/ConsultorLanding';
 import { generateEducationalProposal } from './services/geminiService';
 import { consultationService } from './services/consultationService';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -42,6 +43,15 @@ const AppContent: React.FC = () => {
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<ProductType | null>(null);
+
+  const isConsultorRoute = (() => {
+    try {
+      const p = window.location.pathname || '/';
+      return p === '/consultor' || p.startsWith('/consultor/');
+    } catch {
+      return false;
+    }
+  })();
 
   // Recuperem sessió d'admin si existeix
   useEffect(() => {
@@ -219,6 +229,92 @@ const AppContent: React.FC = () => {
     window.history.replaceState({}, '', '/');
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
+
+  // Marketing landing route: accessible without selecting a tenant.
+  if (isConsultorRoute) {
+    const openApp = () => {
+      // Return to root (tenant gate / app entry).
+      window.location.href = '/';
+    };
+
+    const openDocs = () => {
+      // If a tenant is known, keep it; otherwise return to root and let the user pick.
+      try {
+        const saved = (sessionStorage.getItem(SESSION_TENANT_KEY) || '').trim();
+        if (saved) {
+          window.location.href = `/t/${encodeURIComponent(saved)}`;
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      window.location.href = '/';
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col items-center bg-[#FDFDFD]">
+        <header className="fixed top-0 w-full p-6 md:p-8 flex justify-between items-center z-50 glass border-b border-slate-100">
+          <div
+            className="flex items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity"
+            onClick={() => {
+              try {
+                window.history.replaceState({}, '', '/consultor');
+              } catch {
+                // ignore
+              }
+            }}
+          >
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg">
+              <div className="w-3 h-3 bg-indigo-500 rounded-sm" />
+            </div>
+            <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-slate-900 leading-none">{t.appTitle}</span>
+          </div>
+
+          <div className="flex items-center gap-3 md:gap-6">
+            <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+              <button
+                onClick={() => setLanguage('ca')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'ca' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                CAT
+              </button>
+              <button
+                onClick={() => setLanguage('es')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'es' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                ESP
+              </button>
+              <button
+                onClick={() => setLanguage('eu')}
+                className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === 'eu' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                EU
+              </button>
+            </div>
+
+            <button
+              onClick={openApp}
+              className="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-indigo-600 transition-all text-[9px] font-black uppercase tracking-widest"
+            >
+              {t.consultorHeaderCta}
+            </button>
+          </div>
+        </header>
+
+        <main className="w-full px-6 md:px-12 mt-32 mb-20 max-w-[1600px]">
+          <ConsultorLanding onOpenApp={openApp} onOpenDocs={openDocs} />
+        </main>
+
+        <footer className="w-full p-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.footerText}</p>
+          <div className="flex gap-8">
+            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest">AES-256 Protocol</span>
+            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest">ISO 27001 Cloud</span>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   // Gate: require selecting which institution (tenant) this session belongs to.
   if (!tenantSlug) {
