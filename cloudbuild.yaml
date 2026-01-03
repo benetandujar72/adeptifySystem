@@ -141,9 +141,6 @@ availableSecrets:
       env: 'SUPABASE_ANON_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SB_PUBLISHABLE_KEY/versions/latest
       env: 'SB_PUBLISHABLE_KEY'
-    # Contact email (SMTP)
-    - versionName: projects/$PROJECT_ID/secrets/SMTP_PASS/versions/latest
-      env: 'SMTP_PASS'
     # (Testing phase) Disabled until we re-enable DB backup/migrations.
     # - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
     #   env: 'SUPABASE_DB_URL'
