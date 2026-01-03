@@ -125,6 +125,6 @@ export const ADEPTIFY_INFO = {
   nif: "B46605585",
   address: "C/ Independencia 3, 08290 Cerdanyola del Vallès, Barcelona",
   phone: "+34 690831770",
-  email: "info@adeptify.es",
+  email: "bandujar@edutac.es",
   taxRate: 0.21
 };
