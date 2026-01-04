@@ -36,6 +36,9 @@ export default defineConfig(({ command }) => {
           SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
           SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '',
           SB_PUBLISHABLE_KEY: process.env.SB_PUBLISHABLE_KEY || process.env.VITE_SB_PUBLISHABLE_KEY || '',
+          // Optional (non-secret): AI pricing for token cost accounting.
+          AI_COST_EUR_PER_1M_INPUT: process.env.AI_COST_EUR_PER_1M_INPUT || process.env.VITE_AI_COST_EUR_PER_1M_INPUT || '',
+          AI_COST_EUR_PER_1M_OUTPUT: process.env.AI_COST_EUR_PER_1M_OUTPUT || process.env.VITE_AI_COST_EUR_PER_1M_OUTPUT || '',
         };
         res.statusCode = 200;
         res.end(`// Dev runtime config; do not commit.\nwindow.__ADEPTIFY_ENV__ = ${JSON.stringify(safeEnv)};\n`);
@@ -45,6 +48,8 @@ export default defineConfig(({ command }) => {
     build: {
       // Keep vendor-prefixed properties that Safari/iOS Safari require (e.g. -webkit-backdrop-filter).
       cssTarget: ['safari9'],
+      // Avoid build warnings for the current app bundle size.
+      chunkSizeWarningLimit: 2000,
     },
     resolve: {
       alias: {

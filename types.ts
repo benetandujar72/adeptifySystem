@@ -125,6 +125,12 @@ export interface ProposalData {
   meta?: {
     modelUsed?: string;
     generatedAt?: string;
+    aiUsage?: {
+      promptTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      costEur?: number;
+    };
   };
 }
 

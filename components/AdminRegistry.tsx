@@ -6,6 +6,7 @@ import { Consultation, ChatMessage, ProposalData } from '../types';
 import { useLanguage } from '../LanguageContext';
 import { generateCenterDAFO, generateCenterCustomProposal, DafoResult } from '../services/geminiService';
 import { centerInsightsService, normalizeCenterKey } from '../services/centerInsightsService';
+import { aiUsageService } from '../services/aiUsageService';
 import ReportCenter from './ReportCenter';
 import AdminClientProfile from './AdminClientProfile';
 
@@ -31,6 +32,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   const [dafoLoadingKey, setDafoLoadingKey] = useState<string | null>(null);
   const [customLoadingKey, setCustomLoadingKey] = useState<string | null>(null);
   const [centerInsightError, setCenterInsightError] = useState<string | null>(null);
+  const [, setAiTotalsVersion] = useState(0);
 
   const navigateAdmin = (adminPath: string) => {
     const basePath = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : '';
@@ -168,6 +170,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   }, [selectedClient, activeTab]);
 
   const totalInvestment = consultations.reduce((acc, c) => acc + (c.proposal?.totalInitial || 0), 0);
+  const aiTotals = aiUsageService.totals();
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh] animate-in fade-in duration-700">
@@ -228,6 +231,45 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
                <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
                   <div className="h-full bg-white w-3/4" />
                </div>
+            </div>
+
+            <div className="md:col-span-3 bg-white p-10 rounded-[2.5rem] border border-slate-100">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t.adminAiUsageTitle}</h3>
+                  <p className="mt-2 text-sm text-slate-500 font-medium">
+                    {t.adminAiUsageTotalTokens}: <span className="font-black text-slate-900">{aiTotals.totalTokens.toLocaleString()}</span>
+                    {' • '}
+                    {t.adminAiUsageEstimatedCost}: <span className="font-black text-slate-900">{aiTotals.costEur.toLocaleString()}€</span>
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => aiUsageService.exportJson()}
+                    className="bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg"
+                  >
+                    {t.adminAiUsageExport}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ok = window.confirm(language === 'ca'
+                        ? "Vols esborrar el registre d'ús d'IA d'aquest navegador?"
+                        : language === 'eu'
+                          ? "Nabigatzaile honetako IA erabilera erregistroa ezabatu nahi duzu?"
+                          : '¿Quieres borrar el registro de uso de IA de este navegador?');
+                      if (!ok) return;
+                      aiUsageService.clear();
+                      setAiTotalsVersion(v => v + 1);
+                    }}
+                    className="bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
+                  >
+                    {t.adminAiUsageClear}
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="md:col-span-3 bg-white p-10 rounded-[2.5rem] border border-slate-100">

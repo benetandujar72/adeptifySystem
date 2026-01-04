@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,6 +125,9 @@ app.get('/env.js', (_req, res) => {
     SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '',
     SB_PUBLISHABLE_KEY: process.env.SB_PUBLISHABLE_KEY || process.env.VITE_SB_PUBLISHABLE_KEY || '',
+    // Optional (non-secret): AI pricing for token cost accounting.
+    AI_COST_EUR_PER_1M_INPUT: process.env.AI_COST_EUR_PER_1M_INPUT || process.env.VITE_AI_COST_EUR_PER_1M_INPUT || '',
+    AI_COST_EUR_PER_1M_OUTPUT: process.env.AI_COST_EUR_PER_1M_OUTPUT || process.env.VITE_AI_COST_EUR_PER_1M_OUTPUT || '',
   };
 
   res.status(200).send(`// Generated at request time; do not commit.\nwindow.__ADEPTIFY_ENV__ = ${JSON.stringify(safeEnv)};\n`);
@@ -134,9 +138,12 @@ app.get('/env.js', (_req, res) => {
 // - SMTP_HOST, SMTP_PORT, SMTP_SECURE (true/false), SMTP_USER, SMTP_PASS
 // - CONTACT_TO (recipient), CONTACT_FROM (from email), CONTACT_FROM_NAME
 app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
+  const contactId = crypto.randomUUID();
+  const startedAt = Date.now();
   try {
     const transporter = getTransporter();
     if (!transporter) {
+      console.warn(`[contact:${contactId}] email service not configured`);
       res.status(503).json({ error: { message: 'Email service not configured' } });
       return;
     }
@@ -148,10 +155,12 @@ app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
     const lang = sanitizeText(req.body?.lang, 10);
 
     if (!name || !email || !message) {
+      console.info(`[contact:${contactId}] invalid request: missing required fields`);
       res.status(400).json({ error: { message: 'Missing required fields' } });
       return;
     }
     if (!isValidEmail(email)) {
+      console.info(`[contact:${contactId}] invalid request: invalid email format`);
       res.status(400).json({ error: { message: 'Invalid email' } });
       return;
     }
@@ -160,13 +169,20 @@ app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
     const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
     const fromName = sanitizeText(process.env.CONTACT_FROM_NAME || 'Adeptify Consultor', 120);
     if (!to) {
+      console.warn(`[contact:${contactId}] recipient email not configured`);
       res.status(503).json({ error: { message: 'Recipient email not configured' } });
       return;
     }
     if (!fromEmail || !isValidEmail(fromEmail)) {
+      console.warn(`[contact:${contactId}] sender email not configured`);
       res.status(503).json({ error: { message: 'Sender email not configured' } });
       return;
     }
+
+    const emailDomain = String(email).split('@')[1] || '';
+    console.info(
+      `[contact:${contactId}] received: lang=${lang || '-'} page=${page || '-'} emailDomain=${emailDomain || '-'} nameLen=${name.length} msgLen=${message.length}`
+    );
 
     const subject = `Nuevo contacto web: ${name}`;
     const text =
@@ -177,7 +193,7 @@ app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
       (page ? `Página: ${page}\n` : '') +
       `\nMensaje:\n${message}\n`;
 
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       to,
       from: { name: fromName, address: fromEmail },
       replyTo: email,
@@ -185,9 +201,13 @@ app.post('/api/contact', express.json({ limit: '200kb' }), async (req, res) => {
       text,
     });
 
-    res.status(200).json({ ok: true });
+    console.info(
+      `[contact:${contactId}] sent: messageId=${info?.messageId || '-'} durationMs=${Date.now() - startedAt}`
+    );
+
+    res.status(200).json({ ok: true, id: contactId });
   } catch (e) {
-    console.error('contact email error:', e);
+    console.error(`[contact:${contactId}] failed: durationMs=${Date.now() - startedAt}`, e);
     res.status(502).json({ error: { message: 'Email send failed' } });
   }
 });

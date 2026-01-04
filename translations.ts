@@ -311,6 +311,13 @@ const ca = {
     adminGenerateCustomProposal: "Generar proposta a mida",
     adminGeneratingCustomProposal: "Generant...",
 
+    // Admin - AI usage
+    adminAiUsageTitle: "Ús d'IA",
+    adminAiUsageTotalTokens: "Tokens totals",
+    adminAiUsageEstimatedCost: "Cost estimat (€)",
+    adminAiUsageExport: "Exportar registre",
+    adminAiUsageClear: "Esborrar registre",
+
     // Chat a11y
     chatOpen: "Obrir chat",
     chatClose: "Tancar chat",
@@ -747,6 +754,13 @@ const es = {
     adminGeneratingDafo: "Generando...",
     adminGenerateCustomProposal: "Generar propuesta a medida",
     adminGeneratingCustomProposal: "Generando...",
+
+    // Admin - AI usage
+    adminAiUsageTitle: "Uso de IA",
+    adminAiUsageTotalTokens: "Tokens totales",
+    adminAiUsageEstimatedCost: "Coste estimado (€)",
+    adminAiUsageExport: "Exportar registro",
+    adminAiUsageClear: "Borrar registro",
 
     // Chat a11y
     chatOpen: "Abrir chat",

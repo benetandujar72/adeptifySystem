@@ -1,6 +1,8 @@
 
 import { ProposalData, DiagnosisState, Task, ProductType } from "../types";
 import { Language } from "../translations";
+import { aiUsageService, type AiUsagePurpose } from './aiUsageService';
+import { getRuntimeEnvNumber } from './runtimeEnv';
 
 type GenerateContentConfig = {
   responseMimeType?: string;
@@ -10,11 +12,17 @@ type GenerateContentConfig = {
 type GenerateContentRequest = {
   contents: unknown;
   config?: GenerateContentConfig;
+  purpose?: AiUsagePurpose;
 };
 
 type GenerateContentResponseLike = {
   text?: string;
   raw?: unknown;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
 };
 
 const toGeminiContents = (contents: unknown) => {
@@ -30,6 +38,22 @@ const extractTextFromGeminiResponse = (raw: any): string => {
   }
   const text = raw?.candidates?.[0]?.content?.text;
   return typeof text === 'string' ? text : '';
+};
+
+const extractUsageMetadataFromGeminiResponse = (raw: any): {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+} | undefined => {
+  const u = raw?.usageMetadata;
+  if (!u || typeof u !== 'object') return undefined;
+
+  const promptTokenCount = typeof u.promptTokenCount === 'number' ? u.promptTokenCount : undefined;
+  const candidatesTokenCount = typeof u.candidatesTokenCount === 'number' ? u.candidatesTokenCount : undefined;
+  const totalTokenCount = typeof u.totalTokenCount === 'number' ? u.totalTokenCount : undefined;
+
+  if (promptTokenCount == null && candidatesTokenCount == null && totalTokenCount == null) return undefined;
+  return { promptTokenCount, candidatesTokenCount, totalTokenCount };
 };
 
 async function generateContentViaProxy(model: string, request: GenerateContentRequest): Promise<GenerateContentResponseLike> {
@@ -64,9 +88,24 @@ async function generateContentViaProxy(model: string, request: GenerateContentRe
     throw err;
   }
 
+  const usageMetadata = extractUsageMetadataFromGeminiResponse(raw);
+  if (usageMetadata) {
+    // These env vars are safe to expose and allow cost accounting without hardcoding.
+    const eurPer1MInput = getRuntimeEnvNumber('AI_COST_EUR_PER_1M_INPUT');
+    const eurPer1MOutput = getRuntimeEnvNumber('AI_COST_EUR_PER_1M_OUTPUT');
+    aiUsageService.recordGeminiUsage({
+      model,
+      purpose: request.purpose,
+      usageMetadata,
+      eurPer1MInput,
+      eurPer1MOutput,
+    });
+  }
+
   return {
     raw,
     text: extractTextFromGeminiResponse(raw),
+    usageMetadata,
   };
 }
 
@@ -344,6 +383,7 @@ Responde en este formato JSON (y solo JSON):
     const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
       config: { responseMimeType: "application/json", temperature: 0.4 },
+      purpose: 'dynamic_question',
     });
     
     const data = JSON.parse(response.text || '{}');
@@ -581,6 +621,7 @@ Recomendaciones:
     const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
       config: { responseMimeType: "application/json" },
+      purpose: 'proposal',
     });
 
     const data = JSON.parse(response.text || '{}');
@@ -590,6 +631,13 @@ Recomendaciones:
         ...(data?.meta || {}),
         modelUsed,
         generatedAt: data?.meta?.generatedAt || new Date().toISOString(),
+        aiUsage: response.usageMetadata
+          ? {
+              promptTokens: response.usageMetadata.promptTokenCount,
+              outputTokens: response.usageMetadata.candidatesTokenCount,
+              totalTokens: response.usageMetadata.totalTokenCount,
+            }
+          : undefined,
       },
     } as ProposalData;
   } catch (e) {
@@ -780,6 +828,7 @@ Devuelve EXACTAMENTE este JSON:
   const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: prompt,
     config: { responseMimeType: 'application/json', temperature: 0.4 },
+    purpose: 'dafo',
   });
 
   const data = JSON.parse(response.text || '{}');
@@ -916,6 +965,7 @@ Devuelve EXACTAMENTE este JSON:
   const { response, modelUsed } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: prompt,
     config: { responseMimeType: 'application/json', temperature: 0.25 },
+    purpose: 'center_report',
   });
 
   const data = safeJsonParse(response.text);
@@ -969,6 +1019,7 @@ export function createAdeptifyChat(clientContext: string = '', lang: Language = 
       const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
         contents: prompt,
         config: { temperature: 0.35 },
+        purpose: 'chat',
       });
 
       const text = response.text || '';
@@ -982,6 +1033,7 @@ export async function generateOfficialDocument(type: 'PGA' | 'MEMORIA', context:
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
     contents: `Ajuda'm a redactar un esborrany de ${type} escolar en ${langName}. Que soni oficial però fàcil de llegir. Context: ${context}. Dades: ${indicators}.`,
+    purpose: 'official_document',
   });
   return response.text || "Generant...";
 }
@@ -1004,6 +1056,7 @@ ${tasksStr}
   try {
     const { response } = await generateContentWithFallback(MODEL_FALLBACK_ORDER, {
       contents: prompt,
+      purpose: 'tasks_intelligence',
     });
     return response.text || "No hi ha suggeriments en aquest moment.";
   } catch (e) {

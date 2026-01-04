@@ -110,7 +110,6 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
                 src="/benet/benet-main.svg"
                 alt="Benet Andújar en conferencia"
                 className="h-full w-full object-cover"
-                loading="lazy"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/70 to-transparent p-4">
                 <p className="text-xs md:text-sm font-black text-slate-900">
@@ -226,7 +225,6 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
                     src={event.img}
                     alt={event.title}
                     className="h-full w-full object-cover"
-                    loading="lazy"
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/60 via-transparent" />
                 </div>
@@ -261,7 +259,7 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
             <a
               href="https://es.linkedin.com/in/bandujar"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-center"
             >
               Ver LinkedIn
