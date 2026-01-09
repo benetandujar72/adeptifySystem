@@ -451,8 +451,9 @@ const ca = {
   consultorProjectMetricDeployment: "Desplegament",
   consultorProjectMetricAiCost: "Cost IA",
   consultorProjectMetricMaintenance: "Manteniment",
-  consultorProjectMetricDevCost: "Inversió Inicial",
-  consultorProjectMetricOwnership: "Propietat del Codi"
+  consultorProjectMetricDevCost: "Valor de desenvolupament",
+  consultorProjectMetricOwnership: "Cost inicial",
+  consultorProjectMetricDevCostNote: "Valor actiu estimat amortitzat en les quotes mensuals (no és un pagament inicial)."
 };
 
 const es = {
@@ -905,8 +906,9 @@ const es = {
   consultorProjectMetricDeployment: "Despliegue",
   consultorProjectMetricAiCost: "Coste IA",
   consultorProjectMetricMaintenance: "Mantenimiento",
-  consultorProjectMetricDevCost: "Inversión Inicial",
-  consultorProjectMetricOwnership: "Propiedad del Código"
+  consultorProjectMetricDevCost: "Valor de desarrollo",
+  consultorProjectMetricOwnership: "Coste inicial",
+  consultorProjectMetricDevCostNote: "Valor de activo estimado amortizado en las cuotas mensuales (no es un pago inicial)."
 };
 
 const eu: typeof ca = {
@@ -998,8 +1000,9 @@ const eu: typeof ca = {
   consultorProjectMetricDeployment: "Inplementazioa",
   consultorProjectMetricAiCost: "IA kostua",
   consultorProjectMetricMaintenance: "Mantentzea",
-  consultorProjectMetricDevCost: "Hasierako Inbertsioa",
-  consultorProjectMetricOwnership: "Kodearen Jabetza"
+  consultorProjectMetricDevCost: "Garapen Balioa",
+  consultorProjectMetricOwnership: "Hasierako Kostua",
+  consultorProjectMetricDevCostNote: "Hileko kuotetan amortizatutako balio estimatua (ez da hasierako ordainketa)."
 };
 
 export const translations = { ca, es, eu };

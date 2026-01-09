@@ -107,8 +107,16 @@ const ProjectExamples: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 flex items-center gap-1">
                                         {t.consultorProjectMetricDevCost}
+                                        <div className="group/tip relative cursor-help">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-medium leading-tight shadow-xl">
+                                                {t.consultorProjectMetricDevCostNote}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="text-base font-black text-slate-900">
                                         {project.metrics.dev_cost || 'Consultar'}
