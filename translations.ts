@@ -442,7 +442,15 @@ const ca = {
     consultorContactNote: "Enviem el missatge per correu des del servidor.",
     consultorContactMailSubject: "Sol·licitud de consultoria online",
     consultorContactMailIntro: "Dades de contacte:",
-    consultorContactMailFooter: "Enviat des de:"
+    consultorContactMailFooter: "Enviat des de:",
+
+    // Projects
+    consultorProjectsTitle: "Projectes realitzats",
+    consultorProjectsDesc: "Exemples reals de transformació digital amb el seu trencament de costos i temps.",
+    consultorProjectMetricHours: "Hores",
+    consultorProjectMetricDeployment: "Desplegament",
+    consultorProjectMetricAiCost: "Cost IA",
+    consultorProjectMetricMaintenance: "Manteniment"
 };
 
 const es = {
@@ -886,7 +894,15 @@ const es = {
     consultorContactNote: "Enviamos el mensaje por correo desde el servidor.",
     consultorContactMailSubject: "Solicitud de consultoría online",
     consultorContactMailIntro: "Datos de contacto:",
-    consultorContactMailFooter: "Enviado desde:"
+    consultorContactMailFooter: "Enviado desde:",
+
+    // Projects
+    consultorProjectsTitle: "Proyectos realizados",
+    consultorProjectsDesc: "Ejemplos reales de transformación digital con su desglose de costes y tiempos.",
+    consultorProjectMetricHours: "Horas",
+    consultorProjectMetricDeployment: "Despliegue",
+    consultorProjectMetricAiCost: "Coste IA",
+    consultorProjectMetricMaintenance: "Mantenimiento"
 };
 
 const eu: typeof ca = {
@@ -969,7 +985,15 @@ const eu: typeof ca = {
   // Chat a11y
   chatOpen: "Txata ireki",
   chatClose: "Txata itxi",
-  chatSend: "Mezua bidali"
+  chatSend: "Mezua bidali",
+
+  // Projects
+  consultorProjectsTitle: "Egindako proiektuak",
+  consultorProjectsDesc: "Eraldaketa digitalaren benetako adibideak, kostuen eta denboraren banaketarekin.",
+  consultorProjectMetricHours: "Orduak",
+  consultorProjectMetricDeployment: "Inplementazioa",
+  consultorProjectMetricAiCost: "IA kostua",
+  consultorProjectMetricMaintenance: "Mantentzea"
 };
 
 export const translations = { ca, es, eu };

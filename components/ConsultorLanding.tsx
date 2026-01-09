@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLanguage } from '../LanguageContext';
 import { ADEPTIFY_INFO } from '../constants';
+import ProjectExamples from './ProjectExamples';
 
 type Props = {
   onOpenApp: () => void;
@@ -215,6 +216,8 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
         </div>
       </section>
 
+      <ProjectExamples />
+
       <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
         <div className="text-left md:text-center mb-10">
           <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorExamplesTitle}</h2>
@@ -361,11 +364,10 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
 
               <button
                 onClick={onOpenApp}
-                className={`mt-8 w-full px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${
-                  i === 2
-                    ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
-                    : 'bg-white text-slate-900 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50'
-                }`}
+                className={`mt-8 w-full px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${i === 2
+                  ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
+                  : 'bg-white text-slate-900 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50'
+                  }`}
               >
                 {t.consultorPlanCta}
               </button>
@@ -400,9 +402,8 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                 >
                   <span className="text-sm md:text-base font-black text-slate-900 tracking-tight">{item.q}</span>
                   <span
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-100 text-slate-700 transition-transform ${
-                      isOpen ? 'rotate-45 bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50'
-                    }`}
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-100 text-slate-700 transition-transform ${isOpen ? 'rotate-45 bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50'
+                      }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14m7-7H5" />
@@ -502,11 +503,10 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                 type="button"
                 onClick={submitContact}
                 disabled={!canSubmit || contactStatus === 'sending'}
-                className={`mt-2 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${
-                  canSubmit && contactStatus !== 'sending'
-                    ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
+                className={`mt-2 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${canSubmit && contactStatus !== 'sending'
+                  ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
               >
                 {contactStatus === 'sending' ? t.consultorContactSending : t.consultorContactSubmit}
               </button>
