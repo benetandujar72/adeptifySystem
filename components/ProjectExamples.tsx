@@ -97,7 +97,7 @@ const ProjectExamples: React.FC = () => {
                                 {getLocalizedField(project, 'description')}
                             </p>
 
-                            <div className="grid grid-cols-2 gap-y-6 pt-8 border-t border-slate-100">
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8 border-t border-slate-100">
                                 <div className="space-y-1">
                                     <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
                                         {t.consultorProjectMetricHours}
@@ -108,10 +108,26 @@ const ProjectExamples: React.FC = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
+                                        {t.consultorProjectMetricDevCost}
+                                    </div>
+                                    <div className="text-base font-black text-slate-900">
+                                        {project.metrics.dev_cost || 'Consultar'}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
                                         {t.consultorProjectMetricDeployment}
                                     </div>
                                     <div className="text-base font-black text-slate-900">
                                         {project.metrics.deployment}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
+                                        {t.consultorProjectMetricOwnership}
+                                    </div>
+                                    <div className="text-base font-black text-emerald-600">
+                                        {project.metrics.ownership_cost || 'Inclòs'}
                                     </div>
                                 </div>
                                 <div className="space-y-1">
