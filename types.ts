@@ -188,3 +188,22 @@ export interface NotificationPrefs {
   dailySummary: boolean;
   weeklySummary: boolean;
 }
+
+export interface ProjectExample {
+  id: string;
+  title_ca: string;
+  title_es: string;
+  title_eu: string;
+  description_ca: string;
+  description_es: string;
+  description_eu: string;
+  metrics: {
+    hours: string;
+    deployment: string;
+    ai_cost: string;
+    maintenance: string;
+  };
+  category?: string;
+  image_url?: string;
+  repo_url?: string;
+}
