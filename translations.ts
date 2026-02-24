@@ -364,8 +364,8 @@ const ca = {
   consultorGen4Title: "Export i compartició",
   consultorGen4Desc: "Informe exportable (PDF) per compartir amb direcció i equip.",
 
-  consultorScreensTitle: "Captures (exemples)",
-  consultorScreensDesc: "A continuació hi ha placeholders. Pots substituir-los per captures reals a /public/screenshots.",
+  consultorScreensTitle: "Com funciona en la pràctica",
+  consultorScreensDesc: "Tres pantalles del flux real: diagnòstic guiat, proposta generada per IA i full de ruta per fases.",
   consultorScreensTag: "UI",
   consultorScreens1Label: "Diagnòstic",
   consultorScreens2Label: "Proposta",
@@ -819,8 +819,8 @@ const es = {
   consultorGen4Title: "Exportar y compartir",
   consultorGen4Desc: "Informe exportable (PDF) para compartir con dirección y equipo.",
 
-  consultorScreensTitle: "Capturas (ejemplos)",
-  consultorScreensDesc: "A continuación hay placeholders. Puedes sustituirlos por capturas reales en /public/screenshots.",
+  consultorScreensTitle: "Cómo funciona en la práctica",
+  consultorScreensDesc: "Tres pantallas del flujo real: diagnóstico guiado, propuesta generada por IA y hoja de ruta por fases.",
   consultorScreensTag: "UI",
   consultorScreens1Label: "Diagnóstico",
   consultorScreens2Label: "Propuesta",

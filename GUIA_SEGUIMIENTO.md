@@ -115,6 +115,14 @@ Revisa el build más reciente:
 - Paso 0 (creación de `.env.production`): debe mostrar claves con `=***`.
 - Paso de `docker build`: debe llegar a `npm run build` sin placeholders.
 
+### C) Base de Datos y Backups
+- **Backups:** Se generan automáticamente en cada build antes de aplicar cambios.
+  - Almacén: `gs://adeptify-supabase-backups/adeptify-consultor/YYYY/MM/DD/...`
+  - Formato: `.dump.gz` (pg_dump custom format).
+- **Migraciones:** Se aplican automáticamente los archivos de `supabase/migrations/*.sql`.
+  - Revisar logs de Cloud Build para confirmar: `=== All migrations applied ===`.
+- **Secretos:** Requiere `SUPABASE_DB_URL` en Secret Manager para funcionar.
+
 ## 7) Protocolo de actuación en incidentes
 
 1. **Confirmar impacto** (quién, qué flujo, desde cuándo).

@@ -12,9 +12,8 @@ substitutions:
   _SMTP_USER: bandujar@edutac.es
   _CONTACT_TO: bandujar@edutac.es
   _CONTACT_FROM_NAME: Adeptify Consultor
-  # (Testing phase) DB backup steps are currently disabled below.
-  # When re-enabling backups, you can restore:
-  # _BACKUP_BUCKET: adeptify-supabase-backups
+  # GCS bucket for pre-deploy DB backups (must exist + CB SA needs storage.objects.create)
+  _BACKUP_BUCKET: adeptify-supabase-backups
 
 steps:
   # 0) Create .env.production for Vite build (bundle-time)
@@ -35,57 +34,57 @@ steps:
         # Sanity check (do not print secret values)
         sed -E 's/=(.*)$/=*** /' .env.production
 
-  # 0.4) Safety: database backup BEFORE any schema changes (DISABLED FOR TESTING)
-  # Why disabled:
-  # - Cloud Build failed with: PermissionDenied: secretmanager.versions.access for SUPABASE_DB_URL
-  #   when trying to run the postgres:16 step.
-  # How to re-enable later (production hardening):
-  # 1) Create Secret Manager secret: SUPABASE_DB_URL (Postgres connection string with sslmode=require)
-  # 2) Grant Cloud Build SA roles/secretmanager.secretAccessor on that secret
-  # 3) Ensure ${_BACKUP_BUCKET} exists and Cloud Build SA has storage.objects.create
-  # 4) Uncomment the steps below.
+  # 0.4) Safety: database backup BEFORE any schema changes
+  # Requires:
+  #   1) Secret Manager secret: SUPABASE_DB_URL (Postgres connection string, sslmode=require)
+  #      Format: postgresql://postgres.[ref]:[password]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require
+  #   2) Cloud Build SA needs roles/secretmanager.secretAccessor on SUPABASE_DB_URL
+  #   3) GCS bucket ${_BACKUP_BUCKET} must exist + CB SA needs storage.objects.create
   #
-  # Produces a compressed pg_dump (custom format) and uploads it to GCS.
-  # - name: 'postgres:16'
-  #   entrypoint: 'bash'
-  #   secretEnv: ['SUPABASE_DB_URL']
-  #   args:
-  #     - '-c'
-  #     - |
-  #       set -euo pipefail
-  #       mkdir -p /workspace/db_backups
-  #       BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
-  #       echo "Creating Supabase backup: $$BACKUP_FILE"
-  #       # Do NOT echo the URL (contains credentials).
-  #       pg_dump "$$SUPABASE_DB_URL" --format=custom | gzip -c > "$$BACKUP_FILE"
-  #       echo "Backup created (bytes): $(wc -c < "$$BACKUP_FILE")"
-  #
-  # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  #   entrypoint: 'bash'
-  #   args:
-  #     - '-c'
-  #     - |
-  #       set -euo pipefail
-  #       BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
-  #       DEST="gs://${_BACKUP_BUCKET}/${_SERVICE}/${BUILD_ID}/$(basename "$$BACKUP_FILE")"
-  #       echo "Uploading backup to $$DEST"
-  #       gsutil -q cp "$$BACKUP_FILE" "$$DEST"
-  #       echo "Backup uploaded."
-  #
-  # 0.5) Apply Supabase DB schema (DISABLED FOR TESTING)
-  # - name: 'postgres:16'
-  #   entrypoint: 'bash'
-  #   secretEnv: ['SUPABASE_DB_URL']
-  #   args:
-  #     - '-c'
-  #     - |
-  #       set -euo pipefail
-  #       echo "Applying Supabase schema (supabase/production_schema.sql)..."
-  #       # Do not echo the URL (contains credentials).
-  #       # -1 runs the whole file in a single transaction.
-  #       psql "$$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/production_schema.sql
+  # Creates a compressed pg_dump (custom format) and uploads it to GCS.
+  - name: 'postgres:16'
+    entrypoint: 'bash'
+    secretEnv: ['SUPABASE_DB_URL']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        mkdir -p /workspace/db_backups
+        BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
+        echo "Creating Supabase backup: $$BACKUP_FILE (timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ))"
+        # Do NOT echo the URL (contains credentials).
+        pg_dump "$$SUPABASE_DB_URL" --format=custom | gzip -c > "$$BACKUP_FILE"
+        echo "Backup created (bytes): $(wc -c < "$$BACKUP_FILE")"
 
-  # 1) Build image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        BACKUP_FILE="/workspace/db_backups/supabase_${_SERVICE}_${BUILD_ID}.dump.gz"
+        DEST="gs://${_BACKUP_BUCKET}/${_SERVICE}/$(date -u +%Y/%m/%d)/${BUILD_ID}/$(basename "$$BACKUP_FILE")"
+        echo "Uploading backup to $$DEST"
+        gsutil -q cp "$$BACKUP_FILE" "$$DEST"
+        echo "Backup uploaded successfully."
+
+  # 0.5) Apply Supabase DB migrations
+  # Runs all SQL files in supabase/migrations/ in alphabetical order (idempotent).
+  - name: 'postgres:16'
+    entrypoint: 'bash'
+    secretEnv: ['SUPABASE_DB_URL']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        echo "=== Applying Supabase migrations ==="
+        for f in $(ls supabase/migrations/*.sql | sort); do
+          echo "  → Applying: $$f"
+          psql "$$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -1 -f "$$f"
+        done
+        echo "=== All migrations applied ==="
+
+  # 1) Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args:
@@ -141,6 +140,5 @@ availableSecrets:
       env: 'SUPABASE_ANON_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SB_PUBLISHABLE_KEY/versions/latest
       env: 'SB_PUBLISHABLE_KEY'
-    # (Testing phase) Disabled until we re-enable DB backup/migrations.
-    # - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
-    #   env: 'SUPABASE_DB_URL'
+    - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
+      env: 'SUPABASE_DB_URL'

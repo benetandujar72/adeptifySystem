@@ -1,27 +1,111 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
-  <rect width="1200" height="700" fill="#f8fafc"/>
-  <rect x="90" y="70" width="1020" height="560" rx="26" fill="#ffffff" stroke="#e2e8f0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" font-family="system-ui,-apple-system,sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc"/>
+      <stop offset="100%" style="stop-color:#eef2ff"/>
+    </linearGradient>
+    <filter id="sh3" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0000001a"/>
+    </filter>
+  </defs>
 
-  <rect x="130" y="120" width="420" height="14" rx="7" fill="#0f172a" opacity="0.85"/>
-  <rect x="130" y="160" width="520" height="10" rx="5" fill="#94a3b8"/>
+  <rect width="800" height="480" fill="url(#bg3)" rx="12"/>
 
-  <rect x="130" y="220" width="950" height="360" rx="18" fill="#ffffff" stroke="#e2e8f0"/>
+  <!-- Top bar -->
+  <rect width="800" height="48" fill="#1e293b" rx="12"/>
+  <rect width="800" height="8" y="40" fill="#1e293b"/>
+  <circle cx="24" cy="24" r="6" fill="#ef4444" opacity="0.8"/>
+  <circle cx="44" cy="24" r="6" fill="#f59e0b" opacity="0.8"/>
+  <circle cx="64" cy="24" r="6" fill="#22c55e" opacity="0.8"/>
+  <text x="400" y="28" text-anchor="middle" font-size="11" fill="#94a3b8" font-weight="600" letter-spacing="2">ADEPTIFY CONSULTOR · FULL DE RUTA</text>
 
-  <rect x="160" y="260" width="240" height="12" rx="6" fill="#0f172a" opacity="0.8"/>
-  <rect x="160" y="286" width="340" height="10" rx="5" fill="#cbd5e1"/>
+  <!-- Title -->
+  <text x="32" y="86" font-size="10" fill="#6366f1" font-weight="800" letter-spacing="2">02  IMPLEMENTACIÓ I FULL DE RUTA</text>
 
-  <rect x="160" y="330" width="900" height="18" rx="9" fill="#eef2ff" stroke="#c7d2fe"/>
-  <rect x="180" y="336" width="220" height="6" rx="3" fill="#4338ca" opacity="0.85"/>
+  <!-- Timeline line -->
+  <line x1="48" y1="130" x2="752" y2="130" stroke="#e2e8f0" stroke-width="2"/>
 
-  <rect x="160" y="380" width="430" height="160" rx="18" fill="#0f172a"/>
-  <rect x="190" y="420" width="240" height="12" rx="6" fill="#a5b4fc" opacity="0.9"/>
-  <rect x="190" y="450" width="360" height="10" rx="5" fill="#e2e8f0" opacity="0.55"/>
-  <rect x="190" y="480" width="340" height="10" rx="5" fill="#e2e8f0" opacity="0.4"/>
+  <!-- Phase 1 -->
+  <circle cx="110" cy="130" r="18" fill="#6366f1" filter="url(#sh3)"/>
+  <text x="110" y="134" text-anchor="middle" font-size="12" fill="white" font-weight="900">1</text>
 
-  <rect x="620" y="380" width="440" height="160" rx="18" fill="#ffffff" stroke="#e2e8f0"/>
-  <rect x="650" y="420" width="240" height="12" rx="6" fill="#0f172a" opacity="0.8"/>
-  <rect x="650" y="450" width="360" height="10" rx="5" fill="#94a3b8"/>
-  <rect x="650" y="480" width="320" height="10" rx="5" fill="#cbd5e1"/>
+  <rect x="32" y="160" width="176" height="264" fill="white" rx="12" filter="url(#sh3)"/>
+  <rect x="32" y="160" width="176" height="6" fill="#6366f1" rx="2"/>
+  <text x="120" y="186" text-anchor="middle" font-size="12" fill="#1e293b" font-weight="800">Anàlisi</text>
+  <text x="120" y="200" text-anchor="middle" font-size="9" fill="#94a3b8" font-weight="600">SETMANES 1–2</text>
+  <line x1="48" y1="212" x2="192" y2="212" stroke="#f1f5f9" stroke-width="1"/>
+  <circle cx="52" cy="226" r="3" fill="#6366f1"/>
+  <text x="64" y="230" font-size="10" fill="#475569">Mapatge de fluxos</text>
+  <circle cx="52" cy="244" r="3" fill="#6366f1"/>
+  <text x="64" y="248" font-size="10" fill="#475569">Entrevistes equip</text>
+  <circle cx="52" cy="262" r="3" fill="#6366f1"/>
+  <text x="64" y="266" font-size="10" fill="#475569">Identificació punts crítics</text>
+  <circle cx="52" cy="280" r="3" fill="#6366f1"/>
+  <text x="64" y="284" font-size="10" fill="#475569">Document de requisits</text>
+  <rect x="48" y="368" width="160" height="44" fill="#ede9fe" rx="8"/>
+  <text x="128" y="384" text-anchor="middle" font-size="9" fill="#6366f1" font-weight="700">COST FASE</text>
+  <text x="128" y="402" text-anchor="middle" font-size="16" fill="#4f46e5" font-weight="900">850 €</text>
 
-  <text x="90" y="660" font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto" font-size="18" fill="#64748b">Placeholder: sustituye este SVG por una captura real cuando la tengas.</text>
+  <!-- Phase 2 -->
+  <circle cx="302" cy="130" r="18" fill="#6366f1" filter="url(#sh3)" opacity="0.85"/>
+  <text x="302" y="134" text-anchor="middle" font-size="12" fill="white" font-weight="900">2</text>
+
+  <rect x="224" y="160" width="176" height="264" fill="white" rx="12" filter="url(#sh3)"/>
+  <rect x="224" y="160" width="176" height="6" fill="#818cf8" rx="2"/>
+  <text x="312" y="186" text-anchor="middle" font-size="12" fill="#1e293b" font-weight="800">Prototip</text>
+  <text x="312" y="200" text-anchor="middle" font-size="9" fill="#94a3b8" font-weight="600">SETMANES 3–4</text>
+  <line x1="240" y1="212" x2="384" y2="212" stroke="#f1f5f9" stroke-width="1"/>
+  <circle cx="244" cy="226" r="3" fill="#818cf8"/>
+  <text x="256" y="230" font-size="10" fill="#475569">Disseny UI/UX</text>
+  <circle cx="244" cy="244" r="3" fill="#818cf8"/>
+  <text x="256" y="248" font-size="10" fill="#475569">Desenvolupament base</text>
+  <circle cx="244" cy="262" r="3" fill="#818cf8"/>
+  <text x="256" y="266" font-size="10" fill="#475569">Validació amb direcció</text>
+  <circle cx="244" cy="280" r="3" fill="#818cf8"/>
+  <text x="256" y="284" font-size="10" fill="#475569">Iteració de feedback</text>
+  <rect x="240" y="368" width="160" height="44" fill="#ede9fe" rx="8"/>
+  <text x="320" y="384" text-anchor="middle" font-size="9" fill="#6366f1" font-weight="700">COST FASE</text>
+  <text x="320" y="402" text-anchor="middle" font-size="16" fill="#4f46e5" font-weight="900">1.870 €</text>
+
+  <!-- Phase 3 -->
+  <circle cx="494" cy="130" r="18" fill="#6366f1" filter="url(#sh3)" opacity="0.6"/>
+  <text x="494" y="134" text-anchor="middle" font-size="12" fill="white" font-weight="900">3</text>
+
+  <rect x="416" y="160" width="176" height="264" fill="white" rx="12" filter="url(#sh3)"/>
+  <rect x="416" y="160" width="176" height="6" fill="#a5b4fc" rx="2"/>
+  <text x="504" y="186" text-anchor="middle" font-size="12" fill="#1e293b" font-weight="800">Producció</text>
+  <text x="504" y="200" text-anchor="middle" font-size="9" fill="#94a3b8" font-weight="600">SETMANA 5</text>
+  <line x1="432" y1="212" x2="576" y2="212" stroke="#f1f5f9" stroke-width="1"/>
+  <circle cx="436" cy="226" r="3" fill="#a5b4fc"/>
+  <text x="448" y="230" font-size="10" fill="#475569">Deploy a producció</text>
+  <circle cx="436" cy="244" r="3" fill="#a5b4fc"/>
+  <text x="448" y="248" font-size="10" fill="#475569">Formació equip</text>
+  <circle cx="436" cy="262" r="3" fill="#a5b4fc"/>
+  <text x="448" y="266" font-size="10" fill="#475569">Proves finals UAT</text>
+  <circle cx="436" cy="280" r="3" fill="#a5b4fc"/>
+  <text x="448" y="284" font-size="10" fill="#475569">Documentació tècnica</text>
+  <rect x="432" y="368" width="160" height="44" fill="#ede9fe" rx="8"/>
+  <text x="512" y="384" text-anchor="middle" font-size="9" fill="#6366f1" font-weight="700">COST FASE</text>
+  <text x="512" y="402" text-anchor="middle" font-size="16" fill="#4f46e5" font-weight="900">1.530 €</text>
+
+  <!-- Phase 4 -->
+  <circle cx="686" cy="130" r="18" fill="#1e293b" filter="url(#sh3)"/>
+  <text x="686" y="134" text-anchor="middle" font-size="12" fill="white" font-weight="900">∞</text>
+
+  <rect x="608" y="160" width="176" height="264" fill="#1e293b" rx="12" filter="url(#sh3)"/>
+  <rect x="608" y="160" width="176" height="6" fill="#4ade80" rx="2"/>
+  <text x="696" y="186" text-anchor="middle" font-size="12" fill="white" font-weight="800">Manteniment</text>
+  <text x="696" y="200" text-anchor="middle" font-size="9" fill="#64748b" font-weight="600">MENSUAL · SLA</text>
+  <line x1="624" y1="212" x2="768" y2="212" stroke="#334155" stroke-width="1"/>
+  <circle cx="628" cy="226" r="3" fill="#4ade80"/>
+  <text x="640" y="230" font-size="10" fill="#94a3b8">Monitoratge 24/7</text>
+  <circle cx="628" cy="244" r="3" fill="#4ade80"/>
+  <text x="640" y="248" font-size="10" fill="#94a3b8">Actualitzacions</text>
+  <circle cx="628" cy="262" r="3" fill="#4ade80"/>
+  <text x="640" y="266" font-size="10" fill="#94a3b8">Suport prioritari</text>
+  <circle cx="628" cy="280" r="3" fill="#4ade80"/>
+  <text x="640" y="284" font-size="10" fill="#94a3b8">Informe mensual</text>
+  <rect x="624" y="368" width="160" height="44" fill="#164e63" rx="8"/>
+  <text x="704" y="384" text-anchor="middle" font-size="9" fill="#4ade80" font-weight="700">QUOTA MENSUAL</text>
+  <text x="704" y="402" text-anchor="middle" font-size="16" fill="#4ade80" font-weight="900">290 €/mes</text>
 </svg>
