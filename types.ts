@@ -202,6 +202,8 @@ export interface ProjectExample {
     deployment: string;
     ai_cost: string;
     maintenance: string;
+    dev_cost?: string;
+    ownership_cost?: string;
   };
   category?: string;
   image_url?: string;
