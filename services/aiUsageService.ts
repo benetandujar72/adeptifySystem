@@ -1,3 +1,5 @@
+import { supabase } from './supabaseClient';
+
 export type AiUsagePurpose =
   | 'dynamic_question'
   | 'proposal'
@@ -27,34 +29,6 @@ type GeminiUsageMetadataLike = {
   totalTokenCount?: number;
 };
 
-const STORAGE_KEY = 'adeptify_ai_usage_log_v1';
-
-function safeParseJson<T>(raw: string | null, fallback: T): T {
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function safeWriteJson(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore
-  }
-}
-
-function readAll(): AiUsageEntry[] {
-  if (typeof window === 'undefined') return [];
-  return safeParseJson<AiUsageEntry[]>(localStorage.getItem(STORAGE_KEY), []).filter(Boolean);
-}
-
-function writeAll(entries: AiUsageEntry[]) {
-  safeWriteJson(STORAGE_KEY, entries);
-}
-
 function uuid(): string {
   try {
     return crypto.randomUUID();
@@ -79,7 +53,6 @@ export function computeCostEur(opts: {
   const inT = typeof promptTokens === 'number' && Number.isFinite(promptTokens) ? promptTokens : undefined;
   const outT = typeof outputTokens === 'number' && Number.isFinite(outputTokens) ? outputTokens : undefined;
 
-  // If we don't have a split, do not guess.
   if (!inT && !outT) return undefined;
 
   const cost =
@@ -90,13 +63,13 @@ export function computeCostEur(opts: {
 }
 
 export const aiUsageService = {
-  recordGeminiUsage: (args: {
+  recordGeminiUsage: async (args: {
     model: string;
     purpose?: AiUsagePurpose;
     usageMetadata?: GeminiUsageMetadataLike;
     eurPer1MInput?: number;
     eurPer1MOutput?: number;
-  }): AiUsageEntry => {
+  }): Promise<AiUsageEntry> => {
     const promptTokens = args.usageMetadata?.promptTokenCount;
     const outputTokens = args.usageMetadata?.candidatesTokenCount;
     const totalTokens = args.usageMetadata?.totalTokenCount;
@@ -118,56 +91,131 @@ export const aiUsageService = {
       }),
     };
 
-    const all = readAll();
-    all.push(entry);
+    if (!supabase) {
+      console.error('Supabase client not available. Cannot log AI usage.');
+      return entry;
+    }
 
-    // Keep last N to prevent unbounded growth.
-    const MAX = 2000;
-    const trimmed = all.length > MAX ? all.slice(all.length - MAX) : all;
-    writeAll(trimmed);
+    try {
+      const { error } = await supabase.from('ai_usage_logs').insert([{
+        id: entry.id,
+        created_at: entry.createdAt,
+        provider: entry.provider,
+        model: entry.model,
+        purpose: entry.purpose,
+        prompt_tokens: entry.promptTokens ?? null,
+        output_tokens: entry.outputTokens ?? null,
+        total_tokens: entry.totalTokens ?? null,
+        cost_eur: entry.costEur ?? null,
+      }]);
+
+      if (error) {
+        console.error('Error recording AI usage to Supabase:', error.message);
+      }
+    } catch (e: any) {
+      console.error('Network error recording AI usage:', e.message);
+    }
 
     return entry;
   },
 
-  list: (limit = 200): AiUsageEntry[] => {
-    const all = readAll();
-    return all.slice(Math.max(0, all.length - limit));
+  list: async (limit = 200): Promise<AiUsageEntry[]> => {
+    if (!supabase) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_usage_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      if (data) {
+        return data.map(dbItem => ({
+          id: dbItem.id,
+          createdAt: dbItem.created_at,
+          provider: dbItem.provider as 'gemini',
+          model: dbItem.model,
+          purpose: dbItem.purpose as AiUsagePurpose,
+          promptTokens: dbItem.prompt_tokens ?? undefined,
+          outputTokens: dbItem.output_tokens ?? undefined,
+          totalTokens: dbItem.total_tokens ?? undefined,
+          costEur: dbItem.cost_eur ?? undefined
+        }));
+      }
+      return [];
+    } catch (e: any) {
+      console.error('Error loading AI usage list:', e.message);
+      return [];
+    }
   },
 
-  totals: (): {
+  totals: async (): Promise<{
     promptTokens: number;
     outputTokens: number;
     totalTokens: number;
     costEur: number;
     count: number;
-  } => {
-    const all = readAll();
-    let promptTokens = 0;
-    let outputTokens = 0;
-    let totalTokens = 0;
-    let costEur = 0;
-    for (const e of all) {
-      if (typeof e.promptTokens === 'number') promptTokens += e.promptTokens;
-      if (typeof e.outputTokens === 'number') outputTokens += e.outputTokens;
-      if (typeof e.totalTokens === 'number') totalTokens += e.totalTokens;
-      if (typeof e.costEur === 'number') costEur += e.costEur;
+  }> => {
+    if (!supabase) {
+      return { promptTokens: 0, outputTokens: 0, totalTokens: 0, costEur: 0, count: 0 };
     }
-    return {
-      promptTokens,
-      outputTokens,
-      totalTokens,
-      costEur: round4(costEur),
-      count: all.length,
-    };
+
+    try {
+      const { data, error } = await supabase
+        .from('ai_usage_logs')
+        .select('prompt_tokens, output_tokens, total_tokens, cost_eur');
+
+      if (error) throw error;
+
+      let promptTokens = 0;
+      let outputTokens = 0;
+      let totalTokens = 0;
+      let costEur = 0;
+      let count = 0;
+
+      if (data) {
+        count = data.length;
+        for (const e of data) {
+          if (typeof e.prompt_tokens === 'number') promptTokens += e.prompt_tokens;
+          if (typeof e.output_tokens === 'number') outputTokens += e.output_tokens;
+          if (typeof e.total_tokens === 'number') totalTokens += e.total_tokens;
+          if (typeof e.cost_eur === 'number') costEur += e.cost_eur;
+        }
+      }
+
+      return {
+        promptTokens,
+        outputTokens,
+        totalTokens,
+        costEur: round4(costEur),
+        count,
+      };
+    } catch (e: any) {
+      console.error('Error calculating AI usage totals:', e.message);
+      return { promptTokens: 0, outputTokens: 0, totalTokens: 0, costEur: 0, count: 0 };
+    }
   },
 
-  clear: () => {
-    writeAll([]);
+  clear: async () => {
+    if (!supabase) return;
+    try {
+      const { error } = await supabase
+        .from('ai_usage_logs')
+        .delete()
+        .neq('id', 'placeholder__delete_all');
+
+      if (error) throw error;
+      console.log('AI usage logs cleared.');
+    } catch (e: any) {
+      console.error('Error clearing AI usage logs:', e.message);
+    }
   },
 
-  exportJson: () => {
-    const all = readAll();
-    const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
+  exportJson: async () => {
+    const list = await aiUsageService.list(10000);
+    const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
