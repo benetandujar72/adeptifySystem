@@ -1,0 +1,118 @@
+----------- REMOTE BUILD OUTPUT -----------
+starting build "be9952fe-ef1f-41f8-9a43-a1bc45f8184d"
+
+FETCHSOURCE
+Fetching storage object: gs://gen-lang-client-0757991117_cloudbuild/source/1771971849.252947-a24bc98167384efb841564fa4590ce34.tgz#1771971860740392
+Copying gs://gen-lang-client-0757991117_cloudbuild/source/1771971849.252947-a24bc98167384efb841564fa4590ce34.tgz#1771971860740392...
+/ [0 files][    0.0 B/  8.1 MiB]                                                
+/ [1 files][  8.1 MiB/  8.1 MiB]                                                
+
+Operation completed over 1 objects/8.1 MiB.                                      
+BUILD
+Starting Step #0
+Step #0: Pulling image: gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #0: Using default tag: latest
+Step #0: latest: Pulling from google.com/cloudsdktool/cloud-sdk
+Step #0: 6bc9f599b3ef: Already exists
+Step #0: c641fc9d9c7f: Pulling fs layer
+Step #0: 2efcf331f30e: Pulling fs layer
+Step #0: f69efcaf036f: Pulling fs layer
+Step #0: 14ddce2aab1b: Pulling fs layer
+Step #0: bbc9f7615abb: Pulling fs layer
+Step #0: c641fc9d9c7f: Verifying Checksum
+Step #0: c641fc9d9c7f: Download complete
+Step #0: bbc9f7615abb: Verifying Checksum
+Step #0: bbc9f7615abb: Download complete
+Step #0: 14ddce2aab1b: Verifying Checksum
+Step #0: 14ddce2aab1b: Download complete
+Step #0: c641fc9d9c7f: Pull complete
+Step #0: f69efcaf036f: Verifying Checksum
+Step #0: f69efcaf036f: Download complete
+Step #0: 2efcf331f30e: Verifying Checksum
+Step #0: 2efcf331f30e: Download complete
+Step #0: 2efcf331f30e: Pull complete
+Step #0: f69efcaf036f: Pull complete
+Step #0: 14ddce2aab1b: Pull complete
+Step #0: bbc9f7615abb: Pull complete
+Step #0: Digest: sha256:ba0af18673b138090a5a874db6e05875d9427786cf5817d064b7ff9b3f60c08e
+Step #0: Status: Downloaded newer image for gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #0: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #0: VITE_SUPABASE_URL=*** 
+Step #0: VITE_SUPABASE_ANON_KEY=*** 
+Step #0: VITE_SB_PUBLISHABLE_KEY=*** 
+Finished Step #0
+Starting Step #1
+Step #1: Pulling image: postgres:16
+Step #1: 16: Pulling from library/postgres
+Step #1: 206356c42440: Pulling fs layer
+Step #1: c9eacd1d709c: Pulling fs layer
+Step #1: ba59a1ae601d: Pulling fs layer
+Step #1: 595352800791: Pulling fs layer
+Step #1: 89f10f4e04dd: Pulling fs layer
+Step #1: 7809c1718c26: Pulling fs layer
+Step #1: 5844c4338824: Pulling fs layer
+Step #1: 861498d93eeb: Pulling fs layer
+Step #1: c64270d947af: Pulling fs layer
+Step #1: 8b12654279d1: Pulling fs layer
+Step #1: dbe9a7ca5fef: Pulling fs layer
+Step #1: 890feb308598: Pulling fs layer
+Step #1: be4f2235cfc3: Pulling fs layer
+Step #1: 5e6ed82659af: Pulling fs layer
+Step #1: 5844c4338824: Waiting
+Step #1: 861498d93eeb: Waiting
+Step #1: c64270d947af: Waiting
+Step #1: 8b12654279d1: Waiting
+Step #1: dbe9a7ca5fef: Waiting
+Step #1: 890feb308598: Waiting
+Step #1: be4f2235cfc3: Waiting
+Step #1: 5e6ed82659af: Waiting
+Step #1: 595352800791: Verifying Checksum
+Step #1: 595352800791: Download complete
+Step #1: c9eacd1d709c: Verifying Checksum
+Step #1: c9eacd1d709c: Download complete
+Step #1: 7809c1718c26: Verifying Checksum
+Step #1: 7809c1718c26: Download complete
+Step #1: 89f10f4e04dd: Verifying Checksum
+Step #1: 89f10f4e04dd: Download complete
+Step #1: 5844c4338824: Download complete
+Step #1: ba59a1ae601d: Verifying Checksum
+Step #1: ba59a1ae601d: Download complete
+Step #1: 206356c42440: Verifying Checksum
+Step #1: 206356c42440: Download complete
+Step #1: 861498d93eeb: Download complete
+Step #1: 8b12654279d1: Verifying Checksum
+Step #1: 8b12654279d1: Download complete
+Step #1: 890feb308598: Verifying Checksum
+Step #1: 890feb308598: Download complete
+Step #1: 5e6ed82659af: Verifying Checksum
+Step #1: 5e6ed82659af: Download complete
+Step #1: be4f2235cfc3: Verifying Checksum
+Step #1: be4f2235cfc3: Download complete
+Step #1: dbe9a7ca5fef: Verifying Checksum
+Step #1: dbe9a7ca5fef: Download complete
+Step #1: c64270d947af: Verifying Checksum
+Step #1: c64270d947af: Download complete
+Step #1: 206356c42440: Pull complete
+Step #1: c9eacd1d709c: Pull complete
+Step #1: ba59a1ae601d: Pull complete
+Step #1: 595352800791: Pull complete
+Step #1: 89f10f4e04dd: Pull complete
+Step #1: 7809c1718c26: Pull complete
+Step #1: 5844c4338824: Pull complete
+Step #1: 861498d93eeb: Pull complete
+Step #1: c64270d947af: Pull complete
+Step #1: 8b12654279d1: Pull complete
+Step #1: dbe9a7ca5fef: Pull complete
+Step #1: 890feb308598: Pull complete
+Step #1: be4f2235cfc3: Pull complete
+Step #1: 5e6ed82659af: Pull complete
+Step #1: Digest: sha256:23af655ba1ddf74eaa002e3deaf5fce022ab8791672336a7c1fb0ef2d57efb7f
+Step #1: Status: Downloaded newer image for postgres:16
+Step #1: docker.io/library/postgres:16
+Step #1: Creating Supabase backup: /workspace/db_backups/supabase_adeptify-consultor_be9952fe-ef1f-41f8-9a43-a1bc45f8184d.dump.gz (timestamp: 2026-02-24T22:26:08Z)
+Step #1: pg_dump: error: connection to server at "db.cqqifwjzljxtiphdcyyi.supabase.co" (2a05:d018:135e:16c7:42ae:8fb:2dfe:56b5), port 5432 failed: Cannot assign requested address
+Step #1: 	Is the server running on that host and accepting TCP/IP connections?
+Finished Step #1
+ERROR
+ERROR: build step 1 "postgres:16" failed: step exited with non-zero status: 1
+-------------------------------------------

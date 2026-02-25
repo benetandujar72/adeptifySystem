@@ -453,7 +453,69 @@ const ca = {
   consultorProjectMetricMaintenance: "Manteniment",
   consultorProjectMetricDevCost: "Valor de desenvolupament",
   consultorProjectMetricOwnership: "Cost inicial",
-  consultorProjectMetricDevCostNote: "Valor actiu estimat amortitzat en les quotes mensuals (no és un pagament inicial)."
+  consultorProjectMetricDevCostNote: "Valor actiu estimat amortitzat en les quotes mensuals (no és un pagament inicial).",
+
+  // New Landing Page (Adeptify)
+  lpNavServices: "Serveis",
+  lpNavCases: "Casos d'Èxit",
+  lpNavContact: "Contactar",
+  lpHeroTitle1: "Potència la teva empresa amb",
+  lpHeroTitle2: "Intel·ligència Artificial i Automatització",
+  lpHeroDesc: "A Adeptify, dissenyem i desenvolupem plataformes digitals, aplicacions web i solucions basades en IA per millorar la teva eficiència operativa.",
+  lpHeroCta1: "Sol·licitar Pressupost",
+  lpHeroCta2: "Veure Projectes",
+
+  lpValueTitle: "Per què triar Adeptify?",
+  lpValueDesc: "Som el teu partner tecnològic de confiança. Transformem les teves idees en eines digitals rendibles, accessibles i modernes.",
+  lpValue1Title: "A Mida i Escalable",
+  lpValue1Desc: "Programari dissenyat per créixer amb el teu negoci, evitant solucions rígides que et limiten.",
+  lpValue2Title: "Integració d'IA",
+  lpValue2Desc: "Connectem els teus sistemes amb els models d'IA més potents per analitzar les teves dades o generar la teva pròpia informació automàticament.",
+  lpValue3Title: "Ecosistema Connectat",
+  lpValue3Desc: "Automatitzem els teus fluxos de treball integrant els teus canals comercials o CRMs actuals.",
+
+  lpServicesTitle: "Solucions que oferim",
+  lpServicesDesc: "Siguis una PIME que vol automatitzar o una agència que necessita la teva pròpia plataforma web, tenim el stack i els coneixements adequats.",
+  lpService1Title: "Plataformes Web a Mida",
+  lpService1Desc: "Desenvolupament integral de plataformes SAAS, intranets, ERP o panells d'administració per a empreses o startups.",
+  lpService2Title: "Implementació d'IA",
+  lpService2Desc: "Agents virtuals conversacionals intel·ligents (Chatbots) amb RAG (Retroactivitat Amplificada per Generació), gestors de base de dades vectorials i integracions genèriques (LLMs).",
+  lpService3Title: "Automatització de Processos",
+  lpService3Desc: "Connexions entre les teves eines (Zapier, Make, n8n) i extracció de dades intel·ligent per eliminar feines repetitives i manuals.",
+  lpServiceCta: "Veure detalls",
+
+
+  lpCasesTitle: "Casos d'Èxit",
+  lpCasesDesc: "Descobreix com ajudem a empreses reals a augmentar la seva rendibilitat amb tecnologia.",
+
+  lpMethodTitle: "La nostra Metodologia",
+  lpMethodDesc: "Treballem amb un procés clar i transparent per assegurar que el resultat final és exactament el que necessites.",
+  lpMethod1Title: "01. Auditoria i Requisits",
+  lpMethod1Desc: "Analitzem les teves necessitats i definim una proposta d'abast i costos (sense compromís).",
+  lpMethod2Title: "02. Disseny i Prototipat",
+  lpMethod2Desc: "Creem un prototip funcional i atractiu perquè validis com serà l'aplicació.",
+  lpMethod3Title: "03. Desenvolupament Iteratiu",
+  lpMethod3Desc: "Construïm el programari amb entregues periòdiques i validació per la teva banda.",
+  lpMethod4Title: "04. Llançament i Manteniment",
+  lpMethod4Desc: "Despleguem l'aplicació en un entorn segur amb suport tècnic continu i escalabilitat garantida.",
+
+  lpMetricsTitle: "Impacte Reial",
+  lpMetricsDesc: "La digitalització i automatització té un impacte directe sobre l'eficiència i la rendibilitat del teu negoci.",
+  lpMetric1Value: "95%",
+  lpMetric1Label: "Taxa de Retenció",
+  lpMetric2Value: "+4.5K",
+  lpMetric2Label: "Hores Estalviades",
+  lpMetric3Value: "15+",
+  lpMetric3Label: "Projectes Entregats",
+
+  lpContactTitle: "Llestos per fer créixer el teu projecte?",
+  lpContactDesc: "Explica'ns el teu repte o demana una auditoria inicial gratuïta. En menys de 24h et donarem una valoració tècnica.",
+  lpContactNamePlaceholder: "El teu nom o empresa",
+  lpContactEmailPlaceholder: "La teva adreça de correu",
+  lpContactMsgPlaceholder: "Explica'ns breument el projecte o quins processos vols automatitzar...",
+  lpContactSubmit: "Enviar sol·licitud",
+  lpContactSuccess: "Gràcies! Hem rebut la teva sol·licitud i contactarem aviat.",
+  lpContactError: "Error enviant. Si us plau, prova-ho de nou."
 };
 
 const es = {
@@ -907,8 +969,70 @@ const es = {
   consultorProjectMetricAiCost: "Coste IA",
   consultorProjectMetricMaintenance: "Mantenimiento",
   consultorProjectMetricDevCost: "Valor de desarrollo",
-  consultorProjectMetricOwnership: "Coste inicial",
-  consultorProjectMetricDevCostNote: "Valor de activo estimado amortizado en las cuotas mensuales (no es un pago inicial)."
+  consultorProjectMetricOwnership: "Cost inicial",
+  consultorProjectMetricDevCostNote: "Valor de activo estimado amortizado en las cuotas mensuales (no es un pago inicial).",
+
+  // New Landing Page (Adeptify)
+  lpNavServices: "Servicios",
+  lpNavCases: "Casos de Éxito",
+  lpNavContact: "Contactar",
+  lpHeroTitle1: "Potencia tu empresa con",
+  lpHeroTitle2: "Inteligencia Artificial y Automatización",
+  lpHeroDesc: "En Adeptify, diseñamos y desarrollamos plataformas digitales, aplicaciones web y soluciones basadas en IA para mejorar tu eficiencia operativa.",
+  lpHeroCta1: "Solicitar Presupuesto",
+  lpHeroCta2: "Ver Proyectos",
+
+  lpValueTitle: "¿Por qué elegir Adeptify?",
+  lpValueDesc: "Somos tu partner tecnológico de confianza. Transformamos tus ideas en herramientas digitales rentables, accesibles y modernas.",
+  lpValue1Title: "A Medida y Escalable",
+  lpValue1Desc: "Software diseñado para crecer con tu negocio, evitando soluciones rígidas que te limiten.",
+  lpValue2Title: "Integración de IA",
+  lpValue2Desc: "Conectamos tus sistemas con los modelos de IA más potentes para analizar tus datos o generar tu propia información automáticamente.",
+  lpValue3Title: "Ecosistema Conectado",
+  lpValue3Desc: "Automatizamos tus flujos de trabajo integrando tus canales comerciales o CRMs actuales.",
+
+  lpServicesTitle: "Soluciones que ofrecemos",
+  lpServicesDesc: "Seas una PYME que quiere automatizar o una agencia que necesita su propia plataforma web, tenemos el stack y los conocimientos adecuados.",
+  lpService1Title: "Plataformas Web a Medida",
+  lpService1Desc: "Desarrollo integral de plataformas SAAS, intranets, ERP o paneles de administración para empresas o startups.",
+  lpService2Title: "Implementación de IA",
+  lpService2Desc: "Agentes virtuales conversacionales inteligentes (Chatbots) con RAG (Retrieval-Augmented Generation), gestores de bases de datos vectoriales e integraciones genéricas (LLMs).",
+  lpService3Title: "Automatización de Procesos",
+  lpService3Desc: "Conexiones entre tus herramientas (Zapier, Make, n8n) y extracción de datos inteligente para eliminar trabajos repetitivos y manuales.",
+  lpServiceCta: "Ver detalles",
+
+
+  lpCasesTitle: "Casos de Éxito",
+  lpCasesDesc: "Descubre cómo ayudamos a empresas reales a aumentar su rentabilidad con tecnología.",
+
+  lpMethodTitle: "Nuestra Metodología",
+  lpMethodDesc: "Trabajamos con un proceso claro y transparente para asegurar que el resultado final es exactamente lo que necesitas.",
+  lpMethod1Title: "01. Auditoría y Requisitos",
+  lpMethod1Desc: "Analizamos tus necesidades y definimos una propuesta de alcance y costes (sin compromiso).",
+  lpMethod2Title: "02. Diseño y Prototipado",
+  lpMethod2Desc: "Creamos un prototipo funcional y atractivo para que valides cómo será la aplicación.",
+  lpMethod3Title: "03. Desarrollo Iterativo",
+  lpMethod3Desc: "Construimos el software con entregas periódicas y validación por tu parte.",
+  lpMethod4Title: "04. Lanzamiento y Mantenimiento",
+  lpMethod4Desc: "Desplegamos la aplicación en un entorno seguro con soporte técnico continuo y escalabilidad garantizada.",
+
+  lpMetricsTitle: "Impacto Real",
+  lpMetricsDesc: "La digitalización y automatización tiene un impacto directo sobre la eficiencia y la rentabilidad de tu negocio.",
+  lpMetric1Value: "95%",
+  lpMetric1Label: "Tasa de Retención",
+  lpMetric2Value: "+4.5K",
+  lpMetric2Label: "Horas Ahorradas",
+  lpMetric3Value: "15+",
+  lpMetric3Label: "Proyectos Entregados",
+
+  lpContactTitle: "¿Listos para hacer crecer tu proyecto?",
+  lpContactDesc: "Explícanos tu reto o pide una auditoría inicial gratuita. En menos de 24h te daremos una valoración técnica.",
+  lpContactNamePlaceholder: "Tu nombre o empresa",
+  lpContactEmailPlaceholder: "Tu dirección de correo",
+  lpContactMsgPlaceholder: "Explícanos brevemente el proyecto o qué procesos quieres automatizar...",
+  lpContactSubmit: "Enviar solicitud",
+  lpContactSuccess: "¡Gracias! Hemos recibido tu solicitud y contactaremos pronto.",
+  lpContactError: "Error enviando. Por favor, pruébalo de nuevo."
 };
 
 const eu: typeof ca = {
@@ -1002,7 +1126,69 @@ const eu: typeof ca = {
   consultorProjectMetricMaintenance: "Mantentzea",
   consultorProjectMetricDevCost: "Garapen Balioa",
   consultorProjectMetricOwnership: "Hasierako Kostua",
-  consultorProjectMetricDevCostNote: "Hileko kuotetan amortizatutako balio estimatua (ez da hasierako ordainketa)."
+  consultorProjectMetricDevCostNote: "Hileko kuotetan amortizatutako balio estimatua (ez da hasierako ordainketa).",
+
+  // New Landing Page (Adeptify)
+  lpNavServices: "Zerbitzuak",
+  lpNavCases: "Arrakasta Kasuak",
+  lpNavContact: "Kontaktua",
+  lpHeroTitle1: "Bultzatu zure enpresa",
+  lpHeroTitle2: "Adimen Artifizial eta Automatizazioarekin",
+  lpHeroDesc: "Adeptify-n, plataforma digitalak, web aplikazioak eta IA oinarritutako soluzioak diseinatu eta garatzen ditugu, zure eraginkortasun operatiboa hobetzeko.",
+  lpHeroCta1: "Aurrekontua Eskatu",
+  lpHeroCta2: "Proiektuak Ikusi",
+
+  lpValueTitle: "Zergatik aukeratu Adeptify?",
+  lpValueDesc: "Zure bazkide teknologiko fidagarria gara. Zure ideiak tresna digital errentagarri, eskuragarri eta moderno bihurtzen ditugu.",
+  lpValue1Title: "Neurrira eta Eskalagarria",
+  lpValue1Desc: "Zure negozioarekin batera hazteko diseinatutako softwarea, mugatzen zaituzten soluzio zurrunak saihestuz.",
+  lpValue2Title: "IA Integrazioa",
+  lpValue2Desc: "Zure sistemak IA eredu indartsuenekin konektatzen ditugu zure datuak aztertzeko edo zure informazioa automatikoki sortzeko.",
+  lpValue3Title: "Ekosistema Konektatua",
+  lpValue3Desc: "Zure lan-fluxuak automatizatzen ditugu gaur egungo merkataritza-bideak edo CRMak integratuz.",
+
+  lpServicesTitle: "Eskaintzen ditugun soluzioak",
+  lpServicesDesc: "Automatizatu nahi duen ETE bat edo bere web plataforma behar duen agentzia bat bazara, pila eta ezagutza egokiak ditugu.",
+  lpService1Title: "Neurrira egindako Web Plataformak",
+  lpService1Desc: "SAAS plataformen, intranet-en, ERP-en edo enpresa edo startup-entzako administrazio-panelen garapen integrala.",
+  lpService2Title: "IA Inplementazioa",
+  lpService2Desc: "Agente birtual elkarrizketalari adimendunak (Chatbotak) RAG (Retrieval-Augmented Generation) bidez, datu-base bektorialen kudeatzaileak eta integrazio orokorrak (LLMak).",
+  lpService3Title: "Prozesuen Automatizazioa",
+  lpService3Desc: "Zure tresnen arteko konexioak (Zapier, Make, n8n) eta datu-erauzketa adimenduna eskuzko lan errepikakorrak kentzeko.",
+  lpServiceCta: "Xehetasunak ikusi",
+
+
+  lpCasesTitle: "Arrakasta Kasuak",
+  lpCasesDesc: "Ezagutu nola laguntzen diegun benetako enpresei beren errentagarritasuna teknologiarekin handitzen.",
+
+  lpMethodTitle: "Gure Metodologia",
+  lpMethodDesc: "Prozesu argi eta garden batekin lan egiten dugu, azken emaitza zehazki behar duzuna dela ziurtatzeko.",
+  lpMethod1Title: "01. Auditoria eta Eskakizunak",
+  lpMethod1Desc: "Zure beharrak aztertu eta irismen eta kostu proposamen bat zehazten dugu (konpromisorik gabe).",
+  lpMethod2Title: "02. Diseinua eta Prototipatzea",
+  lpMethod2Desc: "Prototipo funtzional eta erakargarri bat sortzen dugu, aplikazioa nolakoa izango den balioztatzeko.",
+  lpMethod3Title: "03. Garapen Iteratiboa",
+  lpMethod3Desc: "Softwarea eraikitzen dugu aldizkako entregak eta zure aldetik balioztatzeak eginez.",
+  lpMethod4Title: "04. Aurkezpena eta Mantentzea",
+  lpMethod4Desc: "Aplikazioa ingurune seguru batean zabaltzen dugu, etengabeko laguntza teknikoarekin eta eskalagarritasun bermatuarekin.",
+
+  lpMetricsTitle: "Benetako Eragina",
+  lpMetricsDesc: "Digitalizazioak eta automatizazioak eragin zuzena dute zure negozioaren eraginkortasunean eta errentagarritasunean.",
+  lpMetric1Value: "95%",
+  lpMetric1Label: "Erretentzio Tasa",
+  lpMetric2Value: "+4.5K",
+  lpMetric2Label: "Aurreztutako Orduak",
+  lpMetric3Value: "15+",
+  lpMetric3Label: "Entregatutako Proiektuak",
+
+  lpContactTitle: "Zure proiektua hazteko prest?",
+  lpContactDesc: "Azaldu zure erronka edo eskatu doako hasierako auditoria bat. 24 ordu baino gutxiagoan balorazio tekniko bat emango dizugu.",
+  lpContactNamePlaceholder: "Zure izena edo enpresa",
+  lpContactEmailPlaceholder: "Zure helbide elektronikoa",
+  lpContactMsgPlaceholder: "Azaldu laburki zure proiektua edo zer prozesu automatizatu nahi dituzun...",
+  lpContactSubmit: "Eskaera bidali",
+  lpContactSuccess: "Eskerrik asko! Zure eskaera jaso dugu eta laster jarriko gara harremanetan.",
+  lpContactError: "Errorea bidaltzean. Mesedez, saiatu berriro."
 };
 
 export const translations = { ca, es, eu };

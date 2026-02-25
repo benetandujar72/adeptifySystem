@@ -1,0 +1,24 @@
+PROJECT_ID                      NAME                            PROJECT_NUMBER  ENVIRONMENT
+adeptify-460620                 adeptify                        1080986221149
+gei-adeptify-prod               GEI Adeptify Production         735333783204
+gen-lang-client-0167663995      CCTT-BI                         242536481106
+gen-lang-client-0321471357      quinto                          210267487206
+gen-lang-client-0367409805      CCBB-Bitacola                   360338465758
+gen-lang-client-0487291612      RoyalMath                       398101403892
+gen-lang-client-0488088591      espai-expertesses               617252673495
+gen-lang-client-0524740683      connectasenior                  1018947353328
+gen-lang-client-0638368553      Gemini API                      105253118170
+gen-lang-client-0652011048      AVALAUCIONS ESTADISTIQUES       706736459859
+gen-lang-client-0757991117      adeptifysystem                  1061852826388
+gen-lang-client-0834370609      webmatchcare                    1089875285096
+gestio-guardies                 gestio Guardies                 86658517609
+haikuvision-5bqkm               HaikuVision                     208027803619
+myplace-1565985274041           Myplace                         545173281539
+pdfdigitalbook-1745136460474    PDFDigitalbook                  933186362484
+sys-12850716114116787987699336  EnviarEmails                    889128686360
+sys-26642179812898217641002970  Macros enregistrades  Model Sd  494410454501
+sys-26821398147429452659832502  Proyecto sin t tulo             730715092533
+sys-39544560495753933570611775  Proyecto sin t tulo             438131597963
+sys-74307922603716731839128239  Assistatut 7 clases CAS v3 1    1014385157093
+sys-74469217171959035568327027  qViC v2 0 1                     72524653083
+sys-91806017276817890879254164  Proyecto sin t tulo             607832654709

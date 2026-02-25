@@ -1,0 +1,138 @@
+------- REMOTE BUILD OUTPUT --------
+starting build "57d6a7c1-c235-46ea-a8d0-6949c56ac997"
+
+FETCHSOURCE
+Fetching storage object: gs://gen-lang-client-0757991117_cloudbuild/source/1771975189.916732-677e4c313b304a02a6a77be8724a1e20.tgz#1771975198225034
+Copying gs://gen-lang-client-0757991117_cloudbuild/source/1771975189.916732-677e4c313b304a02a6a77be8724a1e20.tgz#1771975198225034...
+/ [0 files][    0.0 B/  8.1 MiB]                                                
+/ [1 files][  8.1 MiB/  8.1 MiB]                                                
+
+Operation completed over 1 objects/8.1 MiB.                                      
+BUILD
+Starting Step #0
+Step #0: Pulling image: gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #0: Using default tag: latest
+Step #0: latest: Pulling from google.com/cloudsdktool/cloud-sdk
+Step #0: 6bc9f599b3ef: Already exists
+Step #0: c641fc9d9c7f: Pulling fs layer
+Step #0: 2efcf331f30e: Pulling fs layer
+Step #0: f69efcaf036f: Pulling fs layer
+Step #0: 14ddce2aab1b: Pulling fs layer
+Step #0: bbc9f7615abb: Pulling fs layer
+Step #0: c641fc9d9c7f: Verifying Checksum
+Step #0: c641fc9d9c7f: Download complete
+Step #0: bbc9f7615abb: Verifying Checksum
+Step #0: bbc9f7615abb: Download complete
+Step #0: 14ddce2aab1b: Verifying Checksum
+Step #0: 14ddce2aab1b: Download complete
+Step #0: c641fc9d9c7f: Pull complete
+Step #0: f69efcaf036f: Download complete
+Step #0: 2efcf331f30e: Download complete
+Step #0: 2efcf331f30e: Pull complete
+Step #0: f69efcaf036f: Pull complete
+Step #0: 14ddce2aab1b: Pull complete
+Step #0: bbc9f7615abb: Pull complete
+Step #0: Digest: sha256:ba0af18673b138090a5a874db6e05875d9427786cf5817d064b7ff9b3f60c08e
+Step #0: Status: Downloaded newer image for gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #0: gcr.io/google.com/cloudsdktool/cloud-sdk:latest
+Step #0: VITE_SUPABASE_URL=*** 
+Step #0: VITE_SUPABASE_ANON_KEY=*** 
+Step #0: VITE_SB_PUBLISHABLE_KEY=*** 
+Finished Step #0
+Starting Step #1
+Step #1: Pulling image: postgres:17
+Step #1: 17: Pulling from library/postgres
+Step #1: 206356c42440: Pulling fs layer
+Step #1: 1b35aa83564f: Pulling fs layer
+Step #1: 3c80eff5a536: Pulling fs layer
+Step #1: abb57321672e: Pulling fs layer
+Step #1: f61f1ede6112: Pulling fs layer
+Step #1: 7fea81bba4fe: Pulling fs layer
+Step #1: 4c98759cf719: Pulling fs layer
+Step #1: 6689de359a79: Pulling fs layer
+Step #1: 7bd3b711f7f3: Pulling fs layer
+Step #1: 41c36bf6f2a0: Pulling fs layer
+Step #1: bf2e34dd56b2: Pulling fs layer
+Step #1: 490b2b7cb250: Pulling fs layer
+Step #1: d57bd7d4bd4c: Pulling fs layer
+Step #1: 6d7c305a26be: Pulling fs layer
+Step #1: 4c98759cf719: Waiting
+Step #1: 6689de359a79: Waiting
+Step #1: 7bd3b711f7f3: Waiting
+Step #1: 41c36bf6f2a0: Waiting
+Step #1: bf2e34dd56b2: Waiting
+Step #1: 490b2b7cb250: Waiting
+Step #1: d57bd7d4bd4c: Waiting
+Step #1: 6d7c305a26be: Waiting
+Step #1: 1b35aa83564f: Verifying Checksum
+Step #1: 1b35aa83564f: Download complete
+Step #1: 7fea81bba4fe: Verifying Checksum
+Step #1: 7fea81bba4fe: Download complete
+Step #1: abb57321672e: Verifying Checksum
+Step #1: abb57321672e: Download complete
+Step #1: f61f1ede6112: Verifying Checksum
+Step #1: f61f1ede6112: Download complete
+Step #1: 3c80eff5a536: Verifying Checksum
+Step #1: 3c80eff5a536: Download complete
+Step #1: 206356c42440: Verifying Checksum
+Step #1: 206356c42440: Download complete
+Step #1: 6689de359a79: Verifying Checksum
+Step #1: 6689de359a79: Download complete
+Step #1: 4c98759cf719: Verifying Checksum
+Step #1: 4c98759cf719: Download complete
+Step #1: bf2e34dd56b2: Verifying Checksum
+Step #1: bf2e34dd56b2: Download complete
+Step #1: 41c36bf6f2a0: Verifying Checksum
+Step #1: 41c36bf6f2a0: Download complete
+Step #1: 490b2b7cb250: Verifying Checksum
+Step #1: 490b2b7cb250: Download complete
+Step #1: 6d7c305a26be: Verifying Checksum
+Step #1: 6d7c305a26be: Download complete
+Step #1: d57bd7d4bd4c: Verifying Checksum
+Step #1: d57bd7d4bd4c: Download complete
+Step #1: 206356c42440: Pull complete
+Step #1: 1b35aa83564f: Pull complete
+Step #1: 7bd3b711f7f3: Verifying Checksum
+Step #1: 7bd3b711f7f3: Download complete
+Step #1: 3c80eff5a536: Pull complete
+Step #1: abb57321672e: Pull complete
+Step #1: f61f1ede6112: Pull complete
+Step #1: 7fea81bba4fe: Pull complete
+Step #1: 4c98759cf719: Pull complete
+Step #1: 6689de359a79: Pull complete
+Step #1: 7bd3b711f7f3: Pull complete
+Step #1: 41c36bf6f2a0: Pull complete
+Step #1: bf2e34dd56b2: Pull complete
+Step #1: 490b2b7cb250: Pull complete
+Step #1: d57bd7d4bd4c: Pull complete
+Step #1: 6d7c305a26be: Pull complete
+Step #1: Digest: sha256:9ba47fa6d1c34e9cc4c1758640e7774a9b73ea0fba891f14088321ba7561d253
+Step #1: Status: Downloaded newer image for postgres:17
+Step #1: docker.io/library/postgres:17
+Step #1: Creating Supabase backup: /workspace/db_backups/supabase_adeptify-consultor_57d6a7c1-c235-46ea-a8d0-6949c56ac997.dump.gz (timestamp: 2026-02-24T23:21:56Z)
+Step #1: Backup created (bytes): 462940
+Finished Step #1
+Starting Step #2
+Step #2: Already have image (with digest): gcr.io/google.com/cloudsdktool/cloud-sdk
+Step #2: Uploading backup to gs://adeptify-supabase-backups/adeptify-consultor/2026/02/24/57d6a7c1-c235-46ea-a8d0-6949c56ac997/supabase_adeptify-consultor_57d6a7c1-c235-46ea-a8d0-6949c56ac997.dump.gz
+Step #2: Backup uploaded successfully.
+Finished Step #2
+Starting Step #3
+Step #3: Already have image (with digest): postgres:17
+Step #3: === Applying Supabase migrations ===
+Step #3:   → Applying: supabase/migrations/001_project_examples.sql
+Step #3: psql:supabase/migrations/001_project_examples.sql:10: WARNING:  there is already a transaction in progress
+Step #3: BEGIN
+Step #3: psql:supabase/migrations/001_project_examples.sql:41: NOTICE:  relation "project_examples" already exists, skipping
+Step #3: CREATE TABLE
+Step #3: ALTER TABLE
+Step #3: CREATE INDEX
+Step #3: CREATE INDEX
+Step #3: ALTER TABLE
+Step #3: psql:supabase/migrations/001_project_examples.sql:108: ERROR:  invalid input syntax for type uuid: "gestio-informes-centreMX"
+Step #3: LINE 8:   'gestio-informes-centreMX',
+Step #3:           ^
+Finished Step #3
+ERROR
+ERROR: build step 3 "postgres:17" failed: step exited with non-zero status: 3
+------------------------------------

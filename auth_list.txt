@@ -1,0 +1,8 @@
+
+  Credentialed Accounts
+ACTIVE  ACCOUNT
+*       bandujar@edutac.es
+        bandujar@xtec.cat
+To set the active account, run:
+    $ gcloud config set account `ACCOUNT`
+

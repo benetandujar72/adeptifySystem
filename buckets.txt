@@ -1,0 +1,1 @@
+ERROR: (gcloud.storage.ls) HTTPError 403: bandujar@edutac.es does not have storage.buckets.list access to the Google Cloud project. Permission 'storage.buckets.list' denied on resource (or it may not exist). This command is authenticated as bandujar@edutac.es which is the active account specified by the [core/account] property.

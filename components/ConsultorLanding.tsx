@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
 import { ADEPTIFY_INFO } from '../constants';
 import ProjectExamples from './ProjectExamples';
+import AnimatedCounter from './AnimatedCounter';
 
 type Props = {
   onOpenApp: () => void;
@@ -10,22 +11,12 @@ type Props = {
 
 const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
   const { t } = useLanguage();
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [activeTab, setActiveTab] = useState<'services' | 'cases' | 'methodology'>('services');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactMessage, setContactMessage] = useState('');
   const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const [contactError, setContactError] = useState('');
-
-  const faqs = useMemo(
-    () => [
-      { q: t.consultorFaqQ1, a: t.consultorFaqA1 },
-      { q: t.consultorFaqQ2, a: t.consultorFaqA2 },
-      { q: t.consultorFaqQ3, a: t.consultorFaqA3 },
-      { q: t.consultorFaqQ4, a: t.consultorFaqA4 },
-    ],
-    [t]
-  );
 
   const canSubmit = !!contactName.trim() && !!contactEmail.trim() && !!contactMessage.trim();
 
@@ -69,459 +60,279 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
   };
 
   return (
-    <div className="fade-up">
-      <section className="w-full max-w-6xl mx-auto">
-        <div className="text-center mb-14 md:mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-[0.25em] text-slate-600">
+    <div className="fade-up space-y-24 md:space-y-32 pb-20">
+      {/* 1. HERO SECTION */}
+      <section className="relative w-full max-w-7xl mx-auto px-4 pt-10 md:pt-20">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent -z-10 blur-3xl rounded-full" />
+
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-[10px] font-black uppercase tracking-[0.25em] text-blue-600 mb-8">
             {t.consultorKicker}
           </div>
 
-          <h1 className="mt-8 text-5xl md:text-6xl font-serif text-slate-900 mb-6 leading-tight">
-            {t.consultorHeroTitle}{' '}
-            <span className="italic text-indigo-700 font-normal">{t.consultorHeroTitleAccent}</span>
+          <h1 className="text-5xl md:text-7xl font-sans font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
+            {t.lpHeroTitle1}<br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500">
+              {t.lpHeroTitle2}
+            </span>
           </h1>
 
-          <p className="text-slate-500 font-medium text-lg max-w-3xl mx-auto leading-relaxed">
-            {t.consultorHeroDesc}
+          <p className="text-slate-500 font-medium text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-12">
+            {t.lpHeroDesc}
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={onOpenApp}
-              className="bg-slate-900 text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg"
+              onClick={() => document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-full sm:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95"
             >
-              {t.consultorPrimaryCta}
+              {t.lpHeroCta1}
             </button>
             <button
-              onClick={onOpenDocs}
-              className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
+              onClick={() => document.getElementById('casos')?.scrollIntoView({ behavior: 'smooth' })}
+              className="w-full sm:w-auto bg-white text-slate-900 px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all active:scale-95"
             >
-              {t.consultorSecondaryCta}
+              {t.lpHeroCta2}
             </button>
           </div>
 
-          <p className="mt-6 text-[11px] text-slate-400 font-semibold tracking-wide">
-            {t.consultorTrustLine}
-          </p>
-        </div>
-      </section>
-
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((step) => (
-            <div
-              key={step}
-              className="bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-left"
-            >
-              <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-900 flex items-center justify-center font-black">
-                {step}
-              </div>
-              <h3 className="mt-6 text-lg font-black text-slate-900 tracking-tight">
-                {step === 1 ? t.consultorHow1Title : step === 2 ? t.consultorHow2Title : t.consultorHow3Title}
-              </h3>
-              <p className="mt-3 text-sm text-slate-500 leading-relaxed font-medium">
-                {step === 1 ? t.consultorHow1Desc : step === 2 ? t.consultorHow2Desc : t.consultorHow3Desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="text-left md:text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorProductTitle}</h2>
-          <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-3xl md:mx-auto">{t.consultorProductDesc}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-white border border-slate-100 rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                    {i === 1
-                      ? t.consultorGen1Title
-                      : i === 2
-                        ? t.consultorGen2Title
-                        : i === 3
-                          ? t.consultorGen3Title
-                          : t.consultorGen4Title}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-medium">
-                    {i === 1
-                      ? t.consultorGen1Desc
-                      : i === 2
-                        ? t.consultorGen2Desc
-                        : i === 3
-                          ? t.consultorGen3Desc
-                          : t.consultorGen4Desc}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="text-left md:text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorScreensTitle}</h2>
-          <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-3xl md:mx-auto">{t.consultorScreensDesc}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.06)]"
-            >
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-                  {i === 1 ? t.consultorScreens1Label : i === 2 ? t.consultorScreens2Label : t.consultorScreens3Label}
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-indigo-700">
-                  {t.consultorScreensTag}
-                </span>
-              </div>
-              <img
-                className="w-full h-56 object-cover bg-slate-50"
-                src={i === 1 ? '/screenshots/consultor-feature-1.svg' : i === 2 ? '/screenshots/consultor-feature-2.svg' : '/screenshots/consultor-feature-3.svg'}
-                alt={i === 1 ? t.consultorScreens1Alt : i === 2 ? t.consultorScreens2Alt : t.consultorScreens3Alt}
-                loading="lazy"
-              />
-              <div className="p-6">
-                <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                  {i === 1
-                    ? t.consultorScreens1Desc
-                    : i === 2
-                      ? t.consultorScreens2Desc
-                      : t.consultorScreens3Desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <ProjectExamples />
-
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="text-left md:text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorExamplesTitle}</h2>
-          <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-3xl md:mx-auto">{t.consultorExamplesDesc}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border border-slate-100 rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">{t.consultorExample1Title}</h3>
-            <p className="mt-2 text-sm text-slate-500 leading-relaxed font-medium">{t.consultorExample1Desc}</p>
-            <div className="mt-6 bg-slate-950 rounded-2xl p-6 text-slate-100">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-indigo-300">{t.consultorExampleBoxLabel}</p>
-              <p className="mt-3 text-sm leading-relaxed text-slate-200">{t.consultorExampleBox1}</p>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-100 rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-            <h3 className="text-lg font-black text-slate-900 tracking-tight">{t.consultorExample2Title}</h3>
-            <p className="mt-2 text-sm text-slate-500 leading-relaxed font-medium">{t.consultorExample2Desc}</p>
-            <div className="mt-6 bg-slate-950 rounded-2xl p-6 text-slate-100">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-indigo-300">{t.consultorExampleBoxLabel}</p>
-              <p className="mt-3 text-sm leading-relaxed text-slate-200">{t.consultorExampleBox2}</p>
-            </div>
+          <div className="mt-16 flex items-center justify-center gap-8 grayscale opacity-50">
+            {/* Logos representatius de tech stack */}
+            <div className="font-black text-xl tracking-tighter text-slate-400">REACT</div>
+            <div className="font-black text-xl tracking-tighter text-slate-400">SUPABASE</div>
+            <div className="font-black text-xl tracking-tighter text-slate-400">TAILWIND</div>
+            <div className="font-black text-xl tracking-tighter text-slate-400">GEMINI IA</div>
           </div>
         </div>
       </section>
 
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="bg-white border border-slate-100 rounded-2xl p-10 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.06)] grid grid-cols-1 md:grid-cols-[1.2fr,0.8fr] gap-10 items-center">
-          <div className="max-w-xl">
-            <div className="text-[10px] font-black uppercase tracking-[0.22em] text-indigo-700">Perfil</div>
-            <h2 className="mt-3 text-2xl md:text-3xl font-serif text-slate-900 italic">Benet Andújar Guardado</h2>
-            <p className="mt-3 text-slate-500 font-medium leading-relaxed">
-              Consultor educativo y coach con más de 20 años acompañando a centros, equipos y familias. Enfoque humano,
-              match con las personas y tecnología al servicio del vínculo.
+      {/* 2. VALUE PROPOSITION */}
+      <section className="w-full max-w-6xl mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-6">
+              {t.lpValueTitle}
+            </h2>
+            <p className="text-lg text-slate-500 font-medium leading-relaxed mb-10">
+              {t.lpValueDesc}
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    window.location.href = '/consultor/benet';
-                  } catch {
-                    // ignore
-                  }
-                }}
-                className="bg-slate-900 text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg"
-              >
-                Ver perfil
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    const el = document.getElementById('contacto');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } catch {
-                    // ignore
-                  }
-                }}
-                className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
-              >
-                Contactar
-              </button>
+            <div className="space-y-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-5">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                    {i === 1 ? (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                    ) : i === 2 ? (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-black text-slate-900 mb-2">{(t as any)[`lpValue${i}Title`]}</h4>
+                    <p className="text-slate-500 font-medium leading-relaxed">{(t as any)[`lpValue${i}Desc`]}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-indigo-200/60 via-slate-100 to-indigo-100 blur-2xl" />
-            <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white">
-              <img
-                src="/benet/benet-main.svg"
-                alt="Benet Andújar"
-                className="w-full h-64 md:h-72 object-cover bg-slate-50"
-                loading="lazy"
-              />
-              <div className="p-4 border-t border-slate-100">
-                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Frase</div>
-                <p className="mt-2 text-sm text-slate-700 font-semibold">
-                  “La tecnología tiene sentido cuando libera tiempo para cuidar a las personas.”
-                </p>
+            <div className="absolute -inset-4 bg-gradient-to-tr from-blue-100 via-white to-cyan-50 rounded-[3rem] blur-2xl opacity-70" />
+            <div className="relative glass-morphism border border-white/40 shadow-2xl rounded-[2.5rem] overflow-hidden bg-white/60 p-2">
+              <div className="bg-slate-900 rounded-[2.2rem] p-8 aspect-square flex flex-col justify-center overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[80px] rounded-full" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-cyan-400/10 blur-[60px] rounded-full" />
+
+                <div className="space-y-6 relative z-10">
+                  <div className="h-2 w-24 bg-blue-500 rounded-full" />
+                  <div className="h-8 w-full bg-white/10 rounded-xl" />
+                  <div className="h-8 w-3/4 bg-white/10 rounded-xl" />
+                  <div className="pt-8 grid grid-cols-2 gap-4">
+                    <div className="h-20 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center">
+                      <div className="w-8 h-8 text-white"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg></div>
+                    </div>
+                    <div className="h-20 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
+                      <div className="w-8 h-8 text-blue-400"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
-        <div className="text-left md:text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorPlansTitle}</h2>
-          <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-3xl md:mx-auto">{t.consultorPlansDesc}</p>
+      {/* 3. SERVICE PACKAGES */}
+      <section id="servicios" className="w-full max-w-7xl mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">{t.lpServicesTitle}</h2>
+          <p className="text-lg text-slate-500 font-medium max-w-3xl mx-auto">{t.lpServicesDesc}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`bg-white border rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] ${i === 2 ? 'border-indigo-200' : 'border-slate-100'}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-black text-slate-900 tracking-tight">
-                    {i === 1 ? t.consultorPlan1Name : i === 2 ? t.consultorPlan2Name : t.consultorPlan3Name}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-500 leading-relaxed font-medium">
-                    {i === 1 ? t.consultorPlan1Desc : i === 2 ? t.consultorPlan2Desc : t.consultorPlan3Desc}
-                  </p>
-                </div>
-                {i === 2 ? (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-[0.22em]">
-                    {t.consultorPlanFeatured}
-                  </span>
-                ) : null}
+            <div key={i} className="group relative bg-white border border-slate-100 p-10 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 hover:-translate-y-2">
+              <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 text-blue-600 flex items-center justify-center mb-8 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                {i === 1 ? (
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
+                ) : i === 2 ? (
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                ) : (
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                )}
               </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-4">{(t as any)[`lpService${i}Title`]}</h3>
+              <p className="text-slate-500 font-medium leading-relaxed mb-10">{(t as any)[`lpService${i}Desc`]}</p>
 
-              <div className="mt-6 text-slate-900">
-                <div className="text-3xl font-black tracking-tight">
-                  {i === 1 ? t.consultorPlan1Price : i === 2 ? t.consultorPlan2Price : t.consultorPlan3Price}
-                </div>
-                <div className="mt-1 text-[11px] text-slate-400 font-semibold tracking-wide">
-                  {i === 1 ? t.consultorPlan1PriceNote : i === 2 ? t.consultorPlan2PriceNote : t.consultorPlan3PriceNote}
-                </div>
+              <div className="pt-6 border-t border-slate-50 group-hover:border-blue-50 transition-colors flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-blue-500 transition-colors">{t.lpServiceCta}</span>
+                <svg className="w-5 h-5 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </div>
-
-              <ul className="mt-6 space-y-3">
-                {(
-                  i === 1
-                    ? [t.consultorPlan1Feat1, t.consultorPlan1Feat2, t.consultorPlan1Feat3]
-                    : i === 2
-                      ? [t.consultorPlan2Feat1, t.consultorPlan2Feat2, t.consultorPlan2Feat3]
-                      : [t.consultorPlan3Feat1, t.consultorPlan3Feat2, t.consultorPlan3Feat3]
-                ).map((txt) => (
-                  <li key={txt} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
-                    <span className="mt-1 w-4 h-4 rounded bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span>{txt}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                onClick={onOpenApp}
-                className={`mt-8 w-full px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${i === 2
-                  ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
-                  : 'bg-white text-slate-900 border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50'
-                  }`}
-              >
-                {t.consultorPlanCta}
-              </button>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="w-full max-w-4xl mx-auto mb-16 md:mb-20">
-        <div className="text-left md:text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorFaqTitle}</h2>
-          <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-2xl md:mx-auto">{t.consultorFaqDesc}</p>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((item, idx) => {
-            const isOpen = openFaq === idx;
-            const buttonId = `consultor-faq-${idx}-button`;
-            const panelId = `consultor-faq-${idx}-panel`;
-            return (
-              <div
-                key={item.q}
-                className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(isOpen ? null : idx)}
-                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
-                  id={buttonId}
-                  aria-controls={panelId}
-                  aria-expanded={isOpen ? 'true' : 'false'}
-                >
-                  <span className="text-sm md:text-base font-black text-slate-900 tracking-tight">{item.q}</span>
-                  <span
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center border border-slate-100 text-slate-700 transition-transform ${isOpen ? 'rotate-45 bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50'
-                      }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v14m7-7H5" />
-                    </svg>
-                  </span>
-                </button>
-                {isOpen ? (
-                  <div id={panelId} role="region" aria-labelledby={buttonId} className="px-6 pb-6 -mt-1">
-                    <p className="text-sm text-slate-500 leading-relaxed font-medium">{item.a}</p>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+      {/* 4. CASE STUDIES (Reusing ProjectExamples) */}
+      <section id="casos" className="w-full bg-slate-50 py-24 md:py-32">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">{t.lpCasesTitle}</h2>
+            <p className="text-lg text-slate-500 font-medium max-w-3xl mx-auto">{t.lpCasesDesc}</p>
+          </div>
+          <ProjectExamples />
         </div>
       </section>
 
-      <section id="contacto" className="w-full max-w-6xl mx-auto">
-        <div className="bg-white border border-slate-100 rounded-2xl p-10 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.06)] grid grid-cols-1 md:grid-cols-2 gap-10">
-          <div className="max-w-xl">
-            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">{t.consultorContactTitle}</h2>
-            <p className="mt-3 text-slate-500 font-medium leading-relaxed">{t.consultorContactDesc}</p>
+      {/* 5. METHODOLOGY */}
+      <section className="w-full max-w-7xl mx-auto px-4">
+        <div className="text-center mb-20">
+          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-6">{t.lpMethodTitle}</h2>
+          <p className="text-lg text-slate-500 font-medium max-w-3xl mx-auto">{t.lpMethodDesc}</p>
+        </div>
 
-            <div className="mt-8 space-y-3 text-sm text-slate-600 font-medium">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18M3 12h18M3 19h18" />
-                  </svg>
-                </span>
+        <div className="relative">
+          <div className="hidden md:block absolute top-[28px] left-[5%] right-[5%] h-1 bg-slate-100 -z-10" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="text-center space-y-6">
+                <div className="w-14 h-14 rounded-full bg-white border-4 border-blue-500 mx-auto flex items-center justify-center font-black text-blue-600 text-lg shadow-lg">
+                  {i}
+                </div>
                 <div>
-                  <div className="text-slate-900 font-black">{t.consultorContactPhoneLabel}</div>
-                  <div className="text-slate-500">{ADEPTIFY_INFO.phone}</div>
+                  <h4 className="text-xl font-black text-slate-900 mb-3">{(t as any)[`lpMethod${i}Title`]}</h4>
+                  <p className="text-slate-500 font-medium leading-relaxed">{(t as any)[`lpMethod${i}Desc`]}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <div className="flex items-start gap-3">
-                <span className="mt-1 w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22s8-4.5 8-10a8 8 0 10-16 0c0 5.5 8 10 8 10z" />
-                  </svg>
-                </span>
-                <div>
-                  <div className="text-slate-900 font-black">{t.consultorContactAddressLabel}</div>
-                  <div className="text-slate-500">{ADEPTIFY_INFO.address}</div>
-                </div>
+      {/* 6. IMPACT METRICS */}
+      <section className="w-full py-16">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center bg-blue-600 rounded-[3rem] p-16 shadow-2xl shadow-blue-200">
+            <div>
+              <div className="text-5xl md:text-6xl font-black text-white mb-2 flex items-center justify-center">
+                <AnimatedCounter value={95} suffix="%" />
               </div>
+              <div className="text-blue-100 font-black uppercase tracking-[0.2em] text-xs px-2">{t.lpMetric1Label}</div>
+            </div>
+            <div className="border-t md:border-t-0 md:border-x border-blue-500/50 py-8 md:py-0">
+              <div className="text-5xl md:text-6xl font-black text-white mb-2 flex items-center justify-center">
+                <AnimatedCounter value={4.5} suffix="K" decimals={1} prefix="+" />
+              </div>
+              <div className="text-blue-100 font-black uppercase tracking-[0.2em] text-xs px-2">{t.lpMetric2Label}</div>
+            </div>
+            <div>
+              <div className="text-5xl md:text-6xl font-black text-white mb-2 flex items-center justify-center">
+                <AnimatedCounter value={15} suffix="+" />
+              </div>
+              <div className="text-blue-100 font-black uppercase tracking-[0.2em] text-xs px-2">{t.lpMetric3Label}</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="flex items-start gap-3">
-                <span className="mt-1 w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4h16v16H4z" />
-                  </svg>
-                </span>
-                <div>
-                  <div className="text-slate-900 font-black">{t.consultorContactEmailLabel}</div>
-                  <div className="text-slate-500">{ADEPTIFY_INFO.email}</div>
-                </div>
+      {/* 7. CONTACT FORM */}
+      <section id="contacto" className="w-full max-w-6xl mx-auto px-4">
+        <div className="bg-slate-900 rounded-[3rem] overflow-hidden shadow-2xl grid grid-cols-1 lg:grid-cols-[1fr,1.2fr]">
+          <div className="p-12 md:p-20 bg-gradient-to-br from-slate-900 to-slate-800 text-white flex flex-col justify-center">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-8">
+              {t.lpContactTitle}
+            </h2>
+            <p className="text-slate-400 text-lg font-medium leading-relaxed mb-12">
+              {t.lpContactDesc}
+            </p>
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 text-slate-300">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg></div>
+                <span className="font-semibold">{ADEPTIFY_INFO.email}</span>
+              </div>
+              <div className="flex items-center gap-4 text-slate-300">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 22s8-4.5 8-10a8 8 0 10-16 0c0 5.5 8 10 8 10z" /></svg></div>
+                <span className="font-semibold">Barcelona, Spain</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-8">
-            <div className="grid grid-cols-1 gap-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {t.consultorContactFieldName}
-                <input
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  className="mt-2 w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm font-semibold outline-none focus:border-indigo-300"
-                  placeholder={t.consultorContactNamePlaceholder}
-                />
-              </label>
+          <div className="p-10 md:p-20 bg-white">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t.consultorContactFieldName}</label>
+                  <input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-semibold outline-none focus:border-blue-500 focus:bg-white transition-all"
+                    placeholder={t.lpContactNamePlaceholder}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t.consultorContactFieldEmail}</label>
+                  <input
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-semibold outline-none focus:border-blue-500 focus:bg-white transition-all"
+                    placeholder={t.lpContactEmailPlaceholder}
+                    type="email"
+                  />
+                </div>
+              </div>
 
-              <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {t.consultorContactFieldEmail}
-                <input
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  className="mt-2 w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm font-semibold outline-none focus:border-indigo-300"
-                  placeholder={t.consultorContactEmailPlaceholder}
-                  type="email"
-                />
-              </label>
-
-              <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">
-                {t.consultorContactFieldMessage}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{t.consultorContactFieldMessage}</label>
                 <textarea
                   value={contactMessage}
                   onChange={(e) => setContactMessage(e.target.value)}
-                  className="mt-2 w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm font-semibold outline-none focus:border-indigo-300 min-h-[140px]"
-                  placeholder={t.consultorContactMessagePlaceholder}
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-900 font-semibold outline-none focus:border-blue-500 focus:bg-white transition-all min-h-[160px]"
+                  placeholder={t.lpContactMsgPlaceholder}
                 />
-              </label>
+              </div>
 
               <button
                 type="button"
                 onClick={submitContact}
                 disabled={!canSubmit || contactStatus === 'sending'}
-                className={`mt-2 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] transition-all ${canSubmit && contactStatus !== 'sending'
-                  ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                className={`w-full px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl ${canSubmit && contactStatus !== 'sending'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
                   }`}
               >
-                {contactStatus === 'sending' ? t.consultorContactSending : t.consultorContactSubmit}
+                {contactStatus === 'sending' ? t.consultorContactSending : t.lpContactSubmit}
               </button>
 
-              {contactStatus === 'sent' ? (
-                <p className="text-[11px] text-emerald-700 font-semibold leading-relaxed">{t.consultorContactSuccess}</p>
-              ) : null}
+              {contactStatus === 'sent' && (
+                <p className="text-center font-bold text-emerald-600 animate-bounce">{t.lpContactSuccess}</p>
+              )}
 
-              {contactStatus === 'error' ? (
-                <p className="text-[11px] text-rose-700 font-semibold leading-relaxed">{contactError || t.consultorContactError}</p>
-              ) : null}
-
-              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                {t.consultorContactNote}
-              </p>
+              {contactStatus === 'error' && (
+                <p className="text-center font-bold text-rose-500">{contactError || t.lpContactError}</p>
+              )}
             </div>
           </div>
         </div>
@@ -531,3 +342,4 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
 };
 
 export default ConsultorLanding;
+
