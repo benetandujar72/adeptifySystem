@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "CHANGE-ME-IN-PRODUCTION"
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "https://impulsa.edutac.es"]
 
+    # ── URLs de l'aplicació (sense barra final) ──
+    APP_URL: str = "https://adeptifysystem-1061852826388.europe-west1.run.app"
+    DASHBOARD_URL: str = ""   # Si buit, s'usa APP_URL + /dashboard
+    CAMPAIGN_NAME: str = "Adeptify – Consultoria Digital"
+
     # ── Base de Dades ──
     DATABASE_URL: str = "postgresql+asyncpg://campanya:campanya@db:5432/campanya_crm"
     DATABASE_ECHO: bool = False
@@ -24,11 +29,15 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://redis:6379/1"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/2"
 
-    # ── Email (SendGrid) ──
-    SENDGRID_API_KEY: str = ""
-    EMAIL_FROM: str = "campanya@edutac.es"
-    EMAIL_FROM_NAME: str = "Impulsa el teu Negoci Digital"
+    # ── Email: Gmail SMTP (principal) ──
+    GMAIL_USER: str = ""
+    GMAIL_APP_PASSWORD: str = ""
+    EMAIL_FROM: str = ""         # Si buit, s'usa GMAIL_USER
+    EMAIL_FROM_NAME: str = "Adeptify – Consultoria Digital"
     LEAD_NOTIFICATION_EMAIL: str = "bandujar@edutac.es"
+
+    # ── Email: SendGrid (fallback) ──
+    SENDGRID_API_KEY: str = ""
 
     # ── IA ──
     ANTHROPIC_API_KEY: str = ""
@@ -55,9 +64,21 @@ class Settings(BaseSettings):
     SCORE_THRESHOLD_SQL: int = 60
     SCORE_THRESHOLD_HOT: int = 80
 
+    def get_app_url(self) -> str:
+        return self.APP_URL.rstrip("/")
+
+    def get_dashboard_url(self) -> str:
+        if self.DASHBOARD_URL:
+            return self.DASHBOARD_URL.rstrip("/")
+        return f"{self.get_app_url()}/dashboard"
+
+    def get_from_email(self) -> str:
+        return self.EMAIL_FROM or self.GMAIL_USER
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
