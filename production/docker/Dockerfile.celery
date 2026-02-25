@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════════════════════════
+# Dockerfile - Celery Workers (Agents IA + Email automation)
+# ═══════════════════════════════════════════════════════════
+
+FROM python:3.12-slim
+
+RUN groupadd -r campanya && useradd -r -g campanya campanya
+
+WORKDIR /app
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/app ./app
+COPY agents ./agents
+
+RUN chown -R campanya:campanya /app
+USER campanya
+
+CMD ["celery", "-A", "agents.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
