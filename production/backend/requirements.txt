@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════
+# DEPENDÈNCIES DE PRODUCCIÓ - Campanya Consultoria Digital
+# ═══════════════════════════════════════════════════════════
+
+# Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# Base de dades
+sqlalchemy==2.0.36
+alembic==1.14.1
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# Cache & Cues
+redis==5.2.1
+celery==5.4.0
+celery[redis]==5.4.0
+
+# Email
+sendgrid==6.11.0
+jinja2==3.1.5
+
+# IA & Imatges
+anthropic==0.43.0
+google-genai==1.5.0
+Pillow==11.1.0
+
+# Auth & Seguretat
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pydantic[email]==2.10.4
+pydantic-settings==2.7.1
+
+# Observabilitat
+structlog==24.4.0
+sentry-sdk[fastapi]==2.19.2
+prometheus-client==0.21.1
+
+# Utils
+httpx==0.28.1
+python-dateutil==2.9.0
+babel==2.16.0
+apscheduler==3.10.4

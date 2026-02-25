@@ -24,6 +24,14 @@ supabase/cat_education_centers_import.sql
 supabase/import_chunks/
 
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Word temp files
+~$*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -34,3 +42,5 @@ supabase/import_chunks/
 *.njsproj
 *.sln
 *.sw?
+*.db
+*.db-journal
