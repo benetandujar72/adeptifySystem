@@ -8,7 +8,7 @@ import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 2705);
 const STARTUP_TS = Date.now();
 
 const app = express();

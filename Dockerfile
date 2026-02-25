@@ -22,5 +22,5 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY server.mjs ./server.mjs
 
-EXPOSE 8080
+EXPOSE 2705
 CMD ["node", "server.mjs"]

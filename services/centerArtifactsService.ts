@@ -27,15 +27,17 @@ const toLocalKey = (tenantSlug: string | undefined, centerKey: string) => `${(te
 
 export const centerArtifactsService = {
   async listForCenter(centerName: string, tenantSlug?: string): Promise<CenterArtifact[]> {
-    const centerKey = normalizeCenterKey(centerName);
-
     if (supabase) {
       try {
         let query = supabase
           .from('center_artifacts')
           .select('*')
-          .eq('center_key', centerKey)
           .order('created_at', { ascending: false });
+
+        if (centerName) {
+          const centerKey = normalizeCenterKey(centerName);
+          query = query.eq('center_key', centerKey);
+        }
 
         if (tenantSlug) query = query.eq('tenant_slug', tenantSlug);
 
@@ -57,9 +59,23 @@ export const centerArtifactsService = {
     }
 
     const store = safeParse<Record<string, StoredArtifact[]>>(localStorage.getItem(LOCAL_ARTIFACTS_KEY), {});
-    const key = toLocalKey(tenantSlug, centerKey);
-    const list = Array.isArray(store[key]) ? store[key] : [];
-    return list as CenterArtifact[];
+
+    if (centerName) {
+      const centerKey = normalizeCenterKey(centerName);
+      const key = toLocalKey(tenantSlug, centerKey);
+      const list = Array.isArray(store[key]) ? store[key] : [];
+      return list as CenterArtifact[];
+    } else {
+      // Merge all local artifacts for this tenant
+      const result: CenterArtifact[] = [];
+      const tenantPrefix = (tenantSlug || 'global').toLowerCase() + '::';
+      for (const k of Object.keys(store)) {
+        if (k.startsWith(tenantPrefix)) {
+          result.push(...(store[k] as any));
+        }
+      }
+      return result.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }
   },
 
   async addArtifact(centerName: string, artifactType: CenterArtifactType, payload: any, tenantSlug?: string): Promise<CenterArtifact> {

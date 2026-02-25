@@ -177,37 +177,47 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
     <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh] animate-in fade-in duration-700">
 
       {/* SIDEBAR NAVIGATION */}
-      <aside className="lg:w-64 flex flex-col gap-2 shrink-0">
-        <div className="bg-slate-900 rounded-[2rem] p-6 mb-4 shadow-xl border border-white/5">
-          <p className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-1">{t.adminStatus}</p>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${dbMode === 'cloud' ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
-            <span className="text-[9px] font-black text-white uppercase tracking-widest">{dbMode === 'cloud' ? t.adminDbCloud : t.adminDbLocal} {t.adminOnline}</span>
+      <aside className="lg:w-72 flex flex-col gap-3 shrink-0">
+        <div className="bg-slate-900 rounded-[2.5rem] p-7 mb-4 shadow-2xl border border-white/10 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <p className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.3em] mb-2 relative z-10">{t.adminStatus}</p>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="relative">
+              <div className={`w-2.5 h-2.5 rounded-full ${dbMode === 'cloud' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              {dbMode === 'cloud' && <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-25" />}
+            </div>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">
+              {dbMode === 'cloud' ? t.adminDbCloud : t.adminDbLocal} {t.adminOnline}
+            </span>
           </div>
         </div>
 
-        {[
-          { id: 'overview', label: t.adminTabDashboard, icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-          { id: 'clients', label: t.adminTabClients, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-          { id: 'proposals', label: t.adminTabProposals, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-          { id: 'chats', label: t.adminTabChats, icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
-          { id: 'knowledge', label: language === 'ca' ? 'Base de Coneixement' : 'Base de Conocimiento', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-          { id: 'reports', label: t.adminTabReports, icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as AdminTab)}
-            className={`flex items-center gap-4 p-5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id
-                ? 'bg-slate-900 text-white shadow-lg border border-white/10'
-                : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'
-              }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={tab.icon} />
-            </svg>
-            {tab.label}
-          </button>
-        ))}
+        <nav className="flex flex-col gap-2">
+          {[
+            { id: 'overview', label: t.adminTabDashboard, icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+            { id: 'clients', label: t.adminTabClients, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+            { id: 'proposals', label: t.adminTabProposals, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+            { id: 'chats', label: t.adminTabChats, icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
+            { id: 'knowledge', label: language === 'ca' ? 'Base de Coneixement' : 'Base de Conocimiento', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+            { id: 'reports', label: t.adminTabReports, icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as AdminTab)}
+              className={`flex items-center gap-4 p-5 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${activeTab === tab.id
+                ? 'bg-slate-900 text-white shadow-2xl shadow-slate-200 translate-x-1 border border-white/10'
+                : 'bg-white/50 backdrop-blur-sm text-slate-400 hover:bg-white hover:text-slate-900 border border-slate-100 hover:shadow-lg'
+                }`}
+            >
+              <div className={`p-2 rounded-xl transition-colors ${activeTab === tab.id ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-50 text-slate-300'}`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d={tab.icon} />
+                </svg>
+              </div>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
       </aside>
 
       {/* MAIN CONTENT AREA */}
@@ -320,8 +330,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
                     navigateAdmin(`/admin/clients/${encodeURIComponent(getClientKey(c))}`);
                   }}
                   className={`w-full text-left p-6 rounded-3xl border-2 transition-all ${selectedClient?.id === c.id
-                      ? 'bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]'
-                      : 'bg-white border-slate-100 hover:border-indigo-200 text-slate-800'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]'
+                    : 'bg-white border-slate-100 hover:border-indigo-200 text-slate-800'
                     }`}
                 >
                   <h4 className="font-black text-sm uppercase truncate mb-1">{c.centerName}</h4>
@@ -352,8 +362,8 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
                   key={c.id}
                   onClick={() => setSelectedClient(c)}
                   className={`w-full text-left p-6 rounded-3xl border-2 transition-all flex items-center gap-4 ${selectedClient?.id === c.id
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl scale-[1.02]'
-                      : 'bg-white border-slate-100 hover:border-indigo-200 text-slate-800 shadow-sm'
+                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl scale-[1.02]'
+                    : 'bg-white border-slate-100 hover:border-indigo-200 text-slate-800 shadow-sm'
                     }`}
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedClient?.id === c.id ? 'bg-white/20' : 'bg-slate-50 text-indigo-600'}`}>

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ command }) => {
   return {
     server: {
-      port: 3000,
+      port: 2705,
       host: '0.0.0.0',
       proxy: {
         // Dev-only: keep GEMINI_API_KEY on the Vite server, never in the browser.
