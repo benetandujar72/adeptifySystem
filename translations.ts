@@ -482,6 +482,7 @@ const ca = {
   lpService2Desc: "Agents virtuals conversacionals intel·ligents (Chatbots) amb RAG (Retroactivitat Amplificada per Generació), gestors de base de dades vectorials i integracions genèriques (LLMs).",
   lpService3Title: "Automatització de Processos",
   lpService3Desc: "Connexions entre les teves eines (Zapier, Make, n8n) i extracció de dades intel·ligent per eliminar feines repetitives i manuals.",
+  lpViewDetails: "MÉS DETALLS",
   lpServiceCta: "Veure detalls",
 
 

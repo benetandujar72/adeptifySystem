@@ -71,115 +71,106 @@ const ProjectExamples: React.FC = () => {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 px-4">
                 {projects.map((project) => (
                     <div
                         key={project.id}
-                        className={`group relative bg-white border-2 rounded-[2rem] p-8 transition-all duration-500 ease-out ${hoveredId === project.id
-                            ? 'border-indigo-500 shadow-[20px_20px_60px_rgba(79,70,229,0.15)] -translate-y-2'
-                            : 'border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)]'
-                            }`}
+                        className="group h-[500px] [perspective:1500px]"
                         onMouseEnter={() => setHoveredId(project.id)}
                         onMouseLeave={() => setHoveredId(null)}
                     >
-                        {/* Interactive Background Glow */}
-                        <div className={`absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[2.1rem] blur opacity-0 transition duration-500 ${hoveredId === project.id ? 'opacity-10' : ''}`} />
+                        <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${hoveredId === project.id ? '[transform:rotateY(180deg)]' : ''}`}>
 
-                        {project.image_url && (
-                            <div className="mb-6 -mx-8 -mt-8 overflow-hidden rounded-t-[1.9rem]">
-                                <img src={project.image_url} alt={getLocalizedField(project, 'title')} className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-700" />
-                            </div>
-                        )}
-
-                        <div className="relative z-10 flex flex-col h-full">
-                            {/* Make top section flexible if we have an image */}
-                            <div className={`flex justify-between items-start ${!project.image_url ? 'mb-6' : 'mb-4'}`}>
-                                {!project.image_url && (
-                                    <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-300">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
+                            {/* FRONT SIDE */}
+                            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col">
+                                {project.image_url ? (
+                                    <div className="h-48 overflow-hidden rounded-t-[2.4rem]">
+                                        <img src={project.image_url} alt={getLocalizedField(project, 'title')} className="w-full h-full object-cover" />
                                     </div>
-                                )}
-                                {project.repo_url && (
-                                    <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className={`text-slate-400 hover:text-indigo-500 transition-colors ${project.image_url ? 'ml-auto' : ''}`}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                                        </svg>
-                                    </a>
-                                )}
-                            </div>
-
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-4">
-                                {getLocalizedField(project, 'title')}
-                            </h3>
-                            <p className="text-slate-500 leading-relaxed font-medium mb-8 flex-grow">
-                                {getLocalizedField(project, 'description')}
-                            </p>
-
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8 border-t border-slate-100">
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
-                                        {t.consultorProjectMetricHours}
-                                    </div>
-                                    <div className="text-base font-black text-indigo-600">
-                                        {project.metrics.hours}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 flex items-center gap-1">
-                                        {t.consultorProjectMetricDevCost}
-                                        <div className="group/tip relative cursor-help">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                ) : (
+                                    <div className="h-48 bg-slate-50 flex items-center justify-center rounded-t-[2.4rem]">
+                                        <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-[10px] text-white rounded-lg opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50 normal-case tracking-normal font-medium leading-tight shadow-xl">
-                                                {t.consultorProjectMetricDevCostNote}
-                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-base font-black text-slate-900">
-                                        {project.metrics.dev_cost || 'Consultar'}
+                                )}
+
+                                <div className="p-8 flex-grow flex flex-col">
+                                    <div className="mb-4">
+                                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                                            {project.category || 'Consultoria'}
+                                        </span>
                                     </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
-                                        {t.consultorProjectMetricDeployment}
-                                    </div>
-                                    <div className="text-base font-black text-slate-900">
-                                        {project.metrics.deployment}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
-                                        {t.consultorProjectMetricOwnership}
-                                    </div>
-                                    <div className="text-base font-black text-emerald-600">
-                                        {project.metrics.ownership_cost || 'Inclòs'}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
-                                        {t.consultorProjectMetricAiCost}
-                                    </div>
-                                    <div className="text-base font-black text-slate-900">
-                                        {project.metrics.ai_cost}
-                                    </div>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
-                                        {t.consultorProjectMetricMaintenance}
-                                    </div>
-                                    <div className="text-base font-black text-slate-900 border-b-2 border-indigo-100 pb-0.5">
-                                        {project.metrics.maintenance}
+                                    <h3 className="text-2xl font-black text-slate-900 leading-tight mb-4">
+                                        {getLocalizedField(project, 'title')}
+                                    </h3>
+                                    <p className="text-slate-500 text-sm font-medium leading-relaxed line-clamp-4">
+                                        {getLocalizedField(project, 'description')}
+                                    </p>
+
+                                    <div className="mt-auto pt-6 flex items-center text-indigo-600 font-black text-[10px] uppercase tracking-widest gap-2">
+                                        {t.lpViewDetails || 'Més Detalls'}
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Animated Bottom Line */}
-                        <div className={`absolute bottom-0 left-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-700 ease-out rounded-b-full ${hoveredId === project.id ? 'w-full' : 'w-0'
-                            }`} />
+                            {/* BACK SIDE */}
+                            <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-indigo-600 rounded-[2.5rem] p-8 text-white shadow-2xl flex flex-col justify-between">
+                                <div>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="p-3 bg-white/20 rounded-2xl">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                        </div>
+                                        {project.repo_url && (
+                                            <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 hover:bg-white/30 rounded-full transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                                </svg>
+                                            </a>
+                                        )}
+                                    </div>
+                                    <h4 className="text-xl font-black mb-6 border-b border-white/20 pb-4">Mètriques de l'Èxit</h4>
+
+                                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricHours}</p>
+                                            <p className="text-lg font-black">{project.metrics.hours}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricDeployment}</p>
+                                            <p className="text-lg font-black">{project.metrics.deployment}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricDevCost}</p>
+                                            <p className="text-lg font-black">{project.metrics.dev_cost || 'Consultar'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricOwnership}</p>
+                                            <p className="text-lg font-black">{project.metrics.ownership_cost || 'Inclòs'}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricAiCost}</p>
+                                            <p className="text-lg font-black">{project.metrics.ai_cost}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black uppercase opacity-60 tracking-widest">{t.consultorProjectMetricMaintenance}</p>
+                                            <p className="text-lg font-black">{project.metrics.maintenance}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button className="w-full py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-50 transition-colors">
+                                    {t.lpServiceCta || 'Contactar'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>

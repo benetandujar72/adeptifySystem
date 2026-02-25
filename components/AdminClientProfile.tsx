@@ -24,7 +24,7 @@ type Props = {
 };
 
 const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultations }) => {
-  const { t, language } = useLanguage();
+  const { t, language } = useLanguage() as { t: any, language: any };
   const centerKey = useMemo(() => normalizeCenterKey(centerName), [centerName]);
 
   const labels = useMemo(() => {
@@ -283,6 +283,12 @@ const AdminClientProfile: React.FC<Props> = ({ tenantSlug, centerName, consultat
           <div className="min-w-0">
             <h3 className="text-3xl font-black text-slate-900 mb-1 truncate">{centerName}</h3>
             <p className="text-indigo-600 font-bold uppercase text-[10px] tracking-[0.3em] truncate">{centerKey}</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                {language === 'ca' ? 'Sincronitzat amb la Base de Coneixement' : 'Sincronizado con la Base de Conocimiento'}
+              </span>
+            </div>
           </div>
           <div className="bg-slate-50 px-4 py-2 rounded-xl text-center">
             <p className="text-[8px] font-black text-slate-400 uppercase mb-1">{t.adminCentersInAudit}</p>
