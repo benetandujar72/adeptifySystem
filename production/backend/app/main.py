@@ -33,12 +33,15 @@ from app.database import get_db, engine
 from app.models import (
     Base, Lead, Interaction, AutomatedEmail, Alert, Opportunity,
     Campaign, Webinar, WebinarRegistration, AgentConfig, AgentLog,
-    LeadStatus, Language, PipelineStage, AlertPriority,
+    AdminUser, LeadStatus, Language, PipelineStage, AlertPriority,
 )
 from app.schemas import (
     LeadCreate, LeadUpdate, LeadResponse, LeadListResponse,
     InteractionCreate, InteractionResponse,
     AlertResponse, DashboardStats, WebhookLeadCapture,
+)
+from app.auth import (
+    TokenResponse, LoginRequest, authenticate_admin, require_admin
 )
 from app.language_detector import detect_language
 from agents.email_sender import EmailSender
@@ -156,6 +159,16 @@ async def health_check():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/v1/auth/login", response_model=TokenResponse)
+async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Autenticació per a administradors."""
+    return await authenticate_admin(data, db)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # LEADS
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -196,6 +209,7 @@ async def list_leads(
     sort_by: str = "created_at",
     sort_order: str = "desc",
     db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
 ):
     """Llista leads amb paginació, filtres i cerca."""
     query = select(Lead)
@@ -239,7 +253,11 @@ async def list_leads(
 
 
 @app.get("/api/v1/leads/{lead_id}", response_model=LeadResponse)
-async def get_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
+async def get_lead(
+    lead_id: int, 
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     lead = await db.get(Lead, lead_id)
     if not lead:
         raise HTTPException(404, "Lead no trobat")
@@ -248,7 +266,10 @@ async def get_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
 
 @app.patch("/api/v1/leads/{lead_id}", response_model=LeadResponse)
 async def update_lead(
-    lead_id: int, data: LeadUpdate, db: AsyncSession = Depends(get_db)
+    lead_id: int, 
+    data: LeadUpdate, 
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
 ):
     lead = await db.get(Lead, lead_id)
     if not lead:
@@ -328,6 +349,7 @@ async def list_alerts(
     unread_only: bool = False,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
 ):
     query = select(Alert).order_by(Alert.created_at.desc()).limit(limit)
     if unread_only:
@@ -337,7 +359,11 @@ async def list_alerts(
 
 
 @app.patch("/api/v1/alerts/{alert_id}/read")
-async def mark_alert_read(alert_id: int, db: AsyncSession = Depends(get_db)):
+async def mark_alert_read(
+    alert_id: int, 
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     alert = await db.get(Alert, alert_id)
     if not alert:
         raise HTTPException(404, "Alerta no trobada")
@@ -347,7 +373,11 @@ async def mark_alert_read(alert_id: int, db: AsyncSession = Depends(get_db)):
 
 
 @app.patch("/api/v1/alerts/{alert_id}/resolve")
-async def resolve_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
+async def resolve_alert(
+    alert_id: int, 
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     alert = await db.get(Alert, alert_id)
     if not alert:
         raise HTTPException(404, "Alerta no trobada")
@@ -362,7 +392,10 @@ async def resolve_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/v1/dashboard/stats", response_model=DashboardStats)
-async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
+async def get_dashboard_stats(
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     """Retorna estadístiques generals del dashboard."""
     # Total leads
     total = (await db.execute(select(func.count(Lead.id)))).scalar() or 0
@@ -492,7 +525,10 @@ async def webhook_lead_capture(
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/api/v1/agents")
-async def list_agents(db: AsyncSession = Depends(get_db)):
+async def list_agents(
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     result = await db.execute(select(AgentConfig).order_by(AgentConfig.nom))
     agents = result.scalars().all()
     return [
@@ -509,7 +545,11 @@ async def list_agents(db: AsyncSession = Depends(get_db)):
 
 
 @app.post("/api/v1/agents/{agent_name}/trigger")
-async def trigger_agent(agent_name: str, db: AsyncSession = Depends(get_db)):
+async def trigger_agent(
+    agent_name: str, 
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
     """Llança manualment un agent."""
     result = await db.execute(
         select(AgentConfig).where(AgentConfig.nom == agent_name)
@@ -538,6 +578,7 @@ async def get_agent_logs(
     agent_name: str | None = None,
     limit: int = Query(50, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
 ):
     query = select(AgentLog).order_by(AgentLog.created_at.desc()).limit(limit)
     if agent_name:

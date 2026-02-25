@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "https://impulsa.edutac.es"]
 
     # ── URLs de l'aplicació (sense barra final) ──
-    APP_URL: str = "https://adeptifysystem-1061852826388.europe-west1.run.app"
-    DASHBOARD_URL: str = ""   # Si buit, s'usa APP_URL + /dashboard
+    APP_URL: str = "https://consultor.adeptify.es/app"
+    DASHBOARD_URL: str = "https://consultor.adeptify.es/app/dashboard"
     CAMPAIGN_NAME: str = "Adeptify – Consultoria Digital"
 
     # ── Base de Dades ──

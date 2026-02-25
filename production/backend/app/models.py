@@ -312,3 +312,21 @@ class EmailTemplate(Base):
     __table_args__ = (
         UniqueConstraint("sequencia", "numero", "idioma", name="uq_template_seq_num_lang"),
     )
+
+
+class AdminUser(Base):
+    """Usuaris administradors amb accés al Dashboard de gestió.
+    Accessible únicament des de https://consultor.adeptify.es/app/dashboard
+    """
+    __tablename__ = "admin_users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    email = Column(String(320), unique=True, nullable=False)
+    password_hash = Column(String(200), nullable=False)
+    is_admin = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    last_login = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
