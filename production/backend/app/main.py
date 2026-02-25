@@ -41,6 +41,7 @@ from app.schemas import (
     AlertResponse, DashboardStats, WebhookLeadCapture,
 )
 from app.language_detector import detect_language
+from agents.email_sender import EmailSender
 from app.scoring import (
     calculate_interaction_score, calculate_profile_score,
     get_lead_tier, should_trigger_alert,
@@ -110,6 +111,19 @@ async def process_new_lead(lead_id: int, db: AsyncSession):
 
     await db.commit()
     logger.info(f"Lead {lead_id} processat: idioma={lang}, score={profile_score}")
+
+    # 4. Enviar email de benvinguda al lead i notificació interna
+    sender = EmailSender()
+    sender.send_welcome_email({
+        "nom": lead.nom,
+        "email": lead.email,
+        "empresa": lead.empresa or "",
+        "telefon": lead.telefon or "",
+        "idioma": lang,
+        "origen": lead.origen.value if lead.origen else "web",
+        "score": profile_score,
+    })
+    logger.info(f"Lead {lead_id}: email de benvinguda enviat a {lead.email}")
 
 
 async def create_alert_for_lead(
