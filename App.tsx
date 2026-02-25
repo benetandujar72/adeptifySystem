@@ -47,7 +47,16 @@ const AppContent: React.FC = () => {
 
   const isConsultorRoute = (() => {
     try {
+      const h = window.location.hostname || '';
       const p = window.location.pathname || '/';
+
+      // Bypass landing if explicitly asking for /app gate
+      if (p === '/app') return false;
+
+      // Enable landing if on subdomain or explicit path
+      if (h.startsWith('consultor.')) {
+        return !p.startsWith('/t/') && !p.startsWith('/admin') && !p.startsWith('/login');
+      }
       return p === '/consultor' || p.startsWith('/consultor/');
     } catch {
       return false;
@@ -242,7 +251,11 @@ const AppContent: React.FC = () => {
     })();
 
     const openApp = () => {
-      // Return to root (tenant gate / app entry).
+      // If on consultor subdomain, we need to go to /app to bypass the landing page and see the center gate.
+      if (window.location.hostname.startsWith('consultor.')) {
+        window.location.href = '/app';
+        return;
+      }
       window.location.href = '/';
     };
 
