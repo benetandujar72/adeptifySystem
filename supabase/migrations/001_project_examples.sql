@@ -11,7 +11,7 @@ begin;
 
 -- ── Taula principal ─────────────────────────────────────────────────
 create table if not exists public.project_examples (
-  id              text        primary key,
+  id              uuid        primary key,
 
   -- Títols multiidioma
   title_ca        text        not null default '',
@@ -43,8 +43,13 @@ create table if not exists public.project_examples (
 -- ── Afegir columnes si ja existia la taula sense elles ─────────────
 -- (ALTER ADD COLUMN IF NOT EXISTS requereix PG ≥ 9.6; Supabase OK)
 alter table public.project_examples
+  add column if not exists hours          text not null default '',
+  add column if not exists deployment     text not null default '',
+  add column if not exists ai_cost        text not null default '',
+  add column if not exists maintenance    text not null default '',
   add column if not exists dev_cost       text,
-  add column if not exists ownership_cost text;
+  add column if not exists ownership_cost text,
+  drop column if exists metrics;
 
 -- ── Índexos ─────────────────────────────────────────────────────────
 create index if not exists project_examples_category_idx
@@ -64,7 +69,7 @@ insert into public.project_examples (
   dev_cost, ownership_cost, category, image_url
 ) values
 (
-  'gestio-informes-centreMX',
+  '11111111-1111-1111-1111-111111111111',
   'Generador d''actes de reunió amb IA',
   'Generador de actas de reunión con IA',
   'Bilera-aktaren sortzailea IA-rekin',
@@ -76,7 +81,7 @@ insert into public.project_examples (
   'automatitzacio', null
 ),
 (
-  'portal-families-escolarES',
+  '22222222-2222-2222-2222-222222222222',
   'Portal de comunicació amb famílies',
   'Portal de comunicación con familias',
   'Familien komunikazio ataria',
@@ -88,7 +93,7 @@ insert into public.project_examples (
   'comunicacio', null
 ),
 (
-  'dashboard-kpi-educatiu',
+  '33333333-3333-3333-3333-333333333333',
   'Panel de qualitat educativa KPI',
   'Panel de calidad educativa KPI',
   'KPI hezkuntza-kalitate panela',

@@ -188,3 +188,12 @@ drop trigger if exists trg_cat_education_centers_updated_at on public.cat_educat
 create trigger trg_cat_education_centers_updated_at
 before update on public.cat_education_centers
 for each row execute procedure public.set_updated_at();
+
+-- Enable RLS and add public read policy
+alter table public.cat_education_centers enable row level security;
+
+drop policy if exists "Enable public read access for cat_education_centers" on public.cat_education_centers;
+create policy "Enable public read access for cat_education_centers" 
+on public.cat_education_centers 
+for select 
+using (true);

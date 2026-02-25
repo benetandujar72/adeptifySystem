@@ -42,7 +42,7 @@ steps:
   #   3) GCS bucket ${_BACKUP_BUCKET} must exist + CB SA needs storage.objects.create
   #
   # Creates a compressed pg_dump (custom format) and uploads it to GCS.
-  - name: 'postgres:16'
+  - name: 'postgres:17'
     entrypoint: 'bash'
     secretEnv: ['SUPABASE_DB_URL']
     args:
@@ -70,7 +70,7 @@ steps:
 
   # 0.5) Apply Supabase DB migrations
   # Runs all SQL files in supabase/migrations/ in alphabetical order (idempotent).
-  - name: 'postgres:16'
+  - name: 'postgres:17'
     entrypoint: 'bash'
     secretEnv: ['SUPABASE_DB_URL']
     args:
@@ -142,3 +142,4 @@ availableSecrets:
       env: 'SB_PUBLISHABLE_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
       env: 'SUPABASE_DB_URL'
+
