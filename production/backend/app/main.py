@@ -25,8 +25,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import (
+    select, func, update, delete, desc, or_, and_,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 from app.config import get_settings, Settings
 from app.database import get_db, engine
@@ -62,6 +65,27 @@ async def lifespan(app: FastAPI):
     """Crea taules al iniciar (dev) / verifica connexió (prod)."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
+    # Creació de superadmin inicial si no existeix
+    from app.auth import hash_password
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as session:
+        result = await session.execute(
+            select(AdminUser).where(AdminUser.username == "bandujar")
+        )
+        if not result.scalar_one_or_none():
+            logger.info("Creant superadmin inicial (bandujar)...")
+            admin = AdminUser(
+                username="bandujar",
+                email="bandujar@edutac.es",
+                password_hash=hash_password("23@2705BEAngu"),
+                is_admin=True,
+                is_active=True
+            )
+            session.add(admin)
+            await session.commit()
+            logger.info("✅ Superadmin bandujar creat correctament.")
+            
     logger.info("Base de dades inicialitzada")
     yield
     await engine.dispose()
