@@ -22,7 +22,9 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 
 # Copiar codi
+COPY agents ./agents
 COPY backend/app ./app
+COPY campaign_crm.db ./campaign_crm.db
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
@@ -34,4 +36,4 @@ USER campanya
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 4"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 2"]

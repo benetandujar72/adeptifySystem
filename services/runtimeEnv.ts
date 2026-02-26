@@ -4,6 +4,7 @@ type RuntimeEnv = {
   SB_PUBLISHABLE_KEY?: string;
   AI_COST_EUR_PER_1M_INPUT?: string;
   AI_COST_EUR_PER_1M_OUTPUT?: string;
+  MARKETING_API_URL?: string;
 };
 
 declare global {

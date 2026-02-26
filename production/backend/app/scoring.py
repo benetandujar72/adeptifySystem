@@ -11,6 +11,7 @@ SCORING_MATRIX = {
     # Interaccions web
     "visita_landing": 2,
     "descarrega_guia": 10,
+    "descarrega_dossier": 40,
     "formulari_contacte": 15,
     "formulari_diagnostic": 20,
 

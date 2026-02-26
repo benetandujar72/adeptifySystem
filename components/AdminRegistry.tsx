@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { consultationService } from '../services/consultationService';
+import { marketingService, MarketingLead, MarketingStats, MarketingAlert } from '../services/marketingService';
 import { supabase } from '../services/supabaseClient';
 import { Consultation, ChatMessage, ProposalData } from '../types';
 import { useLanguage } from '../LanguageContext';
@@ -11,7 +12,7 @@ import ReportCenter from './ReportCenter';
 import AdminClientProfile from './AdminClientProfile';
 import KnowledgeBase from './KnowledgeBase';
 
-type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports' | 'knowledge';
+type AdminTab = 'overview' | 'clients' | 'proposals' | 'chats' | 'reports' | 'knowledge' | 'marketing';
 
 type AdminRegistryProps = {
   tenantSlug?: string;
@@ -34,6 +35,12 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   const [customLoadingKey, setCustomLoadingKey] = useState<string | null>(null);
   const [centerInsightError, setCenterInsightError] = useState<string | null>(null);
   const [, setAiTotalsVersion] = useState(0);
+
+  // Marketing State
+  const [marketingLeads, setMarketingLeads] = useState<MarketingLead[]>([]);
+  const [marketingStats, setMarketingStats] = useState<MarketingStats | null>(null);
+  const [marketingAlerts, setMarketingAlerts] = useState<MarketingAlert[]>([]);
+  const [isMarketingLoading, setIsMarketingLoading] = useState(false);
 
   const navigateAdmin = (adminPath: string) => {
     const basePath = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : '';
@@ -96,6 +103,30 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
       setIsLoading(false);
     }
   };
+
+  const loadMarketingData = async () => {
+    setIsMarketingLoading(true);
+    try {
+      const [leads, stats, alerts] = await Promise.all([
+        marketingService.getLeads(),
+        marketingService.getStats(),
+        marketingService.getAlerts()
+      ]);
+      setMarketingLeads(leads);
+      setMarketingStats(stats);
+      setMarketingAlerts(alerts);
+    } catch (e) {
+      console.error("Error carregant dades de marketing");
+    } finally {
+      setIsMarketingLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'marketing') {
+      loadMarketingData();
+    }
+  }, [activeTab]);
 
   const loadClientChats = async (centerId: string) => {
     const history = await consultationService.getChatHistory(centerId);
@@ -200,6 +231,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
             { id: 'chats', label: t.adminTabChats, icon: 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z' },
             { id: 'knowledge', label: language === 'ca' ? 'Base de Coneixement' : 'Base de Conocimiento', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
             { id: 'reports', label: t.adminTabReports, icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z' },
+            { id: 'marketing', label: language === 'ca' ? 'Marketing Leads' : 'Leads Marketing', icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -640,6 +672,114 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
         {/* TAB 6: KNOWLEDGE BASE */}
         {activeTab === 'knowledge' && (
           <KnowledgeBase tenantSlug={tenantSlug} />
+        )}
+
+        {/* TAB 7: MARKETING LEADS */}
+        {activeTab === 'marketing' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Marketing Leads {t.adminOnline}</h3>
+                {isMarketingLoading && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sincronitzant...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Marketing Stats Grid */}
+              {marketingStats && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Leads</p>
+                    <p className="text-3xl font-black text-slate-900">{marketingStats.total_leads}</p>
+                  </div>
+                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Score Mitjà</p>
+                    <p className="text-3xl font-black text-indigo-600">{marketingStats.score_mitja.toFixed(1)}</p>
+                  </div>
+                  <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100/50">
+                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1">Alertes Actives</p>
+                    <p className="text-3xl font-black text-indigo-600">{marketingStats.alertes_pendents}</p>
+                  </div>
+                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Emails Enviats</p>
+                    <p className="text-3xl font-black text-slate-900">{(marketingStats as any).emails_enviats || 0}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Leads List */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Leads Capturats</h4>
+                    <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold">{marketingLeads.length} leads</span>
+                  </div>
+
+                  <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-2 custom-scrollbar">
+                    {marketingLeads.map(lead => (
+                      <div key={lead.id} className="bg-white border border-slate-100 p-5 rounded-2xl hover:border-indigo-200 hover:shadow-lg transition-all flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-black text-slate-900 text-sm truncate">{lead.nom} {lead.cognom}</h5>
+                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${lead.score > 60 ? 'bg-orange-100 text-orange-600' :
+                              lead.score > 30 ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                              {lead.score} pts
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-medium truncate">{lead.email}</p>
+                          {lead.empresa && <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mt-1">{lead.empresa}</p>}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{lead.estat}</p>
+                          <p className="text-[9px] text-slate-300 font-medium">{new Date(lead.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {marketingLeads.length === 0 && !isMarketingLoading && (
+                      <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">No hi ha cap lead encara</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Alerts Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Alertes de Seguiment</h4>
+                  </div>
+
+                  <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-2 custom-scrollbar">
+                    {marketingAlerts.map(alert => (
+                      <div key={alert.id} className={`p-4 rounded-2xl border ${alert.prioritat === 'alta' ? 'bg-red-50 border-red-100 text-red-700' :
+                        alert.prioritat === 'mitja' ? 'bg-amber-50 border-amber-100 text-amber-700' :
+                          'bg-indigo-50 border-indigo-100 text-indigo-700'
+                        }`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${alert.prioritat === 'alta' ? 'bg-red-200' :
+                            alert.prioritat === 'mitja' ? 'bg-amber-200' : 'bg-indigo-200'
+                            }`}>
+                            {alert.prioritat}
+                          </span>
+                          <span className="text-[8px] opacity-60 font-bold">{new Date(alert.created_at).toLocaleTimeString()}</span>
+                        </div>
+                        <p className="text-[10px] font-bold leading-relaxed">{alert.missatge}</p>
+                      </div>
+                    ))}
+                    {marketingAlerts.length === 0 && (
+                      <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 mt-4">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Sense alertes pendents</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
       </main>
