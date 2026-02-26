@@ -41,6 +41,7 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   const [marketingStats, setMarketingStats] = useState<MarketingStats | null>(null);
   const [marketingAlerts, setMarketingAlerts] = useState<MarketingAlert[]>([]);
   const [isMarketingLoading, setIsMarketingLoading] = useState(false);
+  const [aiTotals, setAiTotals] = useState({ promptTokens: 0, outputTokens: 0, totalTokens: 0, costEur: 0, count: 0 });
 
   const navigateAdmin = (adminPath: string) => {
     const basePath = tenantSlug ? `/t/${encodeURIComponent(tenantSlug)}` : '';
@@ -104,6 +105,15 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
     }
   };
 
+  const loadAiTotals = async () => {
+    try {
+      const stats = await aiUsageService.totals();
+      setAiTotals(stats);
+    } catch (e) {
+      console.error("Error loading AI totals", e);
+    }
+  };
+
   const loadMarketingData = async () => {
     setIsMarketingLoading(true);
     try {
@@ -127,6 +137,10 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
       loadMarketingData();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    loadAiTotals();
+  }, []);
 
   const loadClientChats = async (centerId: string) => {
     const history = await consultationService.getChatHistory(centerId);
@@ -202,7 +216,6 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   }, [selectedClient, activeTab]);
 
   const totalInvestment = consultations.reduce((acc, c) => acc + (c.proposal?.totalInitial || 0), 0);
-  const aiTotals = aiUsageService.totals();
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh] animate-in fade-in duration-700">
