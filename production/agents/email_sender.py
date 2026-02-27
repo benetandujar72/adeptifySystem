@@ -26,7 +26,7 @@ def _get_settings():
             EMAIL_FROM            = os.environ.get("EMAIL_FROM", "")
             EMAIL_FROM_NAME       = os.environ.get("EMAIL_FROM_NAME", "Adeptify – Consultoria Digital")
             LEAD_NOTIFICATION_EMAIL = os.environ.get("LEAD_NOTIFICATION_EMAIL", "bandujar@edutac.es")
-            APP_URL               = os.environ.get("APP_URL", "https://adeptifysystem-1061852826388.europe-west1.run.app")
+            APP_URL               = os.environ.get("APP_URL", "https://consultor.adeptify.es/app")
             DASHBOARD_URL         = os.environ.get("DASHBOARD_URL", "")
             CAMPAIGN_NAME         = os.environ.get("CAMPAIGN_NAME", "Adeptify – Consultoria Digital")
 
