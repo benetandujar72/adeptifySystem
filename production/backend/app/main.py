@@ -113,44 +113,56 @@ app.add_middleware(
 # BACKGROUND TASKS
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def process_new_lead(lead_id: int, db: AsyncSession):
+async def process_new_lead(lead_id: int):
     """Processa un nou lead: scoring, idioma, primera seqüència email."""
-    lead = await db.get(Lead, lead_id)
-    if not lead:
-        return
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session() as db:
+        lead = await db.get(Lead, lead_id)
+        if not lead:
+            return
 
-    # 1. Detectar idioma
-    lang = detect_language(lead.codi_postal, lead.comunitat_autonoma)
-    lead.idioma_preferit = Language(lang)
-    lead.idioma_detectat = True
+        # 1. Detectar idioma
+        lang = detect_language(lead.codi_postal, lead.comunitat_autonoma)
+        lead.idioma_preferit = Language(lang)
+        lead.idioma_detectat = True
 
-    # 2. Calcular score de perfil
-    profile_score = calculate_profile_score(
-        empresa=lead.empresa,
-        carrec=lead.carrec,
-        telefon=lead.telefon,
-        web=lead.web_empresa,
-    )
-    lead.score = profile_score
+        # 2. Calcular score de perfil
+        profile_score = calculate_profile_score(
+            empresa=lead.empresa,
+            carrec=lead.carrec,
+            telefon=lead.telefon,
+            web=lead.web_empresa,
+        )
+        lead.score = profile_score
 
-    # 3. Classificar
-    lead.etapa_pipeline = PipelineStage(get_lead_tier(lead.score))
+        # 3. Classificar
+        lead.etapa_pipeline = PipelineStage(get_lead_tier(lead.score))
 
-    await db.commit()
-    logger.info(f"Lead {lead_id} processat: idioma={lang}, score={profile_score}")
+        await db.commit()
+        logger.info(f"Lead {lead_id} processat: idioma={lang}, score={profile_score}")
+        
+        # Guardar valors per enviar el correu fora del bloc
+        nom = lead.nom
+        email = lead.email
+        empresa = lead.empresa
+        telefon = lead.telefon
+        origen = lead.origen.value if lead.origen else "web"
 
     # 4. Enviar email de benvinguda al lead i notificació interna
-    sender = EmailSender()
-    sender.send_welcome_email({
-        "nom": lead.nom,
-        "email": lead.email,
-        "empresa": lead.empresa or "",
-        "telefon": lead.telefon or "",
-        "idioma": lang,
-        "origen": lead.origen.value if lead.origen else "web",
-        "score": profile_score,
-    })
-    logger.info(f"Lead {lead_id}: email de benvinguda enviat a {lead.email}")
+    try:
+        sender = EmailSender()
+        sender.send_welcome_email({
+            "nom": nom,
+            "email": email,
+            "empresa": empresa or "",
+            "telefon": telefon or "",
+            "idioma": lang,
+            "origen": origen,
+            "score": profile_score,
+        })
+        logger.info(f"Lead {lead_id}: email de benvinguda enviat a {email}")
+    except Exception as e:
+        logger.error(f"Error enviant correu per al lead {lead_id}: {e}")
 
 
 async def create_alert_for_lead(
@@ -217,7 +229,7 @@ async def create_lead(
     await db.refresh(lead)
 
     # Processament asíncron
-    background_tasks.add_task(process_new_lead, lead.id, db)
+    background_tasks.add_task(process_new_lead, lead.id)
 
     logger.info(f"Nou lead creat: {lead.id} - {lead.email}")
     return lead

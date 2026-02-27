@@ -10,9 +10,8 @@ from production.agents.email_sender import EmailSender
 def run_test():
     sender = EmailSender()
     
-    if not sender.api_key:
-        print("ERROR: La variable de entorno SENDGRID_API_KEY no está configurada.")
-        print("Asegúrate de configurar la variable de entorno o crear un archivo .env válido.")
+    if not sender.sendgrid_api_key and not sender.gmail_user:
+        print("ERROR: Ni Gmail SMTP ni SendGrid estan configurats.")
         return
 
     emails_to_test = [
