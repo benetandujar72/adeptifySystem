@@ -169,10 +169,11 @@ class Document(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     lead_id = Column(Integer, ForeignKey("leads.id", ondelete="CASCADE"), nullable=False, index=True)
-    tipus = Column(String(100), nullable=False)  # diagnostic, proposta, informe
+    tipus = Column(String(100), nullable=False)  # diagnostic, proposta, informe, dafo
     titol = Column(String(500), nullable=False)
     contingut_html = Column(Text, default="")
     fitxer_url = Column(String(1000), default="")
+    payload = Column(JSON, nullable=True)
     idioma = Column(Enum(Language), default=Language.CA)
     enviat = Column(Boolean, default=False)
     data_enviament = Column(DateTime, nullable=True)

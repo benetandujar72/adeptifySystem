@@ -1,39 +1,24 @@
-import { supabase } from './supabaseClient';
 import { CenterArtifact, CenterArtifactType } from '../types';
 import { normalizeCenterKey } from './centerInsightsService';
+import { getRuntimeEnvString } from './runtimeEnv';
+
+const BASE_URL = getRuntimeEnvString('MARKETING_API_URL') ||
+  'https://adeptifysystem-1061852826388.europe-west1.run.app/api/v1';
 
 export const centerArtifactsService = {
   async listForCenter(centerName: string, tenantSlug?: string): Promise<CenterArtifact[]> {
-    if (!supabase) {
-      console.error('La conexión a la base de datos no está disponible.');
-      return [];
-    }
-
     try {
-      let query = supabase
-        .from('center_artifacts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (centerName) {
-        const centerKey = normalizeCenterKey(centerName);
-        query = query.eq('center_key', centerKey);
-      }
-
-      if (tenantSlug) query = query.eq('tenant_slug', tenantSlug);
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      if (data) {
-        return data.map((row: any) => ({
-          id: String(row.id),
-          tenantSlug: row.tenant_slug ?? undefined,
-          centerKey: row.center_key,
-          centerName: row.center_name ?? undefined,
-          artifactType: row.artifact_type as CenterArtifactType,
-          payload: row.payload_json,
-          createdAt: row.created_at,
+      const resp = await fetch(`${BASE_URL}/documents/by-center?center_name=${encodeURIComponent(centerName)}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.map((d: any) => ({
+          id: String(d.id),
+          tenantSlug: tenantSlug,
+          centerKey: normalizeCenterKey(centerName),
+          centerName: centerName,
+          artifactType: (d.tipus === 'custom_proposal' ? 'custom_proposal' : d.tipus === 'report' ? 'report' : 'dafo') as CenterArtifactType,
+          payload: d.payload,
+          createdAt: d.created_at,
         } satisfies CenterArtifact));
       }
       return [];
@@ -44,41 +29,37 @@ export const centerArtifactsService = {
   },
 
   async addArtifact(centerName: string, artifactType: CenterArtifactType, payload: any, tenantSlug?: string): Promise<CenterArtifact> {
-    if (!supabase) {
-      throw new Error('Base de datos no disponible. No se pudo guardar el documento.');
-    }
-
-    const centerKey = normalizeCenterKey(centerName);
-
     try {
-      const row = {
-        tenant_slug: tenantSlug ?? null,
-        center_key: centerKey,
+      const req = {
         center_name: centerName,
-        artifact_type: artifactType,
-        payload_json: payload,
+        document: {
+          tipus: artifactType,
+          titol: `${artifactType.toUpperCase()} - ${centerName}`,
+          contingut_html: "",
+          fitxer_url: "",
+          payload: payload,
+          enviat: false
+        }
       };
 
-      const { data, error } = await supabase
-        .from('center_artifacts')
-        .insert([row])
-        .select('*')
-        .single();
+      const resp = await fetch(`${BASE_URL}/documents/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req)
+      });
 
-      if (error) throw error;
+      if (!resp.ok) throw new Error("Error syncing document");
 
-      if (data) {
-        return {
-          id: String(data.id),
-          tenantSlug: data.tenant_slug ?? undefined,
-          centerKey: data.center_key,
-          centerName: data.center_name ?? undefined,
-          artifactType: data.artifact_type as CenterArtifactType,
-          payload: data.payload_json,
-          createdAt: data.created_at,
-        };
-      }
-      throw new Error('Fallo al recuperar los datos insertados.');
+      const data = await resp.json();
+      return {
+        id: String(data.id),
+        tenantSlug: tenantSlug,
+        centerKey: normalizeCenterKey(centerName),
+        centerName: centerName,
+        artifactType: (data.tipus === 'custom_proposal' ? 'custom_proposal' : data.tipus === 'report' ? 'report' : 'dafo') as CenterArtifactType,
+        payload: data.payload,
+        createdAt: data.created_at,
+      };
     } catch (e: any) {
       console.error('Error saving center artifact:', e.message);
       throw new Error(`Error al guardar en la base de datos: ${e.message}`);

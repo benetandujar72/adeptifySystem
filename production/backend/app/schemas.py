@@ -138,3 +138,27 @@ class WebhookLeadCapture(BaseModel):
     utm_medium: str = ""
     utm_campaign: str = ""
     language: str = ""
+
+# ── Documents (Històric) ──
+
+class DocumentCreate(BaseModel):
+    tipus: str
+    titol: str
+    contingut_html: str = ""
+    fitxer_url: str = ""
+    payload: Optional[dict] = None
+    idioma: Language = Language.CA
+    enviat: bool = False
+
+class DocumentResponse(DocumentCreate):
+    id: int
+    lead_id: int
+    data_enviament: datetime | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+class SyncDocumentRequest(BaseModel):
+    center_name: str
+    contact_email: Optional[str] = None
+    document: DocumentCreate

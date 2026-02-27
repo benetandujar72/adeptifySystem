@@ -37,11 +37,13 @@ from app.models import (
     Base, Lead, Interaction, AutomatedEmail, Alert, Opportunity,
     Campaign, Webinar, WebinarRegistration, AgentConfig, AgentLog,
     AdminUser, LeadStatus, Language, PipelineStage, AlertPriority,
+    Document, LeadSource
 )
 from app.schemas import (
     LeadCreate, LeadUpdate, LeadResponse, LeadListResponse,
     InteractionCreate, InteractionResponse,
     AlertResponse, DashboardStats, WebhookLeadCapture,
+    DocumentCreate, DocumentResponse, SyncDocumentRequest
 )
 from app.auth import (
     TokenResponse, LoginRequest, authenticate_admin, require_admin
@@ -372,6 +374,126 @@ async def list_lead_interactions(lead_id: int, db: AsyncSession = Depends(get_db
         select(Interaction)
         .where(Interaction.lead_id == lead_id)
         .order_by(Interaction.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DOCUMENTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/v1/leads/{lead_id}/documents", response_model=DocumentResponse, status_code=201)
+async def create_lead_document(
+    lead_id: int,
+    data: DocumentCreate,
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
+    lead = await db.get(Lead, lead_id)
+    if not lead:
+        raise HTTPException(404, "Lead no trobat")
+    
+    doc = Document(
+        lead_id=lead_id,
+        tipus=data.tipus,
+        titol=data.titol,
+        contingut_html=data.contingut_html,
+        fitxer_url=data.fitxer_url,
+        payload=data.payload,
+        idioma=data.idioma,
+        enviat=data.enviat,
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+    return doc
+
+@app.get("/api/v1/leads/{lead_id}/documents", response_model=list[DocumentResponse])
+async def list_lead_documents(
+    lead_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
+    result = await db.execute(
+        select(Document)
+        .where(Document.lead_id == lead_id)
+        .order_by(Document.created_at.desc())
+    )
+    return result.scalars().all()
+
+@app.delete("/api/v1/documents/{document_id}")
+async def delete_document(
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
+    doc = await db.get(Document, document_id)
+    if not doc:
+        raise HTTPException(404, "Document no trobat")
+    await db.delete(doc)
+    await db.commit()
+    return {"status": "ok"}
+
+@app.post("/api/v1/documents/sync", response_model=DocumentResponse, status_code=201)
+async def sync_document_by_center(
+    data: SyncDocumentRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
+    lead = None
+    if data.contact_email:
+        result = await db.execute(select(Lead).where(Lead.email == data.contact_email))
+        lead = result.scalar_one_or_none()
+    
+    if not lead:
+        result = await db.execute(select(Lead).where(Lead.nom == data.center_name))
+        lead = result.scalars().first()
+    
+    if not lead:
+        email = data.contact_email or f"{data.center_name.lower().replace(' ', '')}@example.com"
+        lead = Lead(nom=data.center_name, email=email, origen=LeadSource.ALTRES)
+        db.add(lead)
+        await db.commit()
+        await db.refresh(lead)
+
+    doc = Document(
+        lead_id=lead.id,
+        tipus=data.document.tipus,
+        titol=data.document.titol,
+        contingut_html=data.document.contingut_html,
+        fitxer_url=data.document.fitxer_url,
+        payload=data.document.payload,
+        idioma=data.document.idioma,
+        enviat=data.document.enviat,
+    )
+    db.add(doc)
+    await db.commit()
+    await db.refresh(doc)
+    return doc
+
+@app.get("/api/v1/documents/by-center", response_model=list[DocumentResponse])
+async def list_documents_by_center(
+    center_name: str,
+    contact_email: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    admin: bool = Depends(require_admin),
+):
+    lead = None
+    if contact_email:
+        result = await db.execute(select(Lead).where(Lead.email == contact_email))
+        lead = result.scalar_one_or_none()
+    
+    if not lead:
+        result = await db.execute(select(Lead).where(Lead.nom == center_name))
+        lead = result.scalars().first()
+
+    if not lead:
+        return []
+
+    result = await db.execute(
+        select(Document)
+        .where(Document.lead_id == lead.id)
+        .order_by(Document.created_at.desc())
     )
     return result.scalars().all()
 
