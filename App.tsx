@@ -8,6 +8,8 @@ import ProcessingScreen from './components/ProcessingScreen';
 import AdeptifyChat from './components/AdeptifyChat';
 import DocGenerator from './components/DocGenerator';
 import AdminRegistry from './components/AdminRegistry';
+import AutomatedLeadPanel from './components/AutomatedLeadPanel';
+import InteractiveAudit from './components/InteractiveAudit';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
 import InstitutionGate from './components/InstitutionGate';
@@ -44,6 +46,26 @@ const AppContent: React.FC = () => {
   const [proposal, setProposal] = useState<ProposalData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingProduct, setPendingProduct] = useState<ProductType | null>(null);
+  const [auditToken, setAuditToken] = useState<string | null>(null);
+
+  const isAuditRoute = (() => {
+    try {
+      const p = window.location.pathname || '/';
+      if (p.startsWith('/audit/')) {
+        return p.split('/audit/')[1] || null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  })();
+
+  useEffect(() => {
+    if (isAuditRoute) {
+      setAuditToken(isAuditRoute);
+      setPhase(Phase.INTERACTIVE_AUDIT);
+    }
+  }, [isAuditRoute]);
 
   const isConsultorRoute = (() => {
     try {
@@ -480,6 +502,15 @@ const AppContent: React.FC = () => {
             {t.navDocs}
           </button>
 
+          {isAuthenticated && (
+            <button
+              onClick={() => setPhase(Phase.LEAD_MANAGEMENT)}
+              className="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-slate-900 transition-colors"
+            >
+              Leads
+            </button>
+          )}
+
           <button
             onClick={clearTenantSession}
             className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
@@ -536,6 +567,13 @@ const AppContent: React.FC = () => {
 
         {phase === Phase.DOC_GENERATOR && <DocGenerator />}
         {phase === Phase.ADMIN && <AdminRegistry tenantSlug={tenantSlug ?? undefined} adminScope={adminScope} />}
+        {phase === Phase.LEAD_MANAGEMENT && <AutomatedLeadPanel />}
+        {phase === Phase.INTERACTIVE_AUDIT && auditToken && (
+          <InteractiveAudit 
+            token={auditToken} 
+            onBookConsultation={() => setPhase(Phase.LANDING)} 
+          />
+        )}
         {phase === Phase.LOGIN && <Login onLoginSuccess={handleLoginSuccess} />}
 
         {phase === Phase.PROPOSAL && proposal && (

@@ -111,10 +111,10 @@ async function generateContentViaProxy(model: string, request: GenerateContentRe
 
 // Required preferred order (falls back if a model isn't available for the API key/project).
 const MODEL_FALLBACK_ORDER = [
-  'gemini-3-pro-preview',
-  'gemini-3-flash-preview',
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
+  'gemini-3.1',
+  'gemini-2.0-flash',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
 ];
 
 const shouldTryNextModel = (err: unknown): boolean => {
@@ -415,6 +415,21 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
   const historyStr = formatHistoryForPrompt(diagnosis.consultationHistory || [], lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const intakeMode = (diagnosis as any)?.intakeMode === 'clear_need' ? 'clear_need' : 'discovery';
+  
+  // Dynamic Pricing Context
+  const econ = (diagnosis as any)?.economicProfile || { economic_tier: 'medium', institution_type: 'unknown' };
+  const pricingContext = `
+    POLÍTICA DE PREUS DINÀMICS (BASADA EN PERFIL DEL CLIENT):
+    - Tipus d'Institució: \${econ.institution_type}
+    - Nivell Econòmic Detectat: \${econ.economic_tier}
+    
+    HORQUILLES OBLIGATÒRIES (Ajusta segons el nivell):
+    1. Tier LOW / Públic: Implementació 2.500€ - 4.500€. Subscripció 150€-250€/mes.
+    2. Tier MEDIUM / Concertat: Implementació 5.000€ - 9.500€. Subscripció 300€-500€/mes.
+    3. Tier HIGH / Privat: Implementació 10.000€ - 25.000€. Subscripció 600€-1.200€/mes.
+    
+    Ajusta els items[] i la subscripció per reflectir aquest nivell detectat.
+  `;
   const programmingSummaryNoteCa = intakeMode === 'clear_need'
     ? `\n- A "solution" inclou també una secció "Resumen para programación" (títol exactament així), amb 6–10 punts molt concrets per a l'equip de programació: rols, pantalles, fluxos, dades, notificacions, integracions, permisos i criteris d'acceptació.`
     : '';

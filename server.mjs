@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+import * as cheerio from 'cheerio';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +14,17 @@ const PORT = Number(process.env.PORT || 2705);
 const STARTUP_TS = Date.now();
 
 const app = express();
+
+// --- DB CLIENT (ADMIN) ---
+let cachedSupabase = null;
+const getSupabaseAdmin = () => {
+  if (cachedSupabase) return cachedSupabase;
+  const url = process.env.SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ''; // Use service role for backend ops
+  if (!url || !key) return null;
+  cachedSupabase = createClient(url, key);
+  return cachedSupabase;
+};
 
 const isValidEmail = (value) => {
   if (typeof value !== 'string') return false;
@@ -283,6 +296,376 @@ app.all('/api-proxy/*', async (req, res) => {
   } catch (e) {
     console.error('api-proxy error:', e);
     res.status(502).json({ error: { message: 'Upstream proxy error' } });
+  }
+});
+
+// --- LEAD MANAGEMENT & AI AUTOMATION ---
+
+// Analyze lead needs using Gemini
+app.post('/api/leads/analyze', express.json(), async (req, res) => {
+  const { leadId, tenantSlug, companyInfo, previousInteractions } = req.body;
+  
+  if (!tenantSlug || !companyInfo) {
+    return res.status(400).json({ error: 'Missing required lead info' });
+  }
+
+  try {
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const model = "gemini-3.1"; // Updated to latest 3.1 version
+    
+    const prompt = `
+      Analiza el siguiente perfil de cliente potencial para Adeptify (Consultoría Educativa y Tecnológica).
+      Empresa/Centro: ${companyInfo.name}
+      Contexto adicional: ${companyInfo.description || 'N/A'}
+      Interacciones previas: ${JSON.stringify(previousInteractions || [])}
+      
+      Responde en formato JSON con la siguiente estructura:
+      {
+        "needs_detected": ["lista de necesidades"],
+        "pain_points": ["puntos de dolor"],
+        "recommended_services": ["servicios sugeridos"],
+        "estimated_budget_range": "rango sugerido en EUR",
+        "custom_pitch": "Un párrafo corto de venta personalizado"
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await response.json();
+    const analysis = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    // Save to Supabase if leadId is provided
+    const supabase = getSupabaseAdmin();
+    if (supabase && leadId) {
+      await supabase.from('leads').update({
+        ai_needs_analysis: analysis,
+        status: 'qualified'
+      }).eq('id', leadId).eq('tenant_slug', tenantSlug);
+      
+      await supabase.from('lead_interactions').insert({
+        lead_id: leadId,
+        interaction_type: 'ai_analysis',
+        content_summary: 'Análisis de necesidades generado por Gemini',
+        payload_json: analysis
+      });
+    }
+
+    res.status(200).json(analysis);
+  } catch (e) {
+    console.error('Lead analysis failed:', e);
+    res.status(500).json({ error: 'Analysis failed' });
+  }
+});
+
+// Send personalized proposal email
+app.post('/api/leads/send-proposal', express.json({ limit: '5mb' }), async (req, res) => {
+  const { leadId, tenantSlug, email, subject, body, pdfBase64 } = req.body;
+
+  if (!email || !body) {
+    return res.status(400).json({ error: 'Missing recipient or body' });
+  }
+
+  try {
+    const transporter = getTransporter();
+    if (!transporter) throw new Error('Email service not configured');
+
+    const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
+    const fromName = (process.env.CONTACT_FROM_NAME || 'Adeptify Proposals').trim();
+
+    const mailOptions = {
+      from: { name: fromName, address: fromEmail },
+      to: email,
+      subject: subject || 'Propuesta Personalizada - Adeptify',
+      text: body,
+      attachments: pdfBase64 ? [
+        {
+          filename: 'Propuesta_Adeptify.pdf',
+          content: pdfBase64,
+          encoding: 'base64'
+        }
+      ] : []
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    // Record interaction
+    const supabase = getSupabaseAdmin();
+    if (supabase && leadId) {
+      await supabase.from('leads').update({ status: 'proposal_sent' }).eq('id', leadId);
+      await supabase.from('lead_interactions').insert({
+        lead_id: leadId,
+        interaction_type: 'proposal_sent',
+        content_summary: subject
+      });
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('Failed to send proposal:', e);
+    res.status(500).json({ error: 'Email delivery failed' });
+  }
+});
+
+// Get Audit data by Magic Link Token
+app.get('/api/leads/audit/:token', async (req, res) => {
+  const { token } = req.params;
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return res.status(500).json({ error: 'DB not configured' });
+
+    const { data, error } = await supabase
+      .from('leads')
+      .select('company_name, ai_needs_analysis, created_at')
+      .eq('magic_link_token', token)
+      .single();
+
+    if (error || !data) return res.status(404).json({ error: 'Audit not found' });
+    res.status(200).json(data);
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Automated Search & Scrape (Prospecting Motor)
+app.post('/api/automation/capture', express.json(), async (req, res) => {
+  const { url, tenantSlug } = req.body;
+  if (!url) return res.status(400).json({ error: 'URL is required' });
+
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    $('script, style, nav, footer').remove();
+    const pageText = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
+
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const prompt = `
+      Actúa como un experto en auditoría de eficiencia y ventas B2B. Analiza el siguiente texto de un sitio web de una institución.
+      TEXTO DE LA WEB:
+      ${pageText}
+      
+      EXTRAE Y RESPONDE EN JSON:
+      {
+        "company_name": "Nombre de la institución",
+        "contact_email": "Email válido de contacto (o null si no hay)",
+        "detected_needs": ["3 cuellos de botella u oportunidades de digitalización detectadas"],
+        "main_bottleneck": "El principal problema operativo deducido",
+        "estimated_hours_lost_per_week": "Número entero estimado de horas que pierden en papeleo (ej. 15)",
+        "economic_profile": {
+          "institution_type": "private | public | subsidized",
+          "estimated_student_count": "Número estimado de alumnos",
+          "economic_tier": "low | medium | high",
+          "pricing_sensitivity": "high | medium | low"
+        },
+        "recommended_solution": "Breve pitch de cómo Adeptify lo resuelve",
+        "is_relevant": true/false
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const geminiData = await geminiResp.json();
+    const analysis = JSON.parse(geminiData.candidates[0].content.parts[0].text);
+
+    // --- IMPROVEMENT #6: AI Video Script Generation ---
+    const videoScriptPrompt = `
+      Escribe un guion de 30 segundos para un avatar de vídeo de IA que se presentará a ${analysis.company_name}.
+      El tono debe ser profesional, innovador y directo.
+      Menciona específicamente el problema: "${analysis.main_bottleneck}".
+      Termina invitándoles a ver su auditoría interactiva.
+      Responde solo con el texto del guion.
+    `;
+    const videoScriptResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: videoScriptPrompt }] }] })
+    });
+    const videoData = await videoScriptResp.json();
+    const videoScript = videoData.candidates[0].content.parts[0].text;
+    
+    analysis.video_script = videoScript;
+    // --------------------------------------------------
+
+    let automatedAction = "Análisis guardado. No se encontró email.";
+
+    if (analysis.is_relevant && analysis.contact_email) {
+      const supabase = getSupabaseAdmin();
+      if (supabase) {
+        const magicToken = crypto.randomUUID();
+        
+        const { data: lead, error } = await supabase.from('leads').upsert({
+          tenant_slug: tenantSlug || 'default',
+          email: analysis.contact_email,
+          full_name: analysis.company_name,
+          company_name: analysis.company_name,
+          source: 'automated_scrape',
+          status: 'audit_sent',
+          ai_needs_analysis: analysis,
+          metadata_json: { original_url: url },
+          magic_link_token: magicToken,
+          audit_email_sent: true
+        }, { onConflict: 'tenant_slug,email' }).select().single();
+
+        if (!error && lead) {
+           await supabase.from('lead_interactions').insert({
+             lead_id: lead.id,
+             interaction_type: 'automated_capture',
+             content_summary: `Capturado automáticamente y enviada auditoría fantasma`
+           });
+
+           // AUTONOMOUS ZERO-TOUCH: Send the email immediately
+           const transporter = getTransporter();
+           if (transporter) {
+              const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
+              const fromName = (process.env.CONTACT_FROM_NAME || 'Adeptify Consultoría').trim();
+              
+              // Ensure the link works regardless of deployment environment
+              const domain = req.headers.origin || req.headers.host || 'http://localhost:2705';
+              const protocol = domain.startsWith('http') ? '' : (req.secure ? 'https://' : 'http://');
+              const magicLink = `${protocol}${domain}/audit/${magicToken}`;
+
+              const htmlBody = `
+                <div style="font-family: sans-serif; color: #1e293b; max-width: 600px;">
+                  <h2 style="color: #4f46e5;">Auditoría Preliminar: ${analysis.company_name}</h2>
+                  <p>Hola equipo de <strong>${analysis.company_name}</strong>,</p>
+                  <p>Hemos analizado vuestro ecosistema digital y detectado una fuga de aproximadamente <strong>${analysis.estimated_hours_lost_per_week || 20} horas semanales</strong> en tareas operativas.</p>
+                  
+                  <div style="margin: 30px 0; text-align: center;">
+                    <a href="${magicLink}" style="text-decoration: none;">
+                      <div style="background: #111827; border-radius: 16px; padding: 40px; color: white; position: relative;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">👤▶️</div>
+                        <div style="font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; color: #818cf8;">Mensaje de Vídeo Personalizado</div>
+                        <p style="font-size: 14px; color: #9ca3af; margin-top: 8px;">Haz clic para reproducir el análisis de vuestro centro</p>
+                      </div>
+                    </a>
+                  </div>
+
+                  <p>Hemos preparado un <strong>Simulador de ROI</strong> exclusivo para vosotros donde podéis ver el ahorro neto real mensual.</p>
+                  <p><a href="${magicLink}" style="color: #4f46e5; font-weight: bold;">👉 Acceder al Informe Interactivo Completo</a></p>
+                  <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 30px 0;">
+                  <p style="font-size: 12px; color: #64748b;">Enviado de forma segura por el motor de IA de Adeptify Consultoría.</p>
+                </div>
+              `;
+
+              await transporter.sendMail({
+                from: { name: fromName, address: fromEmail },
+                to: analysis.contact_email,
+                subject: `Mensaje Urgente: Auditoría de Eficiencia para ${analysis.company_name}`,
+                text: `Hola equipo de ${analysis.company_name},\n\nHemos detectado que podríais ahorrar ${analysis.estimated_hours_lost_per_week || 20} horas semanales. Hemos generado un vídeo y una auditoría interactiva para vosotros aquí: ${magicLink}`,
+                html: htmlBody
+              });
+              automatedAction = `Auditoría con Gancho de Vídeo enviada a ${analysis.contact_email}`;
+           }
+        }
+      }
+    }
+
+    res.status(200).json({ ...analysis, status: automatedAction });
+  } catch (e) {
+    console.error('Automated capture failed:', e);
+    res.status(500).json({ error: 'Scraping/Analysis failed' });
+  }
+});
+
+// --- IMPROVEMENT #2: Omnichannel Nurturing Agent ---
+
+app.post('/api/automation/chat-nurture', express.json(), async (req, res) => {
+  const { leadId, message, channel } = req.body;
+  if (!leadId || !message) return res.status(400).json({ error: 'LeadID and Message required' });
+
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error('DB Error');
+
+    // 1. Get Lead context and history
+    const { data: lead } = await supabase.from('leads').select('*').eq('id', leadId).single();
+    const { data: history } = await supabase.from('lead_messages')
+      .select('role, content')
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    // 2. Prepare AI Prompt with Context
+    const conversationHistory = (history || []).reverse()
+      .map(m => `${m.role === 'assistant' ? 'Adeptify' : 'Cliente'}: ${m.content}`)
+      .join('\n');
+
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const prompt = `
+      Eres el Agente de Maduración de Adeptify. Tu objetivo es convertir a un lead en una reunión de venta.
+      
+      DATOS DEL CLIENTE:
+      - Empresa: ${lead.company_name}
+      - Problema detectado: ${lead.ai_needs_analysis?.main_bottleneck}
+      - Perfil económico: ${lead.ai_needs_analysis?.economic_profile?.economic_tier}
+      - Fase actual: ${lead.nurturing_stage}
+      
+      HISTORIAL DE CONVERSACIÓN:
+      ${conversationHistory}
+      
+      MENSAJE ENTRANTE DEL CLIENTE:
+      "${message}"
+      
+      INSTRUCCIONES:
+      - Responde de forma humana, empática y profesional.
+      - No seas un bot aburrido. Usa el tono de un consultor experto.
+      - Si el cliente tiene dudas sobre el ROI, recuérdale los datos de su auditoría interactiva.
+      - Si parece listo, sugiere cerrar una breve llamada de 15 min.
+      
+      RESPONDE EN JSON:
+      {
+        "reply": "Texto de tu respuesta",
+        "next_stage_suggested": "initial_contact | engaged | objection_handling | ready_for_meeting",
+        "internal_note": "Breve nota sobre el estado de ánimo del cliente"
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await geminiResp.json();
+    const aiResult = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    // 3. Save messages and update stage
+    await supabase.from('lead_messages').insert([
+      { lead_id: leadId, channel: channel || 'whatsapp', role: 'user', content: message },
+      { lead_id: leadId, channel: channel || 'whatsapp', role: 'assistant', content: aiResult.reply }
+    ]);
+
+    if (aiResult.next_stage_suggested) {
+      await supabase.from('leads').update({ nurturing_stage: aiResult.next_stage_suggested }).eq('id', leadId);
+    }
+
+    res.status(200).json(aiResult);
+  } catch (e) {
+    console.error('Nurturing agent failed:', e);
+    res.status(500).json({ error: 'Agent failed' });
   }
 });
 
