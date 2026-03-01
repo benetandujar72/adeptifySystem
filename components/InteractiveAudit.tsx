@@ -124,7 +124,7 @@ const InteractiveAudit: React.FC<InteractiveAuditProps> = ({ token, onBookConsul
 
           {/* Columna Derecha: Simulador ROI */}
           <div className="bg-white p-8 rounded-3xl shadow-xl border border-indigo-50">
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">Simulador de Fugas de Capital</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-2">{t.roiTitle}</h3>
             <p className="text-sm text-slate-500 mb-8">Ajusta los valores para ver cuánto estáis perdiendo por no automatizar procesos.</p>
             
             <div className="space-y-6 mb-8">
@@ -154,12 +154,12 @@ const InteractiveAudit: React.FC<InteractiveAuditProps> = ({ token, onBookConsul
             </div>
 
             <div className="bg-red-50 p-6 rounded-2xl mb-4 border border-red-100">
-              <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">Pérdida Mensual Actual Estimada</p>
+              <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">{t.roiMonthlyLoss}</p>
               <p className="text-4xl font-black text-red-700">{totalCostLostMonth.toLocaleString('es-ES')} €</p>
             </div>
 
             <div className="bg-green-50 p-6 rounded-2xl mb-8 border border-green-100">
-              <p className="text-xs font-black text-green-600 uppercase tracking-widest mb-1">Ahorro Mensual con Adeptify (85%)</p>
+              <p className="text-xs font-black text-green-600 uppercase tracking-widest mb-1">{t.roiMonthlySavings}</p>
               <p className="text-4xl font-black text-green-700">+{monthlySavings.toLocaleString('es-ES')} €</p>
             </div>
 
@@ -167,7 +167,7 @@ const InteractiveAudit: React.FC<InteractiveAuditProps> = ({ token, onBookConsul
               onClick={onBookConsultation}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-200 flex justify-center items-center gap-3"
             >
-              Frenar Pérdidas y Automatizar
+              {t.roiActionBtn}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </button>
           </div>

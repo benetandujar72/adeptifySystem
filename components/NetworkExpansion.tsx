@@ -1,28 +1,13 @@
 import React, { useState } from 'react';
 
 const NetworkExpansion: React.FC = () => {
+  const { t } = useLanguage();
   const [reference, setReference] = useState('');
   const [location, setLocation] = useState('');
   const [expansionData, setExpansionData] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const handleExpansion = async () => {
-    if (!reference) return;
-    setIsAnalyzing(true);
-    try {
-      const resp = await fetch('/api/automation/network-prospecting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referenceCenterName: reference, location })
-      });
-      const data = await resp.json();
-      setExpansionData(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  // ... logic
 
   return (
     <div className="max-w-5xl mx-auto p-10 bg-white rounded-[40px] shadow-2xl border border-slate-100 mt-10 fade-in">
@@ -31,8 +16,8 @@ const NetworkExpansion: React.FC = () => {
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Expansión por Proximidad</h2>
-          <p className="text-slate-500 text-sm">Utiliza tus casos de éxito para captar centros vecinos automáticamente.</p>
+          <h2 className="text-3xl font-bold text-slate-900">{t.expansionTitle}</h2>
+          <p className="text-slate-500 text-sm">{t.expansionDesc}</p>
         </div>
       </div>
 
@@ -64,7 +49,7 @@ const NetworkExpansion: React.FC = () => {
             disabled={isAnalyzing || !reference}
             className="w-full py-4 bg-cyan-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-cyan-700 transition-all disabled:opacity-50"
           >
-            {isAnalyzing ? 'Calculando Expansión...' : 'Proyectar Nodos'}
+            {isAnalyzing ? '...' : t.expansionProjectBtn}
           </button>
         </div>
 

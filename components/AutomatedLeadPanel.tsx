@@ -31,11 +31,10 @@ const AutomatedLeadPanel: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number | null>(null);
 
   const steps = [
-    "Conectando con el servidor escolar...",
-    "Extrayendo contenido de la web...",
-    "Gemini 3.1 Pro analizando necesidades...",
-    "Generando propuesta y guion de vídeo...",
-    "Finalizando captura en base de datos..."
+    t.leadInvestigateBtn,
+    t.leadAnalyzing,
+    t.leadSendProposal,
+    "IA Insights..."
   ];
 
   const handleScrapeAndCapture = async () => {

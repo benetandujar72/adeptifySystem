@@ -516,7 +516,39 @@ const ca = {
   lpContactMsgPlaceholder: "Explica'ns breument el projecte o quins processos vols automatitzar...",
   lpContactSubmit: "Enviar sol·licitud",
   lpContactSuccess: "Gràcies! Hem rebut la teva sol·licitud i contactarem aviat.",
-  lpContactError: "Error enviant. Si us plau, prova-ho de nou."
+  lpContactError: "Error enviant. Si us plau, prova-ho de nou.",
+
+  // Automation & New Features
+  navLeads: "Leads",
+  navMigration: "Migració",
+  navTwin: "Gemell Digital",
+  navSuccess: "Success",
+  navExpansion: "Expansió",
+  
+  leadPanelTitle: "Gestió de Leads Automàtica",
+  leadAutopilotTitle: "Captura Automàtica (URL Scraper)",
+  leadAutopilotDesc: "Enganxa la URL d'un col·legi. Gemini 3.1 Pro extraurà les dades i detectarà necessitats.",
+  leadInvestigateBtn: "Investigar Web",
+  leadAnalyzing: "Analitzant amb IA...",
+  leadSendProposal: "Generar PDF i Enviar Oferta",
+  
+  roiTitle: "Simulador de Fugues de Capital",
+  roiMonthlyLoss: "Pèrdua Mensual Estimada",
+  roiMonthlySavings: "Estalvi Mensual amb Adeptify",
+  roiActionBtn: "Frenar Pèrdues i Automatitzar",
+  
+  onboardingTitle: "Auto-Onboarding Intel·ligent",
+  onboardingDesc: "Enganxa les teves dades brutes (Excel, CSV) i la IA les organitzarà.",
+  onboardingProcessBtn: "Estructurar Dades Ara",
+  
+  twinTitle: "Gemell Digital Predictiu",
+  twinStressLevel: "Nivel d'Estrès Operatiu",
+  twinAlertsTitle: "Alertes Primerenques (30 dies)",
+  twinActionBtn: "Activar Protocol",
+  
+  expansionTitle: "Expansió per Proximitat",
+  expansionDesc: "Utilitza els teus èxits per captar centres veïns.",
+  expansionProjectBtn: "Projectar Nodes"
 };
 
 const es = {
@@ -1033,11 +1065,75 @@ const es = {
   lpContactMsgPlaceholder: "Explícanos brevemente el proyecto o qué procesos quieres automatizar...",
   lpContactSubmit: "Enviar solicitud",
   lpContactSuccess: "¡Gracias! Hemos recibido tu solicitud y contactaremos pronto.",
-  lpContactError: "Error enviando. Por favor, pruébalo de nuevo."
+  lpContactError: "Error enviando. Por favor, pruébalo de nuevo.",
+
+  // Automation & New Features
+  navLeads: "Leads",
+  navMigration: "Migración",
+  navTwin: "Gemelo Digital",
+  navSuccess: "Success",
+  navExpansion: "Expansión",
+  
+  leadPanelTitle: "Gestión de Leads Automática",
+  leadAutopilotTitle: "Captura Automática (URL Scraper)",
+  leadAutopilotDesc: "Pega la URL de un colegio. Gemini 3.1 Pro extraerá los datos y detectará necesidades.",
+  leadInvestigateBtn: "Investigar Web",
+  leadAnalyzing: "Analizando con IA...",
+  leadSendProposal: "Generar PDF y Enviar Oferta",
+  
+  roiTitle: "Simulador de Fugas de Capital",
+  roiMonthlyLoss: "Pérdida Mensual Estimada",
+  roiMonthlySavings: "Ahorro Mensual con Adeptify",
+  roiActionBtn: "Frenar Pérdidas y Automatizar",
+  
+  onboardingTitle: "Auto-Onboarding Inteligente",
+  onboardingDesc: "Pega tus datos brutos (Excel, CSV) y la IA los organizará.",
+  onboardingProcessBtn: "Estructurar Datos Ahora",
+  
+  twinTitle: "Gemelo Digital Predictivo",
+  twinStressLevel: "Nivel de Estrés Operativo",
+  twinAlertsTitle: "Alertas Tempranas (30 días)",
+  twinActionBtn: "Activar Protocolo",
+  
+  expansionTitle: "Expansión por Proximidad",
+  expansionDesc: "Utiliza tus éxitos para captar centros vecinos.",
+  expansionProjectBtn: "Proyectar Nodos"
 };
 
 const eu: typeof ca = {
   ...es,
+
+  // Automation & New Features
+  navLeads: "Leads",
+  navMigration: "Migrazioa",
+  navTwin: "Biki Digitala",
+  navSuccess: "Success",
+  navExpansion: "Hedapena",
+  
+  leadPanelTitle: "Leads Kudeaketa Automatikoa",
+  leadAutopilotTitle: "Kaptura Automatikoa (URL Scraper)",
+  leadAutopilotDesc: "Itsatsi ikastetxe baten URL-a. Gemini 3.1 Pro-k datuak erauzi eta premiak detektatuko ditu.",
+  leadInvestigateBtn: "Webgunea Ikertu",
+  leadAnalyzing: "IA bidez aztertzen...",
+  leadSendProposal: "PDFa Sortu eta Eskaintza Bidali",
+  
+  roiTitle: "Kapital Ihesen Simulagailua",
+  roiMonthlyLoss: "Hileko Galera Estimatua",
+  roiMonthlySavings: "Hileko Aurrezkia Adeptify-rekin",
+  roiActionBtn: "Galerak Gelditu eta Automatizatu",
+  
+  onboardingTitle: "Auto-Onboarding Adimentsua",
+  onboardingDesc: "Itsatsi zure datu gordinak (Excel, CSV) eta IA-k antolatuko ditu.",
+  onboardingProcessBtn: "Datuak Orain Antolatu",
+  
+  twinTitle: "Biki Digital Iragartzailea",
+  twinStressLevel: "Estres Operatibo Maila",
+  twinAlertsTitle: "Abisu Goiztiarrak (30 egun)",
+  twinActionBtn: "Protokoloa Aktibatu",
+  
+  expansionTitle: "Gertutasun bidezko Hedapena",
+  expansionDesc: "Erabili zure arrakastak alboko zentroak erakartzeko.",
+  expansionProjectBtn: "Nodoak Proiektatu",
 
   // Institution Gate
   institutionGateTitle: "Aukeratu zure ikastetxea",

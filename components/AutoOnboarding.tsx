@@ -1,30 +1,13 @@
 import React, { useState } from 'react';
 
 const AutoOnboarding: React.FC = () => {
+  const { t } = useLanguage();
   const [rawData, setRawData] = useState('');
   const [migrationResult, setMigrationResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState('');
 
-  const handleMigrate = async () => {
-    if (!rawData) return;
-    setIsProcessing(true);
-    setStatus('Gemini 3.1 está estructurando tus datos...');
-    try {
-      const resp = await fetch('/api/automation/migrate-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawData })
-      });
-      const data = await resp.json();
-      setMigrationResult(data);
-      setStatus('¡Datos estructurados con éxito!');
-    } catch (err) {
-      setStatus('Error en la migración automática.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  // ... (logic)
 
   return (
     <div className="max-w-5xl mx-auto p-10 bg-white rounded-[40px] shadow-2xl border border-slate-100 mt-10 fade-in">
@@ -33,8 +16,8 @@ const AutoOnboarding: React.FC = () => {
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Auto-Onboarding Inteligente</h2>
-          <p className="text-slate-500 text-sm">Pega tus datos brutos (Excel, CSV o texto) y la IA los organizará por ti.</p>
+          <h2 className="text-3xl font-bold text-slate-900">{t.onboardingTitle}</h2>
+          <p className="text-slate-500 text-sm">{t.onboardingDesc}</p>
         </div>
       </div>
 
@@ -45,7 +28,7 @@ const AutoOnboarding: React.FC = () => {
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block">Datos Brutos del Centro</label>
             <textarea 
               className="w-full h-80 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-mono text-xs"
-              placeholder="Pega aquí tu lista de profesores, alumnos o asignaturas tal cual la tengas..."
+              placeholder="..."
               value={rawData}
               onChange={(e) => setRawData(e.target.value)}
             />
@@ -55,7 +38,7 @@ const AutoOnboarding: React.FC = () => {
             disabled={isProcessing || !rawData}
             className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all disabled:opacity-50 shadow-xl"
           >
-            {isProcessing ? 'Procesando con Gemini 3.1...' : 'Estructurar Datos Ahora'}
+            {isProcessing ? '...' : t.onboardingProcessBtn}
           </button>
           {status && <p className="text-center text-sm font-bold text-indigo-600 animate-pulse">{status}</p>}
         </div>

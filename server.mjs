@@ -476,7 +476,11 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
     const prompt = `
       Actúa como un experto en auditoría de eficiencia y ventas B2B. 
-      Analiza el siguiente texto extraído de un sitio web de un centro educativo (Àgora/XTEC).
+      Analiza el siguiente texto extraído de un sitio web de un centro educativo.
+      
+      IMPORTANTE (IDIOMA): 
+      - Responde siempre en el idioma predominante del texto analizado (Català, Castellano o Euskera).
+      - Si el texto está en català, el pitch y detected_needs deben estar en català.
       
       CONTENIDO DE LA WEB:
       ${pageContent}
