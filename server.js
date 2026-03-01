@@ -211,7 +211,18 @@ app.post('/api/automation/capture', async (req, res) => {
     const $ = cheerio.load(html);
     const text = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
     
-    const prompt = `Actua com a consultor sènior d'Adeptify. Analitza aquesta web i genera el JSON de 12 seccions segons l'estàndard definit (consultora, cliente, proposta, proyecto, diagnostico, solucion, metodologia, cronograma, equipo, economia, garantias, riesgos, casos_exito, condiciones, proximos_pasos). IDIOMA: CATALÀ. TEXT: ${text}`;
+    const prompt = `Actua com a consultor sènior d'Adeptify. Analitza aquesta web i genera un JSON amb la següent estructura exacta:
+{
+  "company_name": "Nom de l'escola o empresa",
+  "contact_email": "Email de contacte extret o deduït",
+  "recommended_solution": "Breu descripció de la solució proposada",
+  "needs_detected": ["Necessitat 1", "Necessitat 2", "Necessitat 3"],
+  "recommended_services": ["Servei suggerit 1", "Servei suggerit 2"],
+  "main_bottleneck": "Coll d'ampolla principal detectat",
+  "estimated_budget_range": "Ex: 5.000€ - 8.000€",
+  "custom_pitch": "Resum executiu o pitch personalitzat per a l'empresa"
+}
+IDIOMA: CATALÀ. TEXT: ${text}`;
     
     const result = await callGemini(prompt);
     res.json(result);
