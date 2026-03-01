@@ -494,12 +494,15 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
   try {
     console.info(`[automation] Scraping URL: ${url}`);
     
-    // 1. Fetch with Browser Headers to avoid blocks (crucial for xtec.cat)
+    // 1. Fetch with Browser Headers to avoid blocks (crucial for xtec.cat and Wordpress)
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'es-ES,es;q=0.9,ca;q=0.8,en;q=0.7'
+        'Accept-Language': 'ca-ES,ca;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6',
+        'Referer': 'https://www.google.com/',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
       redirect: 'follow'
     });
@@ -511,7 +514,7 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    // 2. Extract specific data points (mailto links)
+    // 2. Extract specific data points (including hidden metadata)
     const mailtoLinks = [];
     $('a[href^="mailto:"]').each((i, el) => {
       try {
@@ -520,15 +523,23 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
       } catch (e) {}
     });
 
-    // Remove unwanted tags but keep structure for context
-    $('script, style, nav, footer, iframe, noscript').remove();
+    // Check OpenGraph and Meta
+    const ogTitle = $('meta[property="og:title"]').attr('content');
+    const ogDesc = $('meta[property="og:description"]').attr('content');
+    const title = ogTitle || $('title').text();
+    const metaDesc = ogDesc || $('meta[name="description"]').attr('content') || '';
     
-    // Extract meaningful text
-    const title = $('title').text();
-    const metaDesc = $('meta[name="description"]').attr('content') || '';
+    // Deeper email search in text via Regex
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+    const bodyRaw = $('body').html() || '';
+    const foundEmails = bodyRaw.match(emailRegex) || [];
+    const allEmails = [...new Set([...mailtoLinks, ...foundEmails])];
+
+    // Remove unwanted tags
+    $('script, style, nav, footer, iframe, noscript').remove();
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
     
-    const pageContent = `TITULO: ${title}\nDESCRIPCION: ${metaDesc}\nCONTENIDO: ${bodyText}`.substring(0, 15000);
+    const pageContent = `URL: ${url}\nTITULO: ${title}\nDESCRIPCION: ${metaDesc}\nEMAILS: ${allEmails.join(', ')}\nCONTENIDO: ${bodyText}`.substring(0, 15000);
 
     if (pageContent.length < 100) {
       return res.status(422).json({ error: 'Contenido insuficiente extraído de la web' });
