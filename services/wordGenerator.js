@@ -1,4 +1,3 @@
-
 import { 
   Document, Packer, Paragraph, TextRun, HeadingLevel, 
   AlignmentType, Table, TableRow, TableCell, WidthType, 
@@ -54,13 +53,11 @@ export class WordProposalGenerator {
               new TextRun({ text: (data.proyecto.titulo || "PROPOSTA ESTRATÈGICA").toUpperCase(), bold: true, size: 28, color: COLORS.SECONDARY })
             ]}),
             new Paragraph({ spacing: { before: 4000 }, alignment: AlignmentType.RIGHT, children: [
-              new TextRun({ text: `CLIENT: \${data.cliente.nombre}`, bold: true, size: 24 }),
-              new TextRun({ text: "
-", break: 1 }),
-              new TextRun({ text: `PROPOSTA: \${data.propuesta.codigo}`, size: 20 }),
-              new TextRun({ text: "
-", break: 1 }),
-              new TextRun({ text: `DATA: \${data.propuesta.fecha}`, size: 20 })
+              new TextRun({ text: `CLIENT: ${data.cliente.nombre}`, bold: true, size: 24 }),
+              new TextRun({ text: "", break: 1 }),
+              new TextRun({ text: `PROPOSTA: ${data.propuesta.codigo}`, size: 20 }),
+              new TextRun({ text: "", break: 1 }),
+              new TextRun({ text: `DATA: ${data.propuesta.fecha}`, size: 20 })
             ]}),
             new Paragraph({ children: [new PageBreak()] })
           ]
@@ -73,7 +70,7 @@ export class WordProposalGenerator {
                   border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single" } },
                   children: [
                     new TextRun({ text: "ADEPTIFY SYSTEMS | CONSULTORIA DIGITAL", bold: true, color: COLORS.PRIMARY, size: 16 }),
-                    new TextRun({ text: "		Proposta Estratègica de Transformació", italics: true, color: "666666", size: 16 })
+                    new TextRun({ text: "\t\tProposta Estratègica de Transformació", italics: true, color: "666666", size: 16 })
                   ]
                 })
               ]
@@ -85,8 +82,8 @@ export class WordProposalGenerator {
                 new Paragraph({
                   border: { top: { color: COLORS.SECONDARY, size: 6, style: "single" } },
                   children: [
-                    new TextRun({ text: `CONFIDENCIAL | \${data.cliente.nombre}`, color: "666666", size: 14 }),
-                    new TextRun({ text: "		Pàgina ", color: "666666", size: 14 }),
+                    new TextRun({ text: `CONFIDENCIAL | ${data.cliente.nombre}`, color: "666666", size: 14 }),
+                    new TextRun({ text: "\t\tPàgina ", color: "666666", size: 14 }),
                     new TextRun({ children: [PageNumber.CURRENT], color: "666666", size: 14 })
                   ]
                 })
@@ -138,7 +135,7 @@ export class WordProposalGenerator {
                       new Paragraph({ children: [new TextRun("Benet Andújar, Director Estratègic")] })
                     ]}),
                     new TableCell({ children: [
-                      new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per \${data.cliente.nombre}`, bold: true })] }),
+                      new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per ${data.cliente.nombre}`, bold: true })] }),
                       new Paragraph({ children: [new TextRun(`Dra. María García López`)] })
                     ]})
                   ]
