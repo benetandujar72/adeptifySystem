@@ -10,6 +10,10 @@ import DocGenerator from './components/DocGenerator';
 import AdminRegistry from './components/AdminRegistry';
 import AutomatedLeadPanel from './components/AutomatedLeadPanel';
 import InteractiveAudit from './components/InteractiveAudit';
+import AutoOnboarding from './components/AutoOnboarding';
+import DigitalTwinDashboard from './components/DigitalTwinDashboard';
+import CustomerSuccessPanel from './components/CustomerSuccessPanel';
+import NetworkExpansion from './components/NetworkExpansion';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
 import InstitutionGate from './components/InstitutionGate';
@@ -511,6 +515,42 @@ const AppContent: React.FC = () => {
             </button>
           )}
 
+          {isAuthenticated && (
+            <button
+              onClick={() => setPhase(Phase.AUTO_ONBOARDING)}
+              className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:text-indigo-600 transition-colors"
+            >
+              Migración
+            </button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => setPhase(Phase.DIGITAL_TWIN)}
+              className="text-[9px] font-black uppercase tracking-widest text-slate-900 hover:text-indigo-600 transition-colors"
+            >
+              Gemelo Digital
+            </button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => setPhase(Phase.CUSTOMER_SUCCESS)}
+              className="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-slate-900 transition-colors"
+            >
+              Success
+            </button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => setPhase(Phase.NETWORK_EXPANSION)}
+              className="text-[9px] font-black uppercase tracking-widest text-cyan-600 hover:text-slate-900 transition-colors"
+            >
+              Expansión
+            </button>
+          )}
+
           <button
             onClick={clearTenantSession}
             className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors"
@@ -568,6 +608,10 @@ const AppContent: React.FC = () => {
         {phase === Phase.DOC_GENERATOR && <DocGenerator />}
         {phase === Phase.ADMIN && <AdminRegistry tenantSlug={tenantSlug ?? undefined} adminScope={adminScope} />}
         {phase === Phase.LEAD_MANAGEMENT && <AutomatedLeadPanel />}
+        {phase === Phase.AUTO_ONBOARDING && <AutoOnboarding />}
+        {phase === Phase.DIGITAL_TWIN && <DigitalTwinDashboard />}
+        {phase === Phase.CUSTOMER_SUCCESS && <CustomerSuccessPanel />}
+        {phase === Phase.NETWORK_EXPANSION && <NetworkExpansion />}
         {phase === Phase.INTERACTIVE_AUDIT && auditToken && (
           <InteractiveAudit 
             token={auditToken} 

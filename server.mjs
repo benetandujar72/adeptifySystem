@@ -466,6 +466,11 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
           "economic_tier": "low | medium | high",
           "pricing_sensitivity": "high | medium | low"
         },
+        "suggested_micro_app": {
+          "type": "substitutions_planner | document_wizard | staff_hours_calc",
+          "title": "Nombre atractivo para la herramienta",
+          "description": "Explicación de por qué esta herramienta les resuelve el problema X"
+        },
         "recommended_solution": "Breve pitch de cómo Adeptify lo resuelve",
         "is_relevant": true/false
       }
@@ -666,6 +671,237 @@ app.post('/api/automation/chat-nurture', express.json(), async (req, res) => {
   } catch (e) {
     console.error('Nurturing agent failed:', e);
     res.status(500).json({ error: 'Agent failed' });
+  }
+});
+
+// --- IMPROVEMENT #9: Autonomous Data Migration ---
+
+app.post('/api/automation/migrate-data', express.json({ limit: '2mb' }), async (req, res) => {
+  const { rawData, tenantSlug, centerKey } = req.body;
+  if (!rawData) return res.status(400).json({ error: 'No data provided' });
+
+  try {
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const prompt = `
+      Actúa como un experto en migración de datos educativos. 
+      A continuación te paso datos brutos extraídos de un archivo de un colegio (puede ser CSV, texto o Excel desordenado).
+      
+      DATOS BRUTOS:
+      ${rawData}
+      
+      TU OBJETIVO:
+      1. Identifica a las personas (profesores/personal).
+      2. Identifica sus roles o asignaturas si aparecen.
+      3. Limpia los nombres y formatos.
+      
+      RESPONDE ÚNICAMENTE EN JSON CON ESTA ESTRUCTURA:
+      {
+        "mapped_staff": [
+          { "full_name": "Nombre completo", "email": "email o null", "department": "departamento o asignatura" }
+        ],
+        "confidence_score": 0-100,
+        "migration_summary": "Breve resumen de lo que has encontrado"
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await geminiResp.json();
+    const migration = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    // Save to Supabase (Optional for now, we'll return it for confirmation)
+    res.status(200).json(migration);
+  } catch (e) {
+    console.error('Migration failed:', e);
+    res.status(500).json({ error: 'AI Migration failed' });
+  }
+});
+
+// --- IMPROVEMENT #10: Digital Twin (Predictive Engine) ---
+
+app.post('/api/automation/digital-twin', express.json(), async (req, res) => {
+  const { tenantSlug, context } = req.body;
+  if (!tenantSlug) return res.status(400).json({ error: 'Tenant is required' });
+
+  try {
+    const currentMonth = new Date().toLocaleString('es-ES', { month: 'long' });
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    
+    const prompt = `
+      Eres el motor de IA predictiva de un "Digital Twin" educativo (Gemelo Digital).
+      Tu objetivo es prever problemas en un centro escolar ANTES de que ocurran, basándote en la estacionalidad y el volumen de trabajo.
+      
+      CONTEXTO DEL CENTRO:
+      - Mes actual: ${currentMonth}
+      - Datos operativos conocidos: ${JSON.stringify(context || { staff: 50, avg_absences: 2 })}
+      
+      INSTRUCCIONES:
+      Genera 2 alertas predictivas de fricción operativa altamente probables para este mes (ej. Evaluaciones, estrés del profesorado, matriculaciones, claustros largos).
+      Para cada alerta, propone un "Protocolo Automático" que Adeptify podría activar hoy para evitar el problema.
+      
+      RESPONDE ÚNICAMENTE EN JSON CON ESTA ESTRUCTURA:
+      {
+        "stress_level": 0-100,
+        "critical_department": "Ej: Secundaria, Secretaría, Dirección",
+        "predictions": [
+          {
+            "risk_title": "Nombre del riesgo",
+            "probability": "Alta/Media",
+            "description": "Por qué va a pasar esto",
+            "suggested_action": "Acción a activar en 1 clic",
+            "time_to_impact": "En X días/semanas"
+          }
+        ]
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await geminiResp.json();
+    const prediction = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    res.status(200).json(prediction);
+  } catch (e) {
+    console.error('Digital Twin analysis failed:', e);
+    res.status(500).json({ error: 'Digital Twin failed' });
+  }
+});
+
+// --- IMPROVEMENT #5: Predictive Churn & Upsell ---
+
+app.post('/api/automation/usage-analysis', express.json(), async (req, res) => {
+  const { tenantSlug, usageMetrics } = req.body;
+  if (!tenantSlug) return res.status(400).json({ error: 'Tenant is required' });
+
+  try {
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const prompt = `
+      Actúa como un experto en Customer Success para SaaS educativo.
+      Analiza los siguientes datos de uso de un centro escolar y predice su estado.
+      
+      MÉTRICAS:
+      ${JSON.stringify(usageMetrics || { last_login_days: 5, docs_generated: 150, active_users: 12 })}
+      
+      INSTRUCCIONES:
+      1. Determina la probabilidad de abandono (Churn Risk).
+      2. Identifica si es el momento de ofrecerle un módulo superior (Upsell Opportunity).
+      3. Escribe un asunto y cuerpo de email breve y persuasivo para este caso.
+      
+      RESPONDE EN JSON:
+      {
+        "health_score": 0-100,
+        "status": "Healthy | At Risk | Upsell Target",
+        "analysis_summary": "Explicación breve",
+        "automated_email": {
+          "send_now": true/false,
+          "subject": "Asunto",
+          "body": "Cuerpo del mensaje"
+        }
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await geminiResp.json();
+    const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    // If upsell target, we could send the email here automatically
+    if (result.automated_email.send_now && usageMetrics.contact_email) {
+       const transporter = getTransporter();
+       if (transporter) {
+          const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
+          await transporter.sendMail({
+            from: { name: 'Adeptify Premium', address: fromEmail },
+            to: usageMetrics.contact_email,
+            subject: result.automated_email.subject,
+            text: result.automated_email.body
+          });
+       }
+    }
+
+    res.status(200).json(result);
+  } catch (e) {
+    console.error('Usage analysis failed:', e);
+    res.status(500).json({ error: 'Analysis failed' });
+  }
+});
+
+// --- IMPROVEMENT #7: Network Graph Prospecting (Expansion) ---
+
+app.post('/api/automation/network-prospecting', express.json(), async (req, res) => {
+  const { referenceCenterName, location } = req.body;
+  if (!referenceCenterName) return res.status(400).json({ error: 'Reference center is required' });
+
+  try {
+    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const prompt = `
+      Actúa como un estratega de expansión comercial para Adeptify.
+      Acabamos de implementar con éxito nuestra IA en el centro: "${referenceCenterName}" ubicado en ${location || 'la zona'}.
+      
+      TU OBJETIVO:
+      1. Simula la búsqueda de 3 centros educativos cercanos o similares en la misma zona.
+      2. Crea un pitch de "Prueba Social por Proximidad". El mensaje debe decir algo como: "Vuestros vecinos de ${referenceCenterName} ya han automatizado X, ¿queréis ver cómo lo hemos hecho?".
+      
+      RESPONDE EN JSON:
+      {
+        "reference_success": "${referenceCenterName}",
+        "expansion_nodes": [
+          {
+            "target_name": "Nombre del centro vecino 1",
+            "reason_for_similarity": "Ej: Ambos son institutos técnicos de gran tamaño",
+            "custom_referral_pitch": "Texto del mensaje de contacto mencionando el éxito cercano"
+          },
+          {
+            "target_name": "Nombre del centro vecino 2",
+            "reason_for_similarity": "Ej: Comparten el mismo clúster educativo",
+            "custom_referral_pitch": "Texto del mensaje"
+          }
+        ],
+        "strategy_note": "Por qué esta zona es prioritaria ahora"
+      }
+    `;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1:generateContent?key=${apiKey}`;
+    const geminiResp = await fetch(geminiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    const data = await geminiResp.json();
+    const expansion = JSON.parse(data.candidates[0].content.parts[0].text);
+
+    res.status(200).json(expansion);
+  } catch (e) {
+    console.error('Network prospecting failed:', e);
+    res.status(500).json({ error: 'Expansion analysis failed' });
   }
 });
 

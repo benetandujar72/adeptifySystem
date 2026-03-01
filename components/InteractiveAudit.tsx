@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
+import DynamicMicroApp from './DynamicMicroApp';
 
 interface InteractiveAuditProps {
   token: string;
@@ -171,6 +172,11 @@ const InteractiveAudit: React.FC<InteractiveAuditProps> = ({ token, onBookConsul
             </button>
           </div>
         </div>
+
+        {/* --- IMPROVEMENT #4: Dynamic Micro-App Magnet --- */}
+        {analysis.suggested_micro_app && (
+          <DynamicMicroApp config={analysis.suggested_micro_app} />
+        )}
       </main>
     </div>
   );
