@@ -28,7 +28,7 @@ const AutomatedLeadPanel: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState('');
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [currentStep, setCurrentStep] = useState<number | null>(null);
-  
+
   const [isTestMode, setIsTestMode] = useState(false);
   const [testEmail, setTestEmail] = useState('bandujar@edutac.es');
 
@@ -65,10 +65,10 @@ const AutomatedLeadPanel: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default' })
       });
-      
+
       clearInterval(stepInterval);
       const data = await resp.json();
-      
+
       if (data.company_name) {
         setLead({
           name: data.company_name,
@@ -97,7 +97,7 @@ const AutomatedLeadPanel: React.FC = () => {
       const doc = new jsPDF();
       const primary = [79, 70, 229]; // Indigo-600
       const slate = [30, 41, 59];   // Slate-800
-      
+
       // PAGE 1: Executive Cover
       doc.setFillColor(primary[0], primary[1], primary[2]);
       doc.rect(0, 0, 210, 60, 'F');
@@ -202,6 +202,35 @@ const AutomatedLeadPanel: React.FC = () => {
     }
   };
 
+  const downloadDocx = async () => {
+    if (!analysis) return;
+    setIsSending(true);
+    setStatusMsg('Generant Informe DOCX de 12 seccions...');
+    try {
+      const resp = await fetch('/api/automation/generate-docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadData: analysis })
+      });
+      if (!resp.ok) throw new Error("Falla al generar el DOCX");
+
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Auditoria_Adeptify_${lead.name.replace(/\s+/g, '_')}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      setStatusMsg('Informe DOCX descarregat amb èxit!');
+    } catch (err: any) {
+      setStatusMsg(`Error: ${err.message}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-8 bg-white rounded-[40px] shadow-2xl border border-slate-100 fade-in">
       <header className="flex justify-between items-center mb-10">
@@ -210,10 +239,10 @@ const AutomatedLeadPanel: React.FC = () => {
           <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Portal de Prospecció i Venda Senior</p>
         </div>
         <div className="flex items-center gap-4">
-           <label className="flex items-center gap-3 cursor-pointer bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-2xl shadow-inner">
-              <input type="checkbox" checked={isTestMode} onChange={(e) => setIsTestMode(e.target.checked)} className="w-5 h-5 accent-indigo-600" />
-              <span className="text-[10px] font-black uppercase text-slate-500">Mode Test</span>
-           </label>
+          <label className="flex items-center gap-3 cursor-pointer bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-2xl shadow-inner">
+            <input type="checkbox" checked={isTestMode} onChange={(e) => setIsTestMode(e.target.checked)} className="w-5 h-5 accent-indigo-600" />
+            <span className="text-[10px] font-black uppercase text-slate-500">Mode Test</span>
+          </label>
         </div>
       </header>
 
@@ -226,14 +255,14 @@ const AutomatedLeadPanel: React.FC = () => {
           <h3 className="text-2xl font-bold mb-2 italic">Captura Intel·ligent de Centres</h3>
           <p className="text-slate-400 mb-8 text-sm max-w-xl">Introdueix la URL d'una escola o institució per generar una proposta executiva basada en èxits reals d'Adeptify.</p>
           <div className="flex gap-4">
-            <input 
-              type="text" 
+            <input
+              type="text"
               className="flex-1 p-5 bg-slate-800 border border-slate-700 rounded-2xl text-white outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all font-mono text-sm"
               placeholder="https://www.centre-educatiu.cat"
               value={scrapeUrl}
               onChange={(e) => setScrapeUrl(e.target.value)}
             />
-            <button 
+            <button
               onClick={handleScrapeAndCapture}
               disabled={isAnalyzing || !scrapeUrl}
               className="bg-indigo-600 px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] hover:bg-indigo-500 transition-all disabled:opacity-50"
@@ -266,11 +295,11 @@ const AutomatedLeadPanel: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Institució</label>
-                  <input type="text" value={lead.name} onChange={(e) => setLead({...lead, name: e.target.value})} className="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-800" />
+                  <input type="text" value={lead.name} onChange={(e) => setLead({ ...lead, name: e.target.value })} className="w-full p-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-800" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Email Target (Editable)</label>
-                  <input type="email" value={lead.email} onChange={(e) => setLead({...lead, email: e.target.value})} className="w-full p-4 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                  <input type="email" value={lead.email} onChange={(e) => setLead({ ...lead, email: e.target.value })} className="w-full p-4 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 outline-none" />
                 </div>
               </div>
             </div>
@@ -292,7 +321,7 @@ const AutomatedLeadPanel: React.FC = () => {
           {/* Right Column: Branded Preview */}
           <div className="lg:col-span-8 bg-white border-2 border-slate-900 rounded-[40px] p-10 shadow-2xl relative">
             <div className="absolute top-0 right-0 bg-slate-900 text-white px-6 py-2 rounded-bl-3xl text-[9px] font-black uppercase tracking-widest">Adeptify Executive Report</div>
-            
+
             <div className="flex justify-between items-start mb-12">
               <h4 className="text-3xl font-serif italic text-slate-900">Anàlisi de Transformació</h4>
               <div className="text-right">
@@ -327,15 +356,22 @@ const AutomatedLeadPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button 
+            <div className="flex flex-col md:flex-row gap-4">
+              <button
                 onClick={generateAndSendProposal}
                 disabled={isSending || (!lead.email && !isTestMode)}
-                className="flex-1 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-indigo-600 transition-all flex items-center justify-center gap-4"
+                className="flex-1 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-4"
               >
-                {isSending ? 'ENVIANT INFORME...' : (isTestMode ? 'ENVIAR PROVA' : 'GENERAR I ENVIAR PROPOSTA REAL')}
+                {isSending ? 'Processant...' : (isTestMode ? 'ENVIAR PROVA (PDF BASIC)' : 'ENVIAR PROPOSTA (PDF BASIC)')}
               </button>
-              <button onClick={() => window.open('https://adeptify.es', '_blank')} className="px-10 py-6 border-2 border-slate-900 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-50 transition-all">Accés Consultoria</button>
+              <button
+                onClick={downloadDocx}
+                disabled={isSending}
+                className="flex-1 py-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 shadow-xl shadow-indigo-900/20"
+              >
+                {isSending ? 'GENERANT DOCX...' : 'DESCARREGAR DOCX (12 SECCIONS)'}
+              </button>
+              <button onClick={() => window.open('https://adeptify.es', '_blank')} className="px-10 py-6 border-2 border-slate-900 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 transition-all">Accés Consultoria</button>
             </div>
           </div>
         </div>
