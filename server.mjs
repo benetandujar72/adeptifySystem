@@ -440,39 +440,72 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
   if (!url) return res.status(400).json({ error: 'URL is required' });
 
   try {
-    const response = await fetch(url);
+    console.info(`[automation] Scraping URL: ${url}`);
+    
+    // 1. Fetch with Browser Headers to avoid blocks (crucial for xtec.cat)
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'es-ES,es;q=0.9,ca;q=0.8,en;q=0.7'
+      },
+      redirect: 'follow'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    $('script, style, nav, footer').remove();
-    const pageText = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
+    // Remove unwanted tags but keep structure for context
+    $('script, style, nav, footer, iframe, noscript').remove();
+    
+    // Extract meaningful text
+    const title = $('title').text();
+    const metaDesc = $('meta[name="description"]').attr('content') || '';
+    const bodyText = $('body').text().replace(/\s+/g, ' ').trim();
+    
+    const pageContent = `TITULO: ${title}\nDESCRIPCION: ${metaDesc}\nCONTENIDO: ${bodyText}`.substring(0, 15000);
+
+    if (pageContent.length < 100) {
+      return res.status(422).json({ error: 'Contenido insuficiente extraído de la web' });
+    }
 
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
     const prompt = `
-      Actúa como un experto en auditoría de eficiencia y ventas B2B. Analiza el siguiente texto de un sitio web de una institución.
-      TEXTO DE LA WEB:
-      ${pageText}
+      Actúa como un experto en auditoría de eficiencia y ventas B2B. 
+      Analiza el siguiente texto extraído de un sitio web de un centro educativo (Àgora/XTEC).
       
-      EXTRAE Y RESPONDE EN JSON:
+      CONTENIDO DE LA WEB:
+      ${pageContent}
+      
+      TU OBJETIVO:
+      1. Identifica el Nombre de la Institución (busca en el título o cabeceras).
+      2. Busca un email de contacto real (terminado en @xtec.cat, @gencat.cat o propio del centro).
+      3. Analiza el contenido para detectar 3 problemas o faltas de digitalización (ej: avisos antiguos, falta de gestiones online, procesos manuales).
+      
+      RESPONDE ÚNICAMENTE EN JSON:
       {
-        "company_name": "Nombre de la institución",
-        "contact_email": "Email válido de contacto (o null si no hay)",
-        "detected_needs": ["3 cuellos de botella u oportunidades de digitalización detectadas"],
-        "main_bottleneck": "El principal problema operativo deducido",
-        "estimated_hours_lost_per_week": "Número entero estimado de horas que pierden en papeleo (ej. 15)",
+        "company_name": "Nombre oficial del centro",
+        "contact_email": "Email encontrado o null",
+        "detected_needs": ["problema 1", "problema 2", "problema 3"],
+        "main_bottleneck": "El principal problema de gestión detectado",
+        "estimated_hours_lost_per_week": "Número entero estimado (ej: 25)",
         "economic_profile": {
-          "institution_type": "private | public | subsidized",
-          "estimated_student_count": "Número estimado de alumnos",
-          "economic_tier": "low | medium | high",
-          "pricing_sensitivity": "high | medium | low"
+          "institution_type": "public",
+          "estimated_student_count": "500",
+          "economic_tier": "low",
+          "pricing_sensitivity": "high"
         },
         "suggested_micro_app": {
-          "type": "substitutions_planner | document_wizard | staff_hours_calc",
-          "title": "Nombre atractivo para la herramienta",
-          "description": "Explicación de por qué esta herramienta les resuelve el problema X"
+          "type": "substitutions_planner",
+          "title": "Gestor de Incidencias XTEC",
+          "description": "Optimiza las guardias y comunicaciones de vuestro centro Àgora."
         },
-        "recommended_solution": "Breve pitch de cómo Adeptify lo resuelve",
-        "is_relevant": true/false
+        "recommended_solution": "Pitch personalizado para el director/a",
+        "is_relevant": true
       }
     `;
 
@@ -487,7 +520,14 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
     });
 
     const geminiData = await geminiResp.json();
+    
+    if (geminiData.error) {
+      console.error('[gemini-error]', geminiData.error);
+      throw new Error(`AI API Error: ${geminiData.error.message}`);
+    }
+
     const analysis = JSON.parse(geminiData.candidates[0].content.parts[0].text);
+    // ... resto de la lógica de guardado ...
 
     // --- IMPROVEMENT #6: AI Video Script Generation ---
     const videoScriptPrompt = `
