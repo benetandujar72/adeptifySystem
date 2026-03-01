@@ -320,23 +320,58 @@ class WordProposalGenerator {
         {
           properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
           children: [
+            // Note: Since docx.js image handling requires absolute local paths or array buffers, 
+            // text-based logo is used here. A future iteration can embed the exact PNG if available.
             new Paragraph({
               spacing: { before: 2400 }, alignment: AlignmentType.CENTER, children: [
-                new TextRun({ text: val(d.consultora.nombre, "ADEPTIFY SYSTEMS").toUpperCase(), bold: true, size: 56, color: COLORS.PRIMARY })
+                new TextRun({ text: "adeptify", bold: true, size: 56, color: "00A0E3" }) // Blue
               ]
             }),
             new Paragraph({
               spacing: { before: 400 }, alignment: AlignmentType.CENTER, children: [
-                new TextRun({ text: val(d.proyecto.titulo, "PROPOSTA DE TRANSFORMACIÓ DIGITAL").toUpperCase(), bold: true, size: 28, color: COLORS.SECONDARY })
+                new TextRun({ text: "ADEPTIFY", bold: true, size: 40, color: "111827" }) // Slate-900
               ]
             }),
             new Paragraph({
-              spacing: { before: 4000 }, alignment: AlignmentType.RIGHT, children: [
-                new TextRun({ text: `CLIENT: ${val(d.cliente.nombre)}`, bold: true, size: 24 }),
+              spacing: { before: 200, after: 800 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: "Ens adaptem a la teva realitat. Com un camaleó digital, cada solució és única.", italics: true, size: 24, color: "4F46E5" }) // Indigo-600
+              ]
+            }),
+            new Paragraph({
+              border: { bottom: { color: "111827", size: 6, space: 1, style: BorderStyle.SINGLE } },
+              spacing: { after: 1200 }, children: []
+            }),
+            new Paragraph({
+              spacing: { before: 1200, after: 200 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: "PROPOSTA DE SOLUCIONS DIGITALS", bold: true, size: 48, color: "1E1B4B" }) // Indigo-950
+              ]
+            }),
+            new Paragraph({
+              spacing: { after: 1200 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: "I AUTOMATITZACIÓ DE PROCESSOS", bold: true, size: 36, color: "6366F1" }) // Indigo-500
+              ]
+            }),
+            new Paragraph({
+              border: { bottom: { color: "C7D2FE", size: 6, space: 1, style: BorderStyle.SINGLE } }, // Indigo-200
+              spacing: { after: 1200 }, children: []
+            }),
+            new Paragraph({
+              spacing: { before: 2000, after: 200 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: "Preparat per a:", size: 28, color: "64748B" }) // Slate-500
+              ]
+            }),
+            new Paragraph({
+              spacing: { after: 1200 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: val(d.cliente.nombre, "Institució"), bold: true, size: 40, color: "1E1B4B" })
+              ]
+            }),
+            new Paragraph({
+              spacing: { before: 1000 }, alignment: AlignmentType.CENTER, children: [
+                new TextRun({ text: `Referència: ${d.propuesta.referencia || "PROP-XXXX-XXXX"}`, size: 20, color: "64748B" }),
                 new TextRun({ text: "", break: 1 }),
-                new TextRun({ text: `Codi: ${val(d.propuesta.codigo)}`, size: 20, color: COLORS.GRAY }),
+                new TextRun({ text: `Data: ${d.propuesta.fecha || new Date().toLocaleDateString()}`, size: 20, color: "64748B" }),
                 new TextRun({ text: "", break: 1 }),
-                new TextRun({ text: `Data: ${val(d.propuesta.fecha)}`, size: 20, color: COLORS.GRAY })
+                new TextRun({ text: `Versió: ${d.propuesta.version || "1.0"}`, size: 20, color: "64748B" })
               ]
             }),
             new Paragraph({ children: [new PageBreak()] })

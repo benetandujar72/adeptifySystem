@@ -88,12 +88,66 @@ const AutomatedLeadPanel: React.FC = () => {
     }
   };
 
+  const buildMappedDocxData = () => {
+    return {
+      consultora: { nombre: "Adeptify Systems", logo_url: "https://adeptify.es/logo.png" },
+      cliente: { nombre: lead.name, contacto: lead.email, sector: "educativo" },
+      propuesta: { fecha: new Date().toLocaleDateString(), referencia: `PROP-${Math.floor(Math.random() * 10000)}`, version: "1.0" },
+      proyecto: {
+        titulo: "Transformació Digital Integral",
+        resumen: analysis?.custom_pitch || "Proposta estratègica generada per a l'eficiència operativa.",
+        alcance: "Digitalització, automatització de processos i implementació IA",
+        inversion_total: analysis?.estimated_budget_range || "A pressupostar"
+      },
+      diagnostico: {
+        entorno: `Anàlisi automàtic del centre ${lead.name}`,
+        procesos: `S'ha detectat que el principal coll d'ampolla és: ${analysis?.main_bottleneck || "Processos manuals o desconnectats."}`,
+        necesidades: (analysis?.needs_detected || []).map((n: string, i: number) => ({ id: `N${i + 1}`, descripcion: n, impacto: "Alt", prioridad: "Alta" }))
+      },
+      solucion: {
+        vision: "Crear un ecosistema digital autònom i eficient.",
+        componentes: {
+          automatizacion: "Eliminació de tasques manuals repetitives.",
+          plataforma: "Integració de campus virtual o portals de comunicació.",
+          integraciones: "Connexió nativa amb eines existents.",
+          ia_datos: "Anàlisi predictiu i bessons digitals (Digital Twin)."
+        },
+        diferenciadores: [
+          { nombre: "Tecnologia Adeptify", valor: "Intel·ligència Artificial nativa" },
+          { nombre: "Velocitat", valor: "Desplegament ràpid" }
+        ]
+      },
+      metodologia: {
+        enfoque: "Agile, iteratiu i centrat en el ROI.",
+        fases: [
+          { nombre: "Auditoria", duracion: "1-2 setmanes", descripcion: "Anàlisi profund", entregables: "Informe detallat" },
+          { nombre: "Desplegament", duracion: "2-4 setmanes", descripcion: "Implementació tècnica", entregables: "Sistemes en producció" },
+          { nombre: "Avaluació", duracion: "Continua", descripcion: "Seguiment de KPIs", entregables: "Dashboards ROI" }
+        ]
+      },
+      cronograma: { fases: [], hitos: "Revisió trimestral i avaluació contínua" },
+      equipo: [
+        { rol: "Consultor AI", nombre: "Equip Adeptify", dedicacion: "Alta", experiencia: "Expert" }
+      ],
+      economia: {
+        conceptos: (analysis?.recommended_services || []).map((s: string) => ({ concepto: s, importe: "A definir", porcentaje: "N/A" })),
+        condiciones_pago: "A acordar en la sessió estratègica.",
+        roi_detalle: "S'analitzarà el ROI específic mitjançant eines de Digital Twin."
+      },
+      garantias: { descripcion: "Acompanyament tècnic garantit." },
+      casos_exito: { educativo: "Implementacions exitoses a més de 20 centres catalans.", empresarial: "Múltiples automatitzacions industrials resoltes." },
+      condiciones: { propiedad_intelectual: "Propietat d'Adeptify", confidencialidad: "Estricta" },
+      personalizacion: { color_primary: "1E1B4B", color_secondary: "4338CA", color_accent: "818CF8" }
+    };
+  };
+
   const generateAndSendProposal = async () => {
     if (!analysis) return;
     setIsSending(true);
     setStatusMsg('Generant Informe Professional Adeptify...');
-
+    setStatusMsg('Generant proposta oficial...');
     try {
+      // 1. Generate local PDF for preview
       const doc = new jsPDF();
       const primary = [79, 70, 229]; // Indigo-600
       const slate = [30, 41, 59];   // Slate-800
@@ -138,15 +192,20 @@ const AutomatedLeadPanel: React.FC = () => {
 
       // PAGE 2: Portfolio & Contact
       doc.addPage();
-      doc.setFillColor(248, 250, 252);
-      doc.rect(0, 0, 210, 40, 'F');
-      doc.setTextColor(slate[0], slate[1], slate[2]);
+      y = 30;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("CREDENCIALS I PROJECTES D'ÈXIT", 20, 25);
+      doc.setFontSize(14);
+      doc.text("3. ELS NOSTRES SERVEIS PER A CENTRES EDUCATIUS", 20, y);
 
-      y = 60;
-      PORTFOLIO.forEach(p => {
+      const portfolio = [
+        { name: "Automatització de Processos", action: "Sincronització preinscripcions ERP/SGA, control d'assistència, generació massiva d'informes." },
+        { name: "Digital Twin & Quadre de Comanament", action: "Panells interactius amb indicadors acadèmics i financers en temps real." },
+        { name: "Portal Famílies UNIFICAT", action: "Comunicació AFA/Centre en un únic flux digital sense friccions." },
+        { name: "Formació Docent IA", action: "Capacitació pràctica per reduir la càrrega administrativa al professorat." }
+      ];
+
+      y += 15;
+      portfolio.forEach(p => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.text(p.name, 20, y);
@@ -157,7 +216,6 @@ const AutomatedLeadPanel: React.FC = () => {
         y += 25;
       });
 
-      // Contact & CTA Box
       y = 180;
       doc.setFillColor(primary[0], primary[1], primary[2]);
       doc.rect(20, y, 170, 60, 'F');
@@ -179,6 +237,27 @@ const AutomatedLeadPanel: React.FC = () => {
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       const recipient = isTestMode ? testEmail : lead.email;
 
+      // 2. Also generate the pure DOCX in background so we attach it to the email
+      let docxBase64 = null;
+      try {
+        const docxResp = await fetch('/api/automation/generate-docx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadData: buildMappedDocxData() })
+        });
+        if (docxResp.ok) {
+          const blob = await docxResp.blob();
+          const arrayBuffer = await blob.arrayBuffer();
+          // Convert ArrayBuffer to Base64 in browser
+          let binary = '';
+          const bytes = new Uint8Array(arrayBuffer);
+          for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          docxBase64 = window.btoa(binary);
+        }
+      } catch (e) { console.error("Could not assemble DOCX for email attachment", e); }
+
       const resp = await fetch('/api/leads/send-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,8 +265,9 @@ const AutomatedLeadPanel: React.FC = () => {
           leadId: lead.id,
           email: recipient,
           subject: `${isTestMode ? '[TEST] ' : ''}Informe Estratègic Adeptify: ${lead.name}`,
-          body: `Hola,\n\nAdjuntem la proposta de transformació digital preparada per Adeptify.es.\n\nSalutacions.`,
+          body: `Hola,\n\nAdjuntem la proposta de transformació digital preparada per Adeptify.es en format Word Document per a la vostra fàcil edició.\n\nSalutacions.`,
           pdfBase64,
+          docxBase64,
           proposalData: analysis
         })
       });
@@ -207,10 +287,13 @@ const AutomatedLeadPanel: React.FC = () => {
     setIsSending(true);
     setStatusMsg('Generant Informe DOCX de 12 seccions...');
     try {
+      // Map simple lead data to the strict DOCX generator schema
+      const mappedDocxData = buildMappedDocxData();
+
       const resp = await fetch('/api/automation/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadData: analysis })
+        body: JSON.stringify({ leadData: mappedDocxData })
       });
       if (!resp.ok) throw new Error("Falla al generar el DOCX");
 

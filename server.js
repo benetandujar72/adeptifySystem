@@ -125,7 +125,7 @@ app.post('/api/automation/network-prospecting', async (req, res) => {
 });
 
 app.post('/api/leads/send-proposal', async (req, res) => {
-  const { leadId, email, subject, body, pdfBase64, proposalData } = req.body;
+  const { leadId, email, subject, body, pdfBase64, docxBase64, proposalData } = req.body;
   try {
     const host = process.env.SMTP_HOST;
     if (!host) throw new Error("SMTP No Configurat");
@@ -136,7 +136,15 @@ app.post('/api/leads/send-proposal', async (req, res) => {
     if (supabase && leadId) await supabase.from('lead_interactions').insert({ id: interactionId, lead_id: leadId, interaction_type: 'proposal_sent', content_summary: subject, payload_json: proposalData });
 
     const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}<br><br><img src="https://consultor.adeptify.es/api/crm/track/${interactionId}.png" width="1" height="1"/></div>`;
-    await transporter.sendMail({ from: process.env.SMTP_USER, to: email, subject, html, attachments: pdfBase64 ? [{ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' }] : [] });
+
+    let attachments = [];
+    if (docxBase64) {
+      attachments.push({ filename: 'Proposta_Adeptify.docx', content: docxBase64, encoding: 'base64' });
+    } else if (pdfBase64) {
+      attachments.push({ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' });
+    }
+
+    await transporter.sendMail({ from: process.env.SMTP_USER, to: email, subject, html, attachments });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

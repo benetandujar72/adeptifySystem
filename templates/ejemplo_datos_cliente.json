@@ -1,0 +1,196 @@
+{
+  "consultora": {
+    "nombre": "DigitalPro Consulting",
+    "subtitulo": "Transformación Digital con Impacto Medible",
+    "direccion": "Calle Innovación 42, 08018 Barcelona",
+    "telefono": "+34 93 000 1234",
+    "email": "info@digitalpro.es",
+    "web": "https://digitalpro.es"
+  },
+  "cliente": {
+    "nombre": "Universidad Politécnica del Norte",
+    "sector": "educativo",
+    "contacto_nombre": "Dra. María García López",
+    "contacto_cargo": "Vicerrectora de Transformación Digital",
+    "contacto_email": "mgarcia@upn.edu"
+  },
+  "propuesta": {
+    "codigo": "PROP-2026-0042",
+    "fecha": "01/03/2026",
+    "version": "1.0",
+    "validez_dias": 45,
+    "moneda": "EUR"
+  },
+  "proyecto": {
+    "titulo": "Digitalización Integral del Campus Virtual y Automatización de Procesos Académicos",
+    "resumen": "La Universidad Politécnica del Norte enfrenta el desafío de modernizar sus sistemas académicos y administrativos para satisfacer las expectativas de una comunidad educativa cada vez más digitalizada. Esta propuesta articula una solución integral que abarca la renovación del campus virtual, la automatización de procesos de matrícula y gestión académica, y la implementación de analítica avanzada para la toma de decisiones institucionales.",
+    "alcance": "Campus virtual, matrícula online, gestión académica automatizada, analítica institucional, integración con SGA existente",
+    "duracion": "20 semanas",
+    "inversion_total": "78.500 EUR",
+    "roi_proyectado": "Reducción del 40% en carga administrativa y mejora del 25% en satisfacción estudiantil en 12 meses"
+  },
+  "diagnostico": {
+    "entorno": "El sector de educación superior está experimentando una transformación acelerada impulsada por la digitalización post-pandemia, la competencia de modelos híbridos y las nuevas expectativas de los estudiantes nativos digitales. Las instituciones que no modernicen sus plataformas enfrentan riesgo de pérdida de competitividad en captación de talento.",
+    "procesos": "Los procesos actuales de matrícula requieren intervención manual en un 70% de los casos. La generación de actas y certificaciones tarda una media de 5 días laborables. El sistema de gestión académica (SGA) opera de forma aislada sin integración con el campus virtual ni con los sistemas de comunicación institucional.",
+    "necesidades": [
+      {
+        "id": "N-01",
+        "descripcion": "Automatización completa del proceso de matrícula online",
+        "impacto": "70% de procesos manuales, 15 días de ciclo medio",
+        "prioridad": "Alta"
+      },
+      {
+        "id": "N-02",
+        "descripcion": "Renovación de la plataforma de campus virtual (LMS)",
+        "impacto": "Plataforma obsoleta con tasa de abandono del 35%",
+        "prioridad": "Alta"
+      },
+      {
+        "id": "N-03",
+        "descripcion": "Dashboard de analítica académica para equipos directivos",
+        "impacto": "Decisiones basadas en datos dispersos y no actualizados",
+        "prioridad": "Media"
+      },
+      {
+        "id": "N-04",
+        "descripcion": "Integración bidireccional SGA-LMS-Comunicaciones",
+        "impacto": "Duplicación de datos, inconsistencias en actas",
+        "prioridad": "Alta"
+      }
+    ]
+  },
+  "solucion": {
+    "vision": "Una plataforma educativa integrada que conecta el campus virtual, la gestión académica y la analítica institucional en un ecosistema único, automatizando los procesos repetitivos y proporcionando una experiencia fluida para estudiantes, docentes y personal administrativo.",
+    "componentes": {
+      "automatizacion": "Implementación de flujos automatizados con n8n para los procesos de matrícula, generación de actas, envío de notificaciones y sincronización de datos entre sistemas. Se estima una reducción del 85% en intervención manual.",
+      "plataforma": "Migración y personalización de Moodle 4.x como LMS central, con interfaz responsive, gamificación, aula virtual con videoconferencia integrada y repositorio de contenidos con búsqueda inteligente.",
+      "integraciones": "API REST bidireccional entre el SGA (Sigma), Moodle, Microsoft 365 (correo institucional) y el sistema de nóminas. Middleware de integración con monitorización en tiempo real.",
+      "ia_datos": "Chatbot de atención al estudiante 24/7 con procesamiento de lenguaje natural, sistema de alertas tempranas de abandono basado en analítica predictiva, y dashboards de BI para el equipo directivo con Metabase."
+    },
+    "arquitectura": "Arquitectura basada en microservicios desplegados en contenedores Docker sobre infraestructura cloud (AWS/Azure). API Gateway centralizado, base de datos PostgreSQL con réplica de lectura, y capa de caché con Redis para optimizar rendimiento.",
+    "diferenciadores": [
+      {
+        "nombre": "Especialización educativa",
+        "valor": "Equipo con más de 50 proyectos completados en el sector educativo superior"
+      },
+      {
+        "nombre": "Enfoque de adopción",
+        "valor": "Programa de gestión del cambio incluido con formación para docentes y PAS"
+      },
+      {
+        "nombre": "Analítica predictiva",
+        "valor": "Modelo de detección temprana de abandono con 89% de precisión validada"
+      }
+    ]
+  },
+  "metodologia": {
+    "enfoque": "Metodología Agile adaptada al entorno educativo con sprints de 2 semanas, demos quincenales al comité de transformación digital, y validación continua con usuarios reales (estudiantes y docentes). Se combina con Design Thinking en la fase de descubrimiento para garantizar que las soluciones estén centradas en la experiencia del usuario.",
+    "fases": [
+      {
+        "nombre": "Descubrimiento y Planificación",
+        "duracion": "3 semanas",
+        "descripcion": "Talleres con stakeholders, análisis de procesos AS-IS/TO-BE, definición de KPIs, plan de proyecto detallado",
+        "entregables": "Documento de requerimientos, plan de proyecto, definición de KPIs"
+      },
+      {
+        "nombre": "Diseño y Prototipado",
+        "duracion": "3 semanas",
+        "descripcion": "Diseño UX/UI del campus virtual, arquitectura técnica, prototipos interactivos validados con usuarios",
+        "entregables": "Prototipos Figma, documento de arquitectura, plan de integraciones"
+      },
+      {
+        "nombre": "Desarrollo e Integración",
+        "duracion": "8 semanas",
+        "descripcion": "4 sprints de desarrollo: LMS, automatización matrícula, integraciones, chatbot IA",
+        "entregables": "Incrementos funcionales por sprint, documentación técnica"
+      },
+      {
+        "nombre": "Pruebas y QA",
+        "duracion": "2 semanas",
+        "descripcion": "Pruebas funcionales, de rendimiento, seguridad y UAT con usuarios finales",
+        "entregables": "Informes de pruebas, plan de correcciones, aprobación UAT"
+      },
+      {
+        "nombre": "Despliegue",
+        "duracion": "2 semanas",
+        "descripcion": "Migración de datos, despliegue gradual por facultades, soporte intensivo on-site",
+        "entregables": "Entorno de producción, plan de rollback, guías de usuario"
+      },
+      {
+        "nombre": "Estabilización y Transferencia",
+        "duracion": "2 semanas",
+        "descripcion": "Monitorización, optimización, formación del equipo IT interno, transferencia de conocimiento",
+        "entregables": "Documentación completa, vídeos formativos, certificados de formación"
+      }
+    ]
+  },
+  "cronograma": {
+    "fases": [
+      { "fase": "Descubrimiento", "inicio": "17/03/2026", "fin": "04/04/2026", "entregables": "Requerimientos, Plan de proyecto" },
+      { "fase": "Diseño", "inicio": "07/04/2026", "fin": "25/04/2026", "entregables": "Prototipos, Arquitectura" },
+      { "fase": "Desarrollo", "inicio": "28/04/2026", "fin": "20/06/2026", "entregables": "4 incrementos funcionales" },
+      { "fase": "Pruebas", "inicio": "22/06/2026", "fin": "04/07/2026", "entregables": "Informes QA, UAT aprobado" },
+      { "fase": "Despliegue", "inicio": "06/07/2026", "fin": "18/07/2026", "entregables": "Producción activa" },
+      { "fase": "Estabilización", "inicio": "20/07/2026", "fin": "01/08/2026", "entregables": "Documentación, Formación" }
+    ],
+    "hitos": "Hito 1: Aprobación de requerimientos (04/04). Hito 2: Validación de prototipos (25/04). Hito 3: MVP campus virtual (23/05). Hito 4: UAT aprobado (04/07). Hito 5: Go-Live (18/07). Hito 6: Cierre de proyecto (01/08)."
+  },
+  "equipo": [
+    { "rol": "Director de Proyecto", "nombre": "Carlos Mendoza", "dedicacion": "50%", "experiencia": "12 años, EdTech" },
+    { "rol": "Arquitecto de Soluciones", "nombre": "Ana Ruiz Torres", "dedicacion": "60%", "experiencia": "10 años, Cloud/SaaS" },
+    { "rol": "Consultor Funcional Educativo", "nombre": "Dr. Pablo Vega", "dedicacion": "80%", "experiencia": "8 años, Ed. Superior" },
+    { "rol": "Desarrollador Full-Stack Senior", "nombre": "Laura Chen", "dedicacion": "100%", "experiencia": "7 años, PHP/React" },
+    { "rol": "Especialista UX/UI", "nombre": "Marina Kovacs", "dedicacion": "60%", "experiencia": "6 años, Plataformas educativas" },
+    { "rol": "Ingeniero de Datos / IA", "nombre": "Sergio Morales", "dedicacion": "40%", "experiencia": "5 años, ML/NLP" }
+  ],
+  "economia": {
+    "conceptos": [
+      { "concepto": "Consultoría, Diseño y Gestión de Proyecto", "importe": "18.500 EUR", "porcentaje": "23.6%" },
+      { "concepto": "Desarrollo e Integración", "importe": "32.000 EUR", "porcentaje": "40.8%" },
+      { "concepto": "Licencias y Plataformas Cloud (1er año)", "importe": "8.500 EUR", "porcentaje": "10.8%" },
+      { "concepto": "Capacitación y Gestión del Cambio", "importe": "7.500 EUR", "porcentaje": "9.6%" },
+      { "concepto": "Soporte Post-Implementación (3 meses)", "importe": "5.000 EUR", "porcentaje": "6.4%" },
+      { "concepto": "Contingencia (10%)", "importe": "7.000 EUR", "porcentaje": "8.9%" }
+    ],
+    "condiciones_pago": "30% a la firma del contrato. 30% tras aprobación de prototipos (Hito 2). 30% tras Go-Live (Hito 5). 10% tras cierre de proyecto y aceptación final (Hito 6). Facturación a 30 días. IVA no incluido.",
+    "roi_detalle": "Año 1: Reducción de 2 FTE en tareas administrativas (ahorro estimado 56.000 EUR). Año 2: Reducción adicional del 15% en abandono estudiantil (impacto en ingresos: +120.000 EUR). Año 3: Plataforma autoescalable sin costes adicionales de personal. Payback estimado: 14 meses."
+  },
+  "garantias": {
+    "descripcion": "Garantía de 6 meses post Go-Live cubriendo defectos de desarrollo, incidencias de integración y soporte correctivo. Excluye cambios de alcance, nuevas funcionalidades y modificaciones en sistemas de terceros.",
+    "sla": [
+      { "nivel": "Crítico (P1)", "descripcion": "Sistema caído o datos corruptos", "tiempo_respuesta": "1 hora", "tiempo_resolucion": "4 horas" },
+      { "nivel": "Alto (P2)", "descripcion": "Funcionalidad clave degradada", "tiempo_respuesta": "2 horas", "tiempo_resolucion": "8 horas" },
+      { "nivel": "Medio (P3)", "descripcion": "Funcionalidad secundaria afectada", "tiempo_respuesta": "4 horas", "tiempo_resolucion": "3 días" },
+      { "nivel": "Bajo (P4)", "descripcion": "Mejora o ajuste menor", "tiempo_respuesta": "8 horas", "tiempo_resolucion": "5 días" }
+    ]
+  },
+  "riesgos": [
+    { "riesgo": "Resistencia al cambio por parte del profesorado", "probabilidad": "Alta", "impacto": "Alto", "mitigacion": "Programa de embajadores digitales + formación gamificada + soporte on-site" },
+    { "riesgo": "Problemas de integración con SGA Sigma", "probabilidad": "Media", "impacto": "Alto", "mitigacion": "POC de integración en fase de Diseño + middleware con reintentos automáticos" },
+    { "riesgo": "Retraso en entrega de contenidos por departamentos", "probabilidad": "Alta", "impacto": "Medio", "mitigacion": "Calendario de contenidos con 4 semanas de buffer + plantillas prediseñadas" },
+    { "riesgo": "Pico de carga en período de matrícula", "probabilidad": "Media", "impacto": "Alto", "mitigacion": "Autoescalado cloud + pruebas de carga con 3x tráfico esperado" }
+  ],
+  "casos_exito": {
+    "empresarial": "Grupo Industrial Martínez: Automatización de 23 procesos administrativos con n8n, reducción del 65% en tiempo de procesamiento de pedidos y eliminación del 90% de errores de transcripción manual. ROI alcanzado en 8 meses.",
+    "educativo": "Escuela de Negocios IESB: Migración completa a campus virtual Moodle 4.x con matrícula automatizada. Reducción del tiempo de matrícula de 45 minutos a 8 minutos. Incremento del 30% en satisfacción estudiantil (NPS de 42 a 67).",
+    "certificaciones": "Partner certificado Moodle. AWS Solutions Architect. Certificación ISO 27001 en gestión de seguridad. Miembro de EDEN (European Distance and E-Learning Network)."
+  },
+  "condiciones": {
+    "propiedad_intelectual": "Todo el código fuente desarrollado específicamente para este proyecto será propiedad exclusiva de la Universidad tras el pago total. Las librerías y frameworks de código abierto se rigen por sus respectivas licencias. Los módulos reutilizables genéricos de la consultora se licencian en uso perpetuo.",
+    "confidencialidad": "Ambas partes se comprometen a mantener la confidencialidad de toda información intercambiada, incluyendo datos académicos de estudiantes, información institucional estratégica y detalles técnicos de la implementación. Vigencia: duración del proyecto + 3 años.",
+    "supuestos": "Se asume acceso al SGA Sigma con permisos de API. La universidad proporcionará un entorno de staging dedicado. Los contenidos formativos serán proporcionados por los departamentos según el calendario acordado. La infraestructura cloud será contratada directamente por la universidad."
+  },
+  "proximos_pasos": [
+    { "paso": 1, "accion": "Revisión y aprobación de la propuesta", "responsable": "Vicerrectorado", "fecha_limite": "15/03/2026" },
+    { "paso": 2, "accion": "Reunión de aclaración técnica", "responsable": "Ambas partes", "fecha_limite": "18/03/2026" },
+    { "paso": 3, "accion": "Firma del contrato", "responsable": "Servicios Jurídicos", "fecha_limite": "25/03/2026" },
+    { "paso": 4, "accion": "Kick-off del proyecto", "responsable": "DigitalPro", "fecha_limite": "31/03/2026" }
+  ],
+  "personalizacion": {
+    "color_primary": null,
+    "color_secondary": null,
+    "color_accent": null,
+    "logo_path": null,
+    "logo_cliente_path": null
+  }
+}

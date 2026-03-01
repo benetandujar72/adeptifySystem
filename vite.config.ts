@@ -28,8 +28,8 @@ export default defineConfig(({ command }) => {
     },
     plugins: [react()],
     // Dev-only runtime env.js (no secrets)
-    configureServer: (server) => {
-      server.middlewares.use('/env.js', (_req, res) => {
+    configureServer: (server: any) => {
+      server.middlewares.use('/env.js', (_req: any, res: any) => {
         res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
         res.setHeader('Cache-Control', 'no-store');
         const safeEnv = {
