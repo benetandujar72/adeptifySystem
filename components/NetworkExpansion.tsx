@@ -78,7 +78,7 @@ const NetworkExpansion: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {expansionData.expansion_nodes.map((node: any, i: number) => (
+                {expansionData?.expansion_nodes?.map((node: any, i: number) => (
                   <div key={i} className="p-6 bg-slate-900 text-white rounded-3xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
                       <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>

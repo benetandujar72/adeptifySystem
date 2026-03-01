@@ -311,7 +311,7 @@ app.post('/api/leads/analyze', express.json(), async (req, res) => {
 
   try {
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const model = "gemini-3.1"; // Updated to latest 3.1 version
+    const model = "gemini-1.5-flash"; // Fixed to a valid API model ID
     
     const prompt = `
       Analiza el siguiente perfil de cliente potencial para Adeptify (Consultoría Educativa y Tecnológica).
