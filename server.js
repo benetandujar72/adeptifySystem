@@ -1,4 +1,3 @@
-
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -33,35 +32,65 @@ const getSupabaseAdmin = () => {
 
 // --- EMAIL TRANSPORTER ---
 const getTransporter = () => {
-  const host = (process.env.SMTP_HOST || '').trim();
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
   const user = (process.env.SMTP_USER || '').trim();
   const pass = process.env.SMTP_PASS || '';
-  if (!host) return null;
-  return nodemailer.createTransport({ host, port, secure, auth: user ? { user, pass } : undefined });
+  if (!process.env.SMTP_HOST) return null;
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
+    auth: user ? { user, pass } : undefined
+  });
 };
 
-// --- WORD GENERATOR SERVICE ---
-const COLORS = {
-  PRIMARY: "1B3A5C",
-  SECONDARY: "2E75B6",
-  LIGHT_BG: "E8F0FE"
-};
+// --- GEMINI RESILIENT CALLER ---
+async function callGemini(prompt, modelId = "gemini-1.5-pro") {
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    })
+  });
+
+  const data = await response.json();
+  
+  if (data.error) {
+    console.error(`[Gemini Error - ${modelId}]`, JSON.stringify(data.error));
+    // Fallback to stable model if Pro Preview fails
+    if (modelId.includes("3.1")) return callGemini(prompt, "gemini-1.5-pro");
+    throw new Error(data.error.message);
+  }
+
+  if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+    console.error("[Gemini Error] Unexpected response structure:", JSON.stringify(data));
+    throw new Error("Stucture Error: No candidates returned from IA");
+  }
+
+  const rawText = data.candidates[0].content.parts[0].text;
+  try {
+    return JSON.parse(rawText.replace(/```json|```/g, "").trim());
+  } catch (e) {
+    console.error("[Gemini Error] Invalid JSON returned:", rawText);
+    throw new Error("Invalid JSON from IA");
+  }
+}
+
+// --- WORD GENERATOR ---
+const COLORS = { PRIMARY: "1B3A5C", SECONDARY: "2E75B6", LIGHT_BG: "E8F0FE" };
 class WordProposalGenerator {
   async generate(data) {
     const doc = new Document({
       styles: {
         paragraphStyles: [
-          {
-            id: "Normal", run: { size: 22, font: "Arial" },
-            paragraph: { alignment: AlignmentType.JUSTIFIED, spacing: { line: 276, before: 120, after: 120 }, indent: { firstLine: 420 } }
-          },
-          {
-            id: "Heading1", run: { size: 32, bold: true, color: COLORS.PRIMARY },
-            paragraph: { spacing: { before: 400, after: 200 }, border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single" } } }
-          }
+          { id: "Normal", run: { size: 22, font: "Arial" }, paragraph: { alignment: AlignmentType.JUSTIFIED, spacing: { line: 276, before: 120, after: 120 }, indent: { firstLine: 420 } } },
+          { id: "Heading1", run: { size: 32, bold: true, color: COLORS.PRIMARY }, paragraph: { spacing: { before: 400, after: 200 }, border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single" } } } }
         ]
       },
       sections: [{
@@ -93,7 +122,7 @@ class WordProposalGenerator {
             width: { size: 9360, type: WidthType.DXA },
             rows: [new TableRow({ children: [
               new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: "Per Adeptify Systems SLU", bold: true })] })] }),
-              new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per \${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
+              new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per ${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
             ]})]
           })
         ]
@@ -103,41 +132,30 @@ class WordProposalGenerator {
   }
 }
 
-// --- API ENDPOINTS ---
+// --- ENDPOINTS ---
 
-// CRM Tracking Pixel
-app.get('/api/crm/track/:id.png', async (req, res) => {
-  const supabase = getSupabaseAdmin();
-  if (supabase) {
-    await supabase.from('lead_interactions').update({ metadata_json: { opened_at: new Date().toISOString() } }).eq('id', req.params.id);
-  }
-  const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
-  res.writeHead(200, { 'Content-Type': 'image/gif', 'Cache-Control': 'no-cache' }).end(pixel);
-});
-
-// Capture & Scrape
 app.post('/api/automation/capture', express.json(), async (req, res) => {
   const { url } = req.body;
   try {
-    const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
-    const html = await resp.text();
+    const fetchResp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const html = await fetchResp.text();
     const $ = cheerio.load(html);
     const text = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
-    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const prompt = `Analitza aquesta web i retorna JSON: company_name, contact_email, detected_needs[], custom_pitch, estimated_budget_range. TEXT: \${text}`;
-    const gUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=\${apiKey}`;
-    const gResp = await fetch(gUrl, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }) });
-    const gData = await gResp.json();
-    res.json(JSON.parse(gData.candidates[0].content.parts[0].text));
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    
+    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs (array), recommended_services (array), custom_pitch, estimated_budget_range. TEXT: ${text}`;
+    const result = await callGemini(prompt, "gemini-3.1-pro-preview");
+    res.json(result);
+  } catch (e) {
+    console.error("[Capture Error]", e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// Send Proposal
 app.post('/api/leads/send-proposal', express.json({ limit: '10mb' }), async (req, res) => {
   const { leadId, email, subject, body, pdfBase64, proposalData } = req.body;
   try {
     const transporter = getTransporter();
-    if (!transporter) throw new Error("No SMTP");
+    if (!transporter) throw new Error("Email service not configured");
     
     const supabase = getSupabaseAdmin();
     let interactionId = crypto.randomUUID();
@@ -147,7 +165,7 @@ app.post('/api/leads/send-proposal', express.json({ limit: '10mb' }), async (req
     }
 
     const domain = req.headers.host.includes('localhost') ? 'http://localhost:2705' : 'https://consultor.adeptify.es';
-    const html = `<div style="font-family:sans-serif;">\${body.replace(/\n/g, '<br>')}<br><br><img src="\${domain}/api/crm/track/\${interactionId}.png" width="1" height="1"/></div>`;
+    const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}<br><br><img src="${domain}/api/crm/track/${interactionId}.png" width="1" height="1"/></div>`;
 
     await transporter.sendMail({
       from: process.env.SMTP_USER,
@@ -156,12 +174,22 @@ app.post('/api/leads/send-proposal', express.json({ limit: '10mb' }), async (req
       html,
       attachments: pdfBase64 ? [{ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' }] : []
     });
-
     res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error("[Mail Error]", e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// DOCX Generation
+app.get('/api/crm/track/:id.png', async (req, res) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (supabase) await supabase.from('lead_interactions').update({ metadata_json: { opened_at: new Date().toISOString() } }).eq('id', req.params.id);
+  } catch (e) {}
+  const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  res.writeHead(200, { 'Content-Type': 'image/gif', 'Cache-Control': 'no-cache' }).end(pixel);
+});
+
 app.post('/api/automation/generate-docx', express.json(), async (req, res) => {
   try {
     const generator = new WordProposalGenerator();
@@ -176,8 +204,8 @@ app.use(express.static(distDir));
 app.get('*', (req, res) => {
   try {
     const html = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
-    res.send(html.replace(/\"\/env\.js\"/g, `\"/env.js?v=\${STARTUP_TS}\"`));
+    res.send(html.replace(/\"\/env\.js\"/g, `\"/env.js?v=${STARTUP_TS}\"`));
   } catch(e) { res.sendFile(path.join(distDir, 'index.html')); }
 });
 
-app.listen(PORT, () => console.log(`Server running on \${PORT}`));
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
