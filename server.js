@@ -1,21 +1,18 @@
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
+const cheerio = require('cheerio');
+const docx = require('docx');
 
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs/promises';
-import nodemailer from 'nodemailer';
-import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-import * as cheerio from 'cheerio';
-import { 
+const { 
   Document, Packer, Paragraph, TextRun, HeadingLevel, 
   AlignmentType, Table, TableRow, TableCell, WidthType, 
   ShadingType, PageBreak, Header, Footer, PageNumber, 
-  TableOfContents
-} from "docx";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+  TableOfContents 
+} = docx;
 
 const PORT = Number(process.env.PORT || 2705);
 const STARTUP_TS = Date.now();
@@ -33,14 +30,11 @@ const getSupabaseAdmin = () => {
   return cachedSupabase;
 };
 
-// --- WORD GENERATOR SERVICE (INTEGRATED) ---
+// --- WORD GENERATOR SERVICE ---
 const COLORS = {
   PRIMARY: "1B3A5C",
   SECONDARY: "2E75B6",
-  ACCENT: "4A90D9",
-  DARK: "1A1A1A",
-  LIGHT_BG: "E8F0FE",
-  BORDER: "B0C4DE"
+  LIGHT_BG: "E8F0FE"
 };
 
 class WordProposalGenerator {
@@ -51,7 +45,7 @@ class WordProposalGenerator {
           {
             id: "Normal",
             name: "Normal",
-            run: { size: 22, font: "Arial", color: COLORS.DARK },
+            run: { size: 22, font: "Arial", color: "1A1A1A" },
             paragraph: { 
               alignment: AlignmentType.JUSTIFIED, 
               spacing: { line: 276, before: 120, after: 120 },
@@ -93,7 +87,7 @@ class WordProposalGenerator {
           ]}),
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("1. RESUM EXECUTIU")] }),
           new Paragraph({ children: [new TextRun(data.proyecto?.resumen || "[Pendent]")] }),
-          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("7. PROPUESTA ECONÒMICA")] }),
+          new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("7. PROPOSTA ECONÒMICA")] }),
           new Table({
             width: { size: 9360, type: WidthType.DXA },
             rows: [
@@ -116,7 +110,7 @@ class WordProposalGenerator {
             rows: [
               new TableRow({ children: [
                 new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: "Per Adeptify Systems SLU", bold: true })] })] }),
-                new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per ${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
+                new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per \${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
               ]})
             ]
           })
@@ -127,40 +121,8 @@ class WordProposalGenerator {
   }
 }
 
-// --- APP LOGIC ---
+// --- API ENDPOINTS ---
 
-const getTransporter = () => {
-  const host = (process.env.SMTP_HOST || '').trim();
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
-  const user = (process.env.SMTP_USER || '').trim();
-  const pass = process.env.SMTP_PASS || '';
-  if (!host) return null;
-  return nodemailer.createTransport({ host, port, secure, auth: user ? { user, pass } : undefined });
-};
-
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
-});
-
-app.get('/healthz', (req, res) => res.status(200).json({ ok: true }));
-
-// Server-side Gemini proxy
-app.all('/api-proxy/*', async (req, res) => {
-  try {
-    const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const targetPath = req.originalUrl.replace(/^\/api-proxy/, '');
-    const upstream = new URL(`https://generativelanguage.googleapis.com${targetPath}`);
-    upstream.searchParams.set('key', apiKey);
-    const upstreamResp = await fetch(upstream.toString(), { method: req.method, body: req.method !== 'GET' ? req.body : undefined });
-    const buf = Buffer.from(await upstreamResp.arrayBuffer());
-    res.send(buf);
-  } catch (e) { res.status(502).json({ error: 'Proxy error' }); }
-});
-
-// Capture & Scrape
 app.post('/api/automation/capture', express.json(), async (req, res) => {
   const { url } = req.body;
   try {
@@ -169,8 +131,8 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
     const $ = cheerio.load(html);
     const pageContent = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs, custom_pitch, estimated_budget_range. TEXT: ${pageContent}`;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${apiKey}`;
+    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs, custom_pitch, estimated_budget_range. TEXT: \${pageContent}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=\${apiKey}`;
     const geminiResp = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -181,7 +143,6 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
   } catch (e) { res.status(500).json({ error: 'Scrape failed' }); }
 });
 
-// DOCX Generation
 app.post('/api/automation/generate-docx', express.json(), async (req, res) => {
   try {
     const generator = new WordProposalGenerator();
@@ -194,6 +155,9 @@ app.post('/api/automation/generate-docx', express.json(), async (req, res) => {
 // Static SPA
 const distDir = path.join(__dirname, 'dist');
 app.use(express.static(distDir));
-app.get('*', (req, res) => res.sendFile(path.join(distDir, 'index.html')));
+app.get('*', (req, res) => {
+  const html = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
+  res.send(html.replace(/\"\/env\.js\"/g, `\"/env.js?v=\${STARTUP_TS}\"`));
+});
 
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on \${PORT}`));

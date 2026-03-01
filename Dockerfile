@@ -20,7 +20,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
-COPY server.mjs ./server.mjs
-
+COPY server.js ./server.js
 EXPOSE 2705
-CMD ["node", "server.mjs"]
+CMD ["node", "server.js"]
+
