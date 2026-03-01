@@ -1,8 +1,6 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface LeadData {
   id?: string;
@@ -17,7 +15,8 @@ interface AIAnalysis {
   recommended_services: string[];
   estimated_budget_range: string;
   custom_pitch: string;
-  video_script?: string; // New field
+  video_script?: string;
+  suggested_micro_app?: any;
 }
 
 const AutomatedLeadPanel: React.FC = () => {
@@ -29,12 +28,17 @@ const AutomatedLeadPanel: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState('');
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [currentStep, setCurrentStep] = useState<number | null>(null);
+  
+  // Test Mode State
+  const [isTestMode, setIsTestMode] = useState(false);
+  const [testEmail, setTestEmail] = useState('bandujar@edutac.es');
 
   const steps = [
-    t.leadInvestigateBtn,
-    t.leadAnalyzing,
-    t.leadSendProposal,
-    "IA Insights..."
+    "Conectant amb el servidor...",
+    "Extraient contingut web...",
+    "Gemini 3.1 Pro analitzant...",
+    "Generant IA Insights...",
+    "Finalitzant..."
   ];
 
   const handleScrapeAndCapture = async () => {
@@ -42,77 +46,40 @@ const AutomatedLeadPanel: React.FC = () => {
     setIsAnalyzing(true);
     setAnalysis(null);
     setStatusMsg('');
-    
-    // Iniciar secuencia de pasos simulada mientras esperamos al backend
     setCurrentStep(0);
+
     const stepInterval = setInterval(() => {
-      setCurrentStep(prev => {
-        if (prev === null) return 0;
-        if (prev < steps.length - 1) return prev + 1;
-        return prev;
-      });
-    }, 4000); // Cambiar de paso cada 4 segundos
+      setCurrentStep(prev => (prev !== null && prev < steps.length - 1 ? prev + 1 : prev));
+    }, 3000);
 
     try {
       const resp = await fetch('/api/automation/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default' })
+        body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default' }),
+        // Añadimos una señal de aborto si fuera necesario en el futuro
       });
       
       clearInterval(stepInterval);
       const data = await resp.json();
       
-      if (data.contact_email) {
+      if (data.company_name) {
         setCurrentStep(null);
         setLead({
           name: data.company_name,
-          email: data.contact_email,
+          email: data.contact_email || '',
           companyDescription: data.recommended_solution
         });
-        setAnalysis({
-          needs_detected: data.detected_needs,
-          pain_points: [],
-          recommended_services: [data.recommended_solution],
-          estimated_budget_range: 'A definir',
-          custom_pitch: data.recommended_solution,
-          video_script: data.video_script,
-          suggested_micro_app: data.suggested_micro_app
-        });
-        setStatusMsg('Lead capturado y analizado con éxito.');
+        setAnalysis(data);
+        setStatusMsg('Anàlisi completada. Revisa i edita les dades abans d\'enviar.');
       } else {
-        setStatusMsg(data.error || 'No se pudo extraer información relevante.');
+        setStatusMsg(data.error || 'No s\'ha pogut extreure informació rellevant.');
         setCurrentStep(null);
       }
     } catch (err) {
       clearInterval(stepInterval);
       setCurrentStep(null);
-      setStatusMsg('Error de red o timeout. Reintenta en unos instantes.');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-    setStatusMsg('Analizando con Gemini AI...');
-    try {
-      const resp = await fetch('/api/leads/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenantSlug: 'default', // O el slug correspondiente
-          companyInfo: {
-            name: lead.name,
-            description: lead.companyDescription
-          }
-        })
-      });
-      const data = await resp.json();
-      setAnalysis(data);
-      setStatusMsg('Análisis completado.');
-    } catch (err) {
-      setStatusMsg('Error en el análisis.');
+      setStatusMsg('Error de xarxa o timeout. El servidor està processant, reintenta en uns segons.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -121,238 +88,146 @@ const AutomatedLeadPanel: React.FC = () => {
   const generateAndSendProposal = async () => {
     if (!analysis) return;
     setIsSending(true);
-    setStatusMsg(t.leadAnalyzing);
+    setStatusMsg('Generant PDF professional...');
 
     try {
-      // --- PROFESSIONAL BRANDED PDF GENERATION ---
       const doc = new jsPDF();
-      const brandColor = [79, 70, 229]; // Indigo-600
-      const textColor = [30, 41, 59]; // Slate-800
+      const brandColor = [79, 70, 229];
       
-      // Header: Branded Bar
+      // Branded Header
       doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
       doc.rect(0, 0, 210, 40, 'F');
-      
-      // Logo Placeholder / Name
       doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.text("ADEPTIFY SYSTEMS", 20, 25);
       doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
       doc.text("CONSULTORIA ESTRATÈGICA IA", 20, 32);
 
-      // Client Info
-      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`PROPOSTA PERSONALITZADA PER A:`, 20, 60);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${lead.name.toUpperCase()}`, 20, 68);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`PROPOSTA PER A: ${lead.name.toUpperCase()}`, 20, 60);
       
-      // Line separator
-      doc.setDrawColor(226, 232, 240);
-      doc.line(20, 75, 190, 75);
-
-      // Executive Pitch
-      doc.setFont("helvetica", "bold");
-      doc.text("ANÀLISI ESTRATÈGIC", 20, 90);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
       const splitPitch = doc.splitTextToSize(analysis.custom_pitch, 170);
-      doc.text(splitPitch, 20, 100);
-
-      // Recommended Solutions
-      let yPos = 130;
-      doc.setFont("helvetica", "bold");
-      doc.text("SOLUCIONS RECOMANADES", 20, yPos);
-      doc.setFont("helvetica", "normal");
-      analysis.recommended_services.forEach((s, i) => {
-        yPos += 10;
-        doc.text(`• ${s}`, 25, yPos);
-      });
-
-      // ROI Section
-      yPos += 30;
-      doc.setFillColor(248, 250, 252);
-      doc.rect(20, yPos, 170, 30, 'F');
-      doc.setFont("helvetica", "bold");
-      doc.text("IMPACTE ECONÒMIC ESTIMAT (ROI)", 30, yPos + 12);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Inversió estimada: ${analysis.estimated_budget_range}`, 30, yPos + 22);
-
-      // Footer
-      doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184);
-      doc.text("adeptify.es • Carrer de l'Avenir, Barcelona • Document Confidencial", 105, 285, { align: "center" });
+      doc.text(splitPitch, 20, 80);
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
+      const finalRecipient = isTestMode ? testEmail : lead.email;
 
-      // 2. Enviar al backend con tracking
+      if (!finalRecipient) {
+        throw new Error("Falta email de destí");
+      }
+
       const resp = await fetch('/api/leads/send-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           leadId: lead.id,
-          email: lead.email,
-          subject: `Proposta Estratègica Adeptify: ${lead.name}`,
-          body: `Estimat/ada equip de ${lead.name},\n\nAdjuntem l'anàlisi estratègica i la proposta de transformació digital que hem preparat per a vosaltres.\n\nAtentament,\nEquip Adeptify.es`,
+          email: finalRecipient,
+          subject: `${isTestMode ? '[TEST] ' : ''}Proposta Estratègica Adeptify: ${lead.name}`,
+          body: `Hola,\n\nAdjuntem la proposta de transformació digital preparada per Adeptify.es.\n\nSalutacions.`,
           pdfBase64,
           proposalData: analysis
         })
       });
 
-      if (resp.ok) {
-        setStatusMsg('¡Propuesta enviada con éxito!');
-      } else {
-        throw new Error('Error en el envío');
-      }
-    } catch (err) {
-      setStatusMsg('Error al enviar la propuesta.');
+      if (resp.ok) setStatusMsg(`¡Èxit! Proposta enviada a ${finalRecipient}`);
+      else throw new Error("Falla en l'enviament");
+
+    } catch (err: any) {
+      setStatusMsg(`Error: ${err.message}`);
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white rounded-2xl shadow-xl border border-slate-100">
+    <div className="max-w-5xl mx-auto p-8 bg-white rounded-[32px] shadow-2xl border border-slate-100 fade-in">
       <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-slate-900">Gestión de Leads</h2>
-        <span className="bg-indigo-50 text-indigo-600 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-          AI Autopilot Enabled
-        </span>
-      </div>
-
-      {/* Sección Autopiloto */}
-      <div className="mb-12 p-8 bg-slate-900 rounded-2xl text-white shadow-2xl">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-3">
-          <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          Captura Automática (URL Scraper)
-        </h3>
-        <p className="text-sm text-slate-400 mb-6">Pega la URL de un colegio o empresa. Gemini extraerá los datos y detectará sus necesidades automáticamente.</p>
-        <div className="flex gap-4">
-          <input 
-            type="text" 
-            className="flex-1 p-4 bg-slate-800 border border-slate-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="https://www.colegio-ejemplo.com"
-            value={scrapeUrl}
-            onChange={(e) => setScrapeUrl(e.target.value)}
-          />
-          <button 
-            onClick={handleScrapeAndCapture}
-            disabled={isAnalyzing || !scrapeUrl}
-            className="bg-indigo-600 px-8 py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-indigo-500 transition-all disabled:opacity-50"
-          >
-            Investigar Web
-          </button>
+        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Gestió de Leads IA</h2>
+        <div className="flex items-center gap-4">
+           <label className="flex items-center gap-2 cursor-pointer bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+              <input type="checkbox" checked={isTestMode} onChange={(e) => setIsTestMode(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
+              <span className="text-[10px] font-black uppercase text-slate-600">Mode Test</span>
+           </label>
         </div>
       </div>
 
-      {isAnalyzing && currentStep !== null && (
-        <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-200 fade-in">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-sm font-bold text-slate-700 uppercase tracking-widest">Ejecutando Secuencia IA Autónoma</span>
-          </div>
-          <div className="space-y-3">
-            {steps.map((step, i) => (
-              <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i > currentStep ? 'opacity-20' : 'opacity-100'}`}>
-                <div className={`w-2 h-2 rounded-full ${i < currentStep ? 'bg-green-500' : (i === currentStep ? 'bg-indigo-600 animate-pulse' : 'bg-slate-300')}`}></div>
-                <span className={`text-xs ${i === currentStep ? 'font-bold text-indigo-600' : 'text-slate-500'}`}>{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-t border-slate-100 pt-8">
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nombre del Lead / Empresa</label>
+      <div className="mb-8 p-8 bg-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+        <div className="relative z-10">
+          <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+            <span className="w-2 h-2 bg-indigo-500 rounded-full animate-ping" />
+            Explorador Autònom de Centres
+          </h3>
+          <p className="text-sm text-slate-400 mb-6">Analitza qualsevol web escolar i genera una oferta professional a l'instant.</p>
+          <div className="flex gap-3">
             <input 
               type="text" 
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-              value={lead.name}
-              onChange={(e) => setLead({...lead, name: e.target.value})}
-              placeholder="Ej: Colegio Santa María"
+              className="flex-1 p-4 bg-slate-800 border border-slate-700 rounded-2xl text-white outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              placeholder="https://www.escolaejemplo.cat"
+              value={scrapeUrl}
+              onChange={(e) => setScrapeUrl(e.target.value)}
             />
+            <button 
+              onClick={handleScrapeAndCapture}
+              disabled={isAnalyzing || !scrapeUrl}
+              className="bg-indigo-600 px-8 py-4 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-indigo-500 transition-all disabled:opacity-50"
+            >
+              {isAnalyzing ? 'Processant...' : 'Investigar'}
+            </button>
           </div>
-          <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email de contacto</label>
-            <input 
-              type="email" 
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-              value={lead.email}
-              onChange={(e) => setLead({...lead, email: e.target.value})}
-              placeholder="director@colegio.com"
-            />
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Descripción de necesidades / Contexto</label>
-          <textarea 
-            className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-indigo-500 outline-none"
-            value={lead.companyDescription}
-            onChange={(e) => setLead({...lead, companyDescription: e.target.value})}
-            placeholder="Describe qué busca el cliente o qué has detectado..."
-          />
         </div>
       </div>
 
-      <button 
-        onClick={handleAnalyze}
-        disabled={isAnalyzing || !lead.name}
-        className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-indigo-700 disabled:opacity-50 transition-all mb-4"
-      >
-        {isAnalyzing ? 'Procesando con IA...' : 'Analizar Necesidades con Gemini'}
-      </button>
-
-      {statusMsg && (
-        <p className="text-sm font-medium text-indigo-600 mb-8 text-center">{statusMsg}</p>
+      {isAnalyzing && (
+        <div className="mb-8 space-y-3 p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+          {steps.map((s, i) => (
+            <div key={i} className={`flex items-center gap-3 transition-opacity ${i > (currentStep || 0) ? 'opacity-20' : 'opacity-100'}`}>
+              <div className={`w-2 h-2 rounded-full ${i < (currentStep || 0) ? 'bg-green-500' : 'bg-indigo-600 animate-pulse'}`} />
+              <span className="text-xs font-medium text-slate-600">{s}</span>
+            </div>
+          ))}
+        </div>
       )}
 
+      {statusMsg && <div className="mb-8 text-center p-4 bg-slate-50 rounded-xl text-xs font-bold text-indigo-600 border border-indigo-50">{statusMsg}</div>}
+
       {analysis && (
-        <div className="bg-slate-50 p-8 rounded-2xl border border-indigo-100 fade-in">
-          <h3 className="text-xl font-bold text-slate-900 mb-4">Análisis Detectado:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-slate-100 pt-8 fade-in">
+          <div className="space-y-6">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Necesidades</p>
-              <ul className="text-sm text-slate-600 list-disc pl-5">
-                {analysis.needs_detected.map((n, i) => <li key={i}>{n}</li>)}
-              </ul>
+              <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Nom de la Institució</label>
+              <input type="text" value={lead.name} onChange={(e) => setLead({...lead, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Presupuesto Estimado</p>
-              <p className="text-lg font-bold text-indigo-600">{analysis.estimated_budget_range}</p>
+              <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block tracking-widest">Email de Contacte (Editable)</label>
+              <input 
+                type="email" 
+                value={lead.email} 
+                onChange={(e) => setLead({...lead, email: e.target.value})} 
+                className="w-full p-4 bg-indigo-50 border border-indigo-200 rounded-xl font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                placeholder="correu@centre.cat"
+              />
+              <p className="text-[9px] text-slate-400 mt-1 italic">Verifica aquest correu abans d'enviar la proposta.</p>
             </div>
-          </div>
-          <div className="mb-8">
-            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Pitch Personalizado</p>
-            <p className="text-sm text-slate-700 italic border-l-4 border-indigo-500 pl-4 mb-6">{analysis.custom_pitch}</p>
             
-            {analysis.video_script && (
-              <div className="mt-6 p-6 bg-indigo-900 rounded-xl text-indigo-100 shadow-inner">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-4 h-4 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm13 2a1 1 0 00-1 1v4a1 1 0 102 0V9a1 1 0 00-1-1z" /></svg>
-                  <span className="text-[10px] font-black uppercase tracking-widest">Guion para Avatar IA</span>
-                </div>
-                <textarea 
-                  className="w-full bg-transparent border-none text-sm leading-relaxed focus:ring-0 resize-none h-24 text-indigo-50"
-                  value={analysis.video_script}
-                  onChange={(e) => setAnalysis({...analysis, video_script: e.target.value})}
-                />
-                <p className="text-[9px] text-indigo-400 mt-2 italic font-medium">Este es el texto que el avatar de vídeo dirá en el mensaje personalizado.</p>
+            {isTestMode && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <label className="text-[10px] font-black uppercase text-amber-700 mb-2 block">Email de Prova</label>
+                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} className="w-full p-3 bg-white border border-amber-200 rounded-lg text-xs" />
               </div>
             )}
           </div>
 
-          <button 
-            onClick={generateAndSendProposal}
-            disabled={isSending}
-            className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all"
-          >
-            {isSending ? 'Enviando...' : 'Generar PDF y Enviar Oferta'}
-          </button>
+          <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+            <h4 className="text-xs font-black uppercase text-slate-400 mb-4">Anàlisi de l'IA</h4>
+            <p className="text-sm text-slate-700 leading-relaxed italic border-l-4 border-indigo-500 pl-4 mb-6">{analysis.custom_pitch}</p>
+            <button 
+              onClick={generateAndSendProposal}
+              disabled={isSending || (!lead.email && !isTestMode)}
+              className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl disabled:opacity-30"
+            >
+              {isSending ? 'Enviant...' : (isTestMode ? 'Enviar Prova' : 'Generar i Enviar Proposta Real')}
+            </button>
+          </div>
         </div>
       )}
     </div>

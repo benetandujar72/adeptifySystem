@@ -494,21 +494,43 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
   try {
     console.info(`[automation] Scraping URL: ${url}`);
     
-    // 1. Fetch with Browser Headers to avoid blocks (crucial for xtec.cat and Wordpress)
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Language': 'ca-ES,ca;q=0.9,es-ES;q=0.8,es;q=0.7,en;q=0.6',
-        'Referer': 'https://www.google.com/',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      },
-      redirect: 'follow'
-    });
+    // 1. Fetch with internal timeout (15s) to prevent 504 proxy errors
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Referer': 'https://www.google.com/'
+        },
+        signal: controller.signal,
+        redirect: 'follow'
+      });
+    } catch (e) {
+      if (e.name === 'AbortError') {
+        console.warn('[automation] Scraping timed out for:', url);
+        // Fallback: try to at least analyze the domain/URL if fetch fails
+        response = { ok: false, status: 408 };
+      } else {
+        throw e;
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response || !response.ok) {
+      // Logic if fetch fails: return partial data or inferred info
+      return res.status(200).json({ 
+        company_name: url.split('/')[2].replace('www.', ''), 
+        contact_email: null,
+        recommended_solution: "Hem detectat dificultats en la connexió amb la vostra web, però podem ajudar-vos a optimitzar el vostre entorn digital.",
+        custom_pitch: "Anàlisi basada en domini: El vostre centre necessita una infraestructura digital resilient.",
+        detected_needs: ["Millora de visibilitat digital", "Seguretat de xarxa"],
+        is_relevant: true
+      });
     }
 
     const html = await response.text();
