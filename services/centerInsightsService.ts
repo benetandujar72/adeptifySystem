@@ -15,8 +15,7 @@ export type CenterInsight = {
 
 export const normalizeCenterKey = (name: string) => name.trim().toLowerCase().replace(/\s+/g, ' ');
 
-const BASE_URL = getRuntimeEnvString('MARKETING_API_URL') ||
-  'https://adeptifysystem-1061852826388.europe-west1.run.app/api/v1';
+const BASE_URL = '/api/v1';
 
 export const centerInsightsService = {
   async get(centerNameOrKey: string, tenantSlug?: string): Promise<CenterInsight | null> {

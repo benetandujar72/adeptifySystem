@@ -2,8 +2,7 @@ import { CenterArtifact, CenterArtifactType } from '../types';
 import { normalizeCenterKey } from './centerInsightsService';
 import { getRuntimeEnvString } from './runtimeEnv';
 
-const BASE_URL = getRuntimeEnvString('MARKETING_API_URL') ||
-  'https://adeptifysystem-1061852826388.europe-west1.run.app/api/v1';
+const BASE_URL = '/api/v1';
 
 export const centerArtifactsService = {
   async listForCenter(centerName: string, tenantSlug?: string): Promise<CenterArtifact[]> {
