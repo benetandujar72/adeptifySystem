@@ -114,7 +114,7 @@ steps:
       - 'deploy'
       - '${_SERVICE}'
       - '--image'
-      - '${_AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${REVISION_ID}'
+      - '${_AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:$BUILD_ID'
       - '--region'
       - '${_RUN_REGION}'
       - '--platform'
