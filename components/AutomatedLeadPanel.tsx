@@ -28,19 +28,44 @@ const AutomatedLeadPanel: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [scrapeUrl, setScrapeUrl] = useState('');
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
+
+  const steps = [
+    "Conectando con el servidor escolar...",
+    "Extrayendo contenido de la web...",
+    "Gemini 3.1 Pro analizando necesidades...",
+    "Generando propuesta y guion de vídeo...",
+    "Finalizando captura en base de datos..."
+  ];
 
   const handleScrapeAndCapture = async () => {
     if (!scrapeUrl) return;
     setIsAnalyzing(true);
-    setStatusMsg(`Scrapeando y analizando ${scrapeUrl}...`);
+    setAnalysis(null);
+    setStatusMsg('');
+    
+    // Iniciar secuencia de pasos simulada mientras esperamos al backend
+    setCurrentStep(0);
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => {
+        if (prev === null) return 0;
+        if (prev < steps.length - 1) return prev + 1;
+        return prev;
+      });
+    }, 4000); // Cambiar de paso cada 4 segundos
+
     try {
       const resp = await fetch('/api/automation/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default' })
       });
+      
+      clearInterval(stepInterval);
       const data = await resp.json();
+      
       if (data.contact_email) {
+        setCurrentStep(null);
         setLead({
           name: data.company_name,
           email: data.contact_email,
@@ -51,14 +76,19 @@ const AutomatedLeadPanel: React.FC = () => {
           pain_points: [],
           recommended_services: [data.recommended_solution],
           estimated_budget_range: 'A definir',
-          custom_pitch: data.recommended_solution
+          custom_pitch: data.recommended_solution,
+          video_script: data.video_script,
+          suggested_micro_app: data.suggested_micro_app
         });
-        setStatusMsg('Lead capturado y analizado con éxito desde la web.');
+        setStatusMsg('Lead capturado y analizado con éxito.');
       } else {
-        setStatusMsg('No se pudo extraer información relevante de esta URL.');
+        setStatusMsg(data.error || 'No se pudo extraer información relevante.');
+        setCurrentStep(null);
       }
     } catch (err) {
-      setStatusMsg('Error en el proceso de captura automática.');
+      clearInterval(stepInterval);
+      setCurrentStep(null);
+      setStatusMsg('Error de red o timeout. Reintenta en unos instantes.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -174,6 +204,23 @@ Equipo Adeptify.`,
           </button>
         </div>
       </div>
+
+      {isAnalyzing && currentStep !== null && (
+        <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-200 fade-in">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-bold text-slate-700 uppercase tracking-widest">Ejecutando Secuencia IA Autónoma</span>
+          </div>
+          <div className="space-y-3">
+            {steps.map((step, i) => (
+              <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i > currentStep ? 'opacity-20' : 'opacity-100'}`}>
+                <div className={`w-2 h-2 rounded-full ${i < currentStep ? 'bg-green-500' : (i === currentStep ? 'bg-indigo-600 animate-pulse' : 'bg-slate-300')}`}></div>
+                <span className={`text-xs ${i === currentStep ? 'font-bold text-indigo-600' : 'text-slate-500'}`}>{step}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-t border-slate-100 pt-8">
         <div className="space-y-4">
