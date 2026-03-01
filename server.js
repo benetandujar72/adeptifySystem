@@ -1,3 +1,4 @@
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -30,6 +31,17 @@ const getSupabaseAdmin = () => {
   return cachedSupabase;
 };
 
+// --- EMAIL TRANSPORTER ---
+const getTransporter = () => {
+  const host = (process.env.SMTP_HOST || '').trim();
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true';
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = process.env.SMTP_PASS || '';
+  if (!host) return null;
+  return nodemailer.createTransport({ host, port, secure, auth: user ? { user, pass } : undefined });
+};
+
 // --- WORD GENERATOR SERVICE ---
 const COLORS = {
   PRIMARY: "1B3A5C",
@@ -43,50 +55,22 @@ class WordProposalGenerator {
       styles: {
         paragraphStyles: [
           {
-            id: "Normal",
-            name: "Normal",
-            run: { size: 22, font: "Arial", color: "1A1A1A" },
-            paragraph: { 
-              alignment: AlignmentType.JUSTIFIED, 
-              spacing: { line: 276, before: 120, after: 120 },
-              indent: { firstLine: 420 }
-            }
+            id: "Normal", run: { size: 22, font: "Arial" },
+            paragraph: { alignment: AlignmentType.JUSTIFIED, spacing: { line: 276, before: 120, after: 120 }, indent: { firstLine: 420 } }
           },
           {
-            id: "Heading1",
-            name: "Heading 1",
-            run: { size: 32, bold: true, font: "Arial", color: COLORS.PRIMARY },
-            paragraph: { 
-              alignment: AlignmentType.LEFT, 
-              spacing: { before: 400, after: 200 },
-              outlineLevel: 0,
-              border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single", space: 1 } }
-            }
+            id: "Heading1", run: { size: 32, bold: true, color: COLORS.PRIMARY },
+            paragraph: { spacing: { before: 400, after: 200 }, border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single" } } }
           }
         ]
       },
       sections: [{
         properties: { page: { size: { width: 12240, height: 15840 } } },
-        headers: {
-          default: new Header({
-            children: [new Paragraph({
-              border: { bottom: { color: COLORS.SECONDARY, size: 6, style: "single" } },
-              children: [
-                new TextRun({ text: "ADEPTIFY SYSTEMS | CONSULTORIA DIGITAL", bold: true, color: COLORS.PRIMARY, size: 16 }),
-                new TextRun({ text: "\t\tProposta Estratègica", italics: true, color: "666666", size: 16 })
-              ]
-            })]
-          })
-        },
         children: [
-          new Paragraph({ spacing: { before: 2400 }, alignment: AlignmentType.CENTER, children: [
-            new TextRun({ text: "ADEPTIFY SYSTEMS", bold: true, size: 56, color: COLORS.PRIMARY })
-          ]}),
-          new Paragraph({ alignment: AlignmentType.CENTER, children: [
-            new TextRun({ text: (data.proyecto?.titulo || "PROPOSTA ESTRATÈGICA").toUpperCase(), bold: true, size: 28, color: COLORS.SECONDARY })
-          ]}),
+          new Paragraph({ spacing: { before: 2400 }, alignment: AlignmentType.CENTER, children: [new TextRun({ text: "ADEPTIFY SYSTEMS", bold: true, size: 56, color: COLORS.PRIMARY })] }),
+          new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (data.proyecto?.titulo || "PROPOSTA ESTRATÈGICA").toUpperCase(), bold: true, size: 28, color: COLORS.SECONDARY })] }),
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("1. RESUM EXECUTIU")] }),
-          new Paragraph({ children: [new TextRun(data.proyecto?.resumen || "[Pendent]")] }),
+          new Paragraph({ children: [new TextRun(data.proyecto?.resumen || data.custom_pitch || "[Pendent]")] }),
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("7. PROPOSTA ECONÒMICA")] }),
           new Table({
             width: { size: 9360, type: WidthType.DXA },
@@ -107,12 +91,10 @@ class WordProposalGenerator {
           new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("12. PRÒXIMS PASSOS I ACCEPTACIÓ")] }),
           new Table({
             width: { size: 9360, type: WidthType.DXA },
-            rows: [
-              new TableRow({ children: [
-                new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: "Per Adeptify Systems SLU", bold: true })] })] }),
-                new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per \${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
-              ]})
-            ]
+            rows: [new TableRow({ children: [
+              new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: "Per Adeptify Systems SLU", bold: true })] })] }),
+              new TableCell({ children: [new Paragraph({ spacing: { before: 1200 }, children: [new TextRun({ text: `Per \${data.cliente?.nombre || 'Client'}`, bold: true })] })] })
+            ]})]
           })
         ]
       }]
@@ -122,75 +104,80 @@ class WordProposalGenerator {
 }
 
 // --- API ENDPOINTS ---
+
+// CRM Tracking Pixel
+app.get('/api/crm/track/:id.png', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (supabase) {
+    await supabase.from('lead_interactions').update({ metadata_json: { opened_at: new Date().toISOString() } }).eq('id', req.params.id);
+  }
+  const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  res.writeHead(200, { 'Content-Type': 'image/gif', 'Cache-Control': 'no-cache' }).end(pixel);
+});
+
 // Capture & Scrape
 app.post('/api/automation/capture', express.json(), async (req, res) => {
   const { url } = req.body;
-  if (!url) return res.status(400).json({ error: 'URL required' });
-
   try {
-    console.info(`[automation] Scraping URL: ${url}`);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(url, { 
-      headers: { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Referer': 'https://www.google.com/'
-      },
-      signal: controller.signal,
-      redirect: 'follow'
-    }).finally(() => clearTimeout(timeoutId));
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const html = await response.text();
+    const resp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+    const html = await resp.text();
     const $ = cheerio.load(html);
-    $('script, style, nav, footer, iframe').remove();
-    const pageContent = $('body').text().replace(/\s+/g, ' ').substring(0, 12000);
-
+    const text = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs (array), recommended_services (array), custom_pitch, estimated_budget_range. TEXT: ${pageContent}`;
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${apiKey}`;
-    const geminiResp = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        contents: [{ parts: [{ text: prompt }] }], 
-        generationConfig: { responseMimeType: "application/json" } 
-      })
-    });
-
-    const geminiData = await geminiResp.json();
-    if (geminiData.error) throw new Error(geminiData.error.message);
-
-    const rawText = geminiData.candidates[0].content.parts[0].text;
-    res.status(200).json(JSON.parse(rawText));
-
-  } catch (e) { 
-    console.error('[scrape-error]', e.message);
-    res.status(500).json({ error: e.message || 'Scrape failed' }); 
-  }
+    const prompt = `Analitza aquesta web i retorna JSON: company_name, contact_email, detected_needs[], custom_pitch, estimated_budget_range. TEXT: \${text}`;
+    const gUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=\${apiKey}`;
+    const gResp = await fetch(gUrl, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }) });
+    const gData = await gResp.json();
+    res.json(JSON.parse(gData.candidates[0].content.parts[0].text));
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Send Proposal
+app.post('/api/leads/send-proposal', express.json({ limit: '10mb' }), async (req, res) => {
+  const { leadId, email, subject, body, pdfBase64, proposalData } = req.body;
+  try {
+    const transporter = getTransporter();
+    if (!transporter) throw new Error("No SMTP");
+    
+    const supabase = getSupabaseAdmin();
+    let interactionId = crypto.randomUUID();
+    if (supabase && leadId) {
+      const { data } = await supabase.from('lead_interactions').insert({ id: interactionId, lead_id: leadId, interaction_type: 'proposal_sent', content_summary: subject, payload_json: proposalData }).select().single();
+      if (data) interactionId = data.id;
+    }
 
+    const domain = req.headers.host.includes('localhost') ? 'http://localhost:2705' : 'https://consultor.adeptify.es';
+    const html = `<div style="font-family:sans-serif;">\${body.replace(/\n/g, '<br>')}<br><br><img src="\${domain}/api/crm/track/\${interactionId}.png" width="1" height="1"/></div>`;
+
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: subject || 'Proposta Adeptify',
+      html,
+      attachments: pdfBase64 ? [{ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' }] : []
+    });
+
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DOCX Generation
 app.post('/api/automation/generate-docx', express.json(), async (req, res) => {
   try {
     const generator = new WordProposalGenerator();
     const buffer = await generator.generate(req.body.leadData);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.send(buffer);
-  } catch (e) { res.status(500).json({ error: 'DOCX failed' }); }
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').send(buffer);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Static SPA
 const distDir = path.join(__dirname, 'dist');
 app.use(express.static(distDir));
 app.get('*', (req, res) => {
-  const html = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
-  res.send(html.replace(/\"\/env\.js\"/g, `\"/env.js?v=\${STARTUP_TS}\"`));
+  try {
+    const html = fs.readFileSync(path.join(distDir, 'index.html'), 'utf8');
+    res.send(html.replace(/\"\/env\.js\"/g, `\"/env.js?v=\${STARTUP_TS}\"`));
+  } catch(e) { res.sendFile(path.join(distDir, 'index.html')); }
 });
 
 app.listen(PORT, () => console.log(`Server running on \${PORT}`));
