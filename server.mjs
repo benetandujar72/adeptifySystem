@@ -365,29 +365,85 @@ app.post('/api/leads/analyze', express.json(), async (req, res) => {
   }
 });
 
-// Send personalized proposal email
+// --- CRM & TRACKING SYSTEM ---
+
+// Email Tracking Pixel
+app.get('/api/crm/track/:interactionId.png', async (req, res) => {
+  const { interactionId } = req.params;
+  try {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      // 1. Mark interaction as opened
+      await supabase.from('lead_interactions').update({
+        metadata_json: { opened_at: new Date().toISOString(), ...req.headers }
+      }).eq('id', interactionId);
+
+      // 2. Increment lead open count
+      const { data: inter } = await supabase.from('lead_interactions').select('lead_id').eq('id', interactionId).single();
+      if (inter?.lead_id) {
+        await supabase.rpc('increment_lead_opens', { row_id: inter.lead_id });
+      }
+    }
+  } catch (e) {
+    console.error('Tracking error:', e);
+  }
+
+  // Return 1x1 transparent pixel
+  const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+  res.writeHead(200, {
+    'Content-Type': 'image/gif',
+    'Content-Length': pixel.length,
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+  });
+  res.end(pixel);
+});
+
+// Send personalized proposal email with tracking
 app.post('/api/leads/send-proposal', express.json({ limit: '5mb' }), async (req, res) => {
-  const { leadId, tenantSlug, email, subject, body, pdfBase64 } = req.body;
+  const { leadId, email, subject, body, pdfBase64, proposalData } = req.body;
 
   if (!email || !body) {
     return res.status(400).json({ error: 'Missing recipient or body' });
   }
 
   try {
+    const supabase = getSupabaseAdmin();
     const transporter = getTransporter();
     if (!transporter) throw new Error('Email service not configured');
 
+    // 1. Create tracking interaction
+    let interactionId = crypto.randomUUID();
+    if (supabase && leadId) {
+      const { data } = await supabase.from('lead_interactions').insert({
+        id: interactionId,
+        lead_id: leadId,
+        interaction_type: 'proposal_sent',
+        content_summary: subject,
+        payload_json: proposalData,
+        user_agent: req.headers['user-agent']
+      }).select().single();
+      if (data) interactionId = data.id;
+    }
+
     const fromEmail = (process.env.CONTACT_FROM || process.env.SMTP_USER || '').trim();
     const fromName = (process.env.CONTACT_FROM_NAME || 'Adeptify Proposals').trim();
+    const domain = req.headers.origin || req.headers.host || 'http://localhost:2705';
+    const trackingPixel = `<img src="${domain}/api/crm/track/${interactionId}.png" width="1" height="1" style="display:none" />`;
 
     const mailOptions = {
       from: { name: fromName, address: fromEmail },
       to: email,
       subject: subject || 'Propuesta Personalizada - Adeptify',
-      text: body,
+      html: `
+        <div style="font-family: sans-serif; color: #1e293b;">
+          ${body.replace(/\n/g, '<br>')}
+          <br><br>
+          ${trackingPixel}
+        </div>
+      `,
       attachments: pdfBase64 ? [
         {
-          filename: 'Propuesta_Adeptify.pdf',
+          filename: `Proposta_Adeptify_${new Date().getFullYear()}.pdf`,
           content: pdfBase64,
           encoding: 'base64'
         }
@@ -396,18 +452,14 @@ app.post('/api/leads/send-proposal', express.json({ limit: '5mb' }), async (req,
 
     await transporter.sendMail(mailOptions);
 
-    // Record interaction
-    const supabase = getSupabaseAdmin();
     if (supabase && leadId) {
-      await supabase.from('leads').update({ status: 'proposal_sent' }).eq('id', leadId);
-      await supabase.from('lead_interactions').insert({
-        lead_id: leadId,
-        interaction_type: 'proposal_sent',
-        content_summary: subject
-      });
+      await supabase.from('leads').update({ 
+        status: 'proposal_sent',
+        last_contacted_at: new Date().toISOString()
+      }).eq('id', leadId);
     }
 
-    res.status(200).json({ ok: true });
+    res.status(200).json({ ok: true, interactionId });
   } catch (e) {
     console.error('Failed to send proposal:', e);
     res.status(500).json({ error: 'Email delivery failed' });
@@ -459,6 +511,15 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
     const html = await response.text();
     const $ = cheerio.load(html);
     
+    // 2. Extract specific data points (mailto links)
+    const mailtoLinks = [];
+    $('a[href^="mailto:"]').each((i, el) => {
+      try {
+        const email = $(el).attr('href').replace('mailto:', '').split('?')[0].trim();
+        if (email.includes('@')) mailtoLinks.push(email);
+      } catch (e) {}
+    });
+
     // Remove unwanted tags but keep structure for context
     $('script, style, nav, footer, iframe, noscript').remove();
     

@@ -14,6 +14,7 @@ import AutoOnboarding from './components/AutoOnboarding';
 import DigitalTwinDashboard from './components/DigitalTwinDashboard';
 import CustomerSuccessPanel from './components/CustomerSuccessPanel';
 import NetworkExpansion from './components/NetworkExpansion';
+import CRMDashboard from './components/CRMDashboard';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
 import InstitutionGate from './components/InstitutionGate';
@@ -612,6 +613,7 @@ const AppContent: React.FC = () => {
         {phase === Phase.DIGITAL_TWIN && <DigitalTwinDashboard />}
         {phase === Phase.CUSTOMER_SUCCESS && <CustomerSuccessPanel />}
         {phase === Phase.NETWORK_EXPANSION && <NetworkExpansion />}
+        {phase === Phase.CRM && <CRMDashboard />}
         {phase === Phase.INTERACTIVE_AUDIT && auditToken && (
           <InteractiveAudit 
             token={auditToken} 

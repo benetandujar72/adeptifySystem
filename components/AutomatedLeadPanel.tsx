@@ -121,40 +121,84 @@ const AutomatedLeadPanel: React.FC = () => {
   const generateAndSendProposal = async () => {
     if (!analysis) return;
     setIsSending(true);
-    setStatusMsg('Generando PDF y enviando propuesta...');
+    setStatusMsg(t.leadAnalyzing);
 
     try {
-      // 1. Crear un elemento temporal para el PDF o usar uno oculto
-      // Para este MVP, generaremos un PDF simple basado en el análisis
+      // --- PROFESSIONAL BRANDED PDF GENERATION ---
       const doc = new jsPDF();
-      doc.setFontSize(20);
-      doc.text(`Propuesta para ${lead.name}`, 20, 20);
+      const brandColor = [79, 70, 229]; // Indigo-600
+      const textColor = [30, 41, 59]; // Slate-800
+      
+      // Header: Branded Bar
+      doc.setFillColor(brandColor[0], brandColor[1], brandColor[2]);
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      // Logo Placeholder / Name
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("ADEPTIFY SYSTEMS", 20, 25);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("CONSULTORIA ESTRATÈGICA IA", 20, 32);
+
+      // Client Info
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
       doc.setFontSize(12);
-      doc.text(`Pitch: ${analysis.custom_pitch}`, 20, 40);
-      doc.text(`Servicios recomendados:`, 20, 60);
+      doc.setFont("helvetica", "bold");
+      doc.text(`PROPOSTA PERSONALITZADA PER A:`, 20, 60);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${lead.name.toUpperCase()}`, 20, 68);
+      
+      // Line separator
+      doc.setDrawColor(226, 232, 240);
+      doc.line(20, 75, 190, 75);
+
+      // Executive Pitch
+      doc.setFont("helvetica", "bold");
+      doc.text("ANÀLISI ESTRATÈGIC", 20, 90);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const splitPitch = doc.splitTextToSize(analysis.custom_pitch, 170);
+      doc.text(splitPitch, 20, 100);
+
+      // Recommended Solutions
+      let yPos = 130;
+      doc.setFont("helvetica", "bold");
+      doc.text("SOLUCIONS RECOMANADES", 20, yPos);
+      doc.setFont("helvetica", "normal");
       analysis.recommended_services.forEach((s, i) => {
-        doc.text(`- ${s}`, 30, 70 + (i * 10));
+        yPos += 10;
+        doc.text(`• ${s}`, 25, yPos);
       });
-      doc.text(`Inversión estimada: ${analysis.estimated_budget_range}`, 20, 150);
+
+      // ROI Section
+      yPos += 30;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(20, yPos, 170, 30, 'F');
+      doc.setFont("helvetica", "bold");
+      doc.text("IMPACTE ECONÒMIC ESTIMAT (ROI)", 30, yPos + 12);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Inversió estimada: ${analysis.estimated_budget_range}`, 30, yPos + 22);
+
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text("adeptify.es • Carrer de l'Avenir, Barcelona • Document Confidencial", 105, 285, { align: "center" });
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
 
-      // 2. Enviar al backend
+      // 2. Enviar al backend con tracking
       const resp = await fetch('/api/leads/send-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          leadId: lead.id,
           email: lead.email,
-          subject: `Plan de Transformación Digital para ${lead.name}`,
-          body: `Hola ${lead.name},
-
-Hemos analizado tus necesidades y adjuntamos una propuesta personalizada.
-
-${analysis.custom_pitch}
-
-Saludos,
-Equipo Adeptify.`,
-          pdfBase64
+          subject: `Proposta Estratègica Adeptify: ${lead.name}`,
+          body: `Estimat/ada equip de ${lead.name},\n\nAdjuntem l'anàlisi estratègica i la proposta de transformació digital que hem preparat per a vosaltres.\n\nAtentament,\nEquip Adeptify.es`,
+          pdfBase64,
+          proposalData: analysis
         })
       });
 
