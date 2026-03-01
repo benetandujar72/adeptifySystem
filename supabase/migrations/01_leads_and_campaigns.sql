@@ -60,10 +60,12 @@ create table if not exists public.automation_tasks (
 );
 
 -- Update triggers for updated_at
+drop trigger if exists trg_campaigns_updated_at on public.campaigns;
 create trigger trg_campaigns_updated_at
 before update on public.campaigns
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_leads_updated_at on public.leads;
 create trigger trg_leads_updated_at
 before update on public.leads
 for each row execute procedure public.set_updated_at();
