@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../LanguageContext';
 
 const AutoOnboarding: React.FC = () => {
   const { t } = useLanguage();

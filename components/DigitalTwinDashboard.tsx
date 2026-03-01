@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../LanguageContext';
 
 const DigitalTwinDashboard: React.FC = () => {
   const { t } = useLanguage();
