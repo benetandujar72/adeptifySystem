@@ -87,7 +87,7 @@ const DigitalTwinDashboard: React.FC = () => {
             <div className="col-span-2 space-y-6">
               <h3 className="text-xs text-indigo-400 uppercase tracking-[0.2em] font-black mb-4">Alertas Tempranas (Próximos 30 días)</h3>
               
-              {prediction.predictions.map((p: any, i: number) => (
+              {prediction?.predictions?.map((p: any, i: number) => (
                 <div key={i} className="bg-slate-800/40 border border-slate-700/50 p-6 rounded-2xl flex gap-6 hover:bg-slate-800/60 transition-all group">
                   <div className="flex-shrink-0 pt-1">
                     {p.probability === 'Alta' ? (

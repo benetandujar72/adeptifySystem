@@ -41,22 +41,22 @@ const CustomerSuccessPanel: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {centers.map(center => {
+        {centers?.map(center => {
           const res = analysisResults[center.id];
           return (
             <div key={center.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-lg transition-all">
               <div className="flex items-center gap-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-md ${
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-md \${
                   res?.status === 'Healthy' ? 'bg-green-500' : 
                   res?.status === 'At Risk' ? 'bg-amber-500' : 
                   res?.status === 'Upsell Target' ? 'bg-indigo-600' : 'bg-slate-300'
                 }`}>
-                  {center.name.charAt(0)}
+                  {center?.name?.charAt(0)}
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-800">{center.name}</h4>
                   <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">
-                    {center.usage.docs_generated} Docs · {center.usage.active_users} Users · Último acceso: {center.usage.last_login_days}d
+                    {center?.usage?.docs_generated} Docs · {center?.usage?.active_users} Users · Último acceso: {center?.usage?.last_login_days}d
                   </p>
                 </div>
               </div>
