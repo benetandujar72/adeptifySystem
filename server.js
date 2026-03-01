@@ -122,26 +122,59 @@ class WordProposalGenerator {
 }
 
 // --- API ENDPOINTS ---
-
+// Capture & Scrape
 app.post('/api/automation/capture', express.json(), async (req, res) => {
   const { url } = req.body;
+  if (!url) return res.status(400).json({ error: 'URL required' });
+
   try {
-    const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+    console.info(`[automation] Scraping URL: ${url}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, { 
+      headers: { 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Referer': 'https://www.google.com/'
+      },
+      signal: controller.signal,
+      redirect: 'follow'
+    }).finally(() => clearTimeout(timeoutId));
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
     const html = await response.text();
     const $ = cheerio.load(html);
-    const pageContent = $('body').text().replace(/\s+/g, ' ').substring(0, 10000);
+    $('script, style, nav, footer, iframe').remove();
+    const pageContent = $('body').text().replace(/\s+/g, ' ').substring(0, 12000);
+
     const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs, custom_pitch, estimated_budget_range. TEXT: \${pageContent}`;
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=\${apiKey}`;
+    const prompt = `Analitza aquesta web escolar i retorna JSON amb company_name, contact_email, detected_needs (array), recommended_services (array), custom_pitch, estimated_budget_range. TEXT: ${pageContent}`;
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${apiKey}`;
     const geminiResp = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+      body: JSON.stringify({ 
+        contents: [{ parts: [{ text: prompt }] }], 
+        generationConfig: { responseMimeType: "application/json" } 
+      })
     });
+
     const geminiData = await geminiResp.json();
-    res.status(200).json(JSON.parse(geminiData.candidates[0].content.parts[0].text));
-  } catch (e) { res.status(500).json({ error: 'Scrape failed' }); }
+    if (geminiData.error) throw new Error(geminiData.error.message);
+
+    const rawText = geminiData.candidates[0].content.parts[0].text;
+    res.status(200).json(JSON.parse(rawText));
+
+  } catch (e) { 
+    console.error('[scrape-error]', e.message);
+    res.status(500).json({ error: e.message || 'Scrape failed' }); 
+  }
 });
+
 
 app.post('/api/automation/generate-docx', express.json(), async (req, res) => {
   try {
