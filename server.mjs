@@ -589,20 +589,16 @@ app.post('/api/automation/capture', express.json(), async (req, res) => {
         "company_name": "Nombre oficial del centro",
         "contact_email": "Email encontrado o null",
         "detected_needs": ["problema 1", "problema 2", "problema 3"],
+        "recommended_services": ["solución 1", "solución 2", "solución 3"],
         "main_bottleneck": "El principal problema de gestión detectado",
-        "estimated_hours_lost_per_week": "Número entero estimado (ej: 25)",
+        "estimated_hours_lost_per_week": 25,
+        "estimated_budget_range": "Rango de inversión sugerido (ej: 5.000€ - 8.000€)",
         "economic_profile": {
-          "institution_type": "public",
-          "estimated_student_count": "500",
-          "economic_tier": "low",
-          "pricing_sensitivity": "high"
+          "institution_type": "public | private",
+          "economic_tier": "low | medium | high"
         },
-        "suggested_micro_app": {
-          "type": "substitutions_planner",
-          "title": "Gestor de Incidencias XTEC",
-          "description": "Optimiza las guardias y comunicaciones de vuestro centro Àgora."
-        },
-        "recommended_solution": "Pitch personalizado para el director/a",
+        "custom_pitch": "Un párrafo de consultoría senior muy profesional y persuasivo",
+        "recommended_solution": "Breve resumen de la solución técnica",
         "is_relevant": true
       }
     `;
