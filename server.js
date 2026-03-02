@@ -150,6 +150,7 @@ Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "pr
   "main_bottleneck": "Cuello de botella",
   "estimated_budget_range": "Estimacion",
   "custom_pitch": "Pitch hiper realista en un parrafo",
+  "image_prompt": "Genera el mejor prompt en INGLÉS para un modelo de IA de imágenes. Debe describir visualmente un dashboard, diagrama de flujo, o infografía del sistema personalizado para este cliente. Si la necesidad menciona importar hojas de cálculo o procesamiento de datos, descríbelo explícitamente en el prompt de la imagen con la interfaz moderna. Ejemplo: 'A high quality UI mockup showing spreadsheet data import and custom workflow dashboard for...'",
   "proposal_data": {
     "consultora": { "nombre": "Adeptify Systems" },
     "cliente": { "nombre": "...", "tipo": "...", "sector": "...", "contacto_nombre": "Responsable autorizado", "contacto_cargo": "Dirección" },

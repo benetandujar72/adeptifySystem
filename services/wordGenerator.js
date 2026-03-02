@@ -335,7 +335,10 @@ class WordProposalGenerator {
       return new Table({ width: { size: 9360, type: WidthType.DXA }, rows: tableRows });
     };
 
-    const imgPrompt = `Modern SaaS dashboard UI for ${d.cliente.nombre || "Digital Transformation"}, app layout, clean modern interface analytics blue and purple colors`;
+    const imgPrompt = d.image_prompt
+      ? d.image_prompt + ` Corporate realistic, extremely high quality, clean modern app.`
+      : `Modern SaaS dashboard UI for ${d.cliente.nombre || "Digital Transformation"}, app layout, clean modern interface analytics blue and purple colors`;
+
     const uiImageBuffer = await fetchImageBuffer(imgPrompt);
 
     // 4. BUILDING BODY SECTIONS

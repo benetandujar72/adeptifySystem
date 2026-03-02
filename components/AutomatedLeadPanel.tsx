@@ -18,6 +18,7 @@ interface AIAnalysis {
   video_script?: string;
   estimated_hours_lost_per_week?: number;
   proposal_data?: any;
+  image_prompt?: string;
 }
 
 const AutomatedLeadPanel: React.FC = () => {
@@ -91,7 +92,7 @@ const AutomatedLeadPanel: React.FC = () => {
 
   const buildMappedDocxData = () => {
     if (analysis?.proposal_data) {
-      return analysis.proposal_data;
+      return { ...analysis.proposal_data, image_prompt: analysis.image_prompt };
     }
     return {
       consultora: { nombre: "Adeptify Systems", logo_url: "https://adeptify.es/logo.png" },
@@ -141,7 +142,8 @@ const AutomatedLeadPanel: React.FC = () => {
       garantias: { descripcion: "Acompanyament tècnic garantit." },
       casos_exito: { educativo: "Implementacions exitoses a més de 20 centres catalans.", empresarial: "Múltiples automatitzacions industrials resoltes." },
       condiciones: { propiedad_intelectual: "Propietat d'Adeptify", confidencialidad: "Estricta" },
-      personalizacion: { color_primary: "1E1B4B", color_secondary: "4338CA", color_accent: "818CF8" }
+      personalizacion: { color_primary: "1E1B4B", color_secondary: "4338CA", color_accent: "818CF8" },
+      image_prompt: analysis?.image_prompt
     };
   };
 
