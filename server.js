@@ -61,6 +61,7 @@ async function callGemini(prompt, modelId = "gemini-2.5-flash") {
 
   const data = await response.json();
   if (data.error) {
+    console.error(`[Gemini API Error]`, data.error);
     throw new Error(data.error.message);
   }
 
@@ -143,10 +144,11 @@ TEXT OBTINGUT: ${text}
 `;
 
     // Utiliza un modelo estándar moderno, flash 2.5 soporte tool calling
+    console.info(`[automation] Calling Gemini for URL analysis...`);
     const result = await callGemini(prompt, "gemini-2.5-flash");
     res.json(result);
   } catch (e) {
-    console.error("[Capture Error]", e.message);
+    console.error("[Capture Error Trace]", e);
     res.status(500).json({ error: e.message });
   }
 });
