@@ -1,4 +1,4 @@
-
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -55,7 +55,7 @@ async function callGemini(prompt, modelId = "gemini-2.5-flash") {
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
       tools: [{ googleSearch: {} }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.3 }
+      generationConfig: { temperature: 0.3 }
     })
   });
 
@@ -66,7 +66,35 @@ async function callGemini(prompt, modelId = "gemini-2.5-flash") {
   }
 
   const rawText = data.candidates[0].content.parts[0].text;
-  return JSON.parse(rawText.replace(/```json|```/g, "").trim());
+  let cleanText = rawText.trim();
+
+  if (cleanText.startsWith("```json")) {
+    cleanText = cleanText.substring(7);
+  } else if (cleanText.startsWith("```")) {
+    cleanText = cleanText.substring(3);
+  }
+
+  if (cleanText.endsWith("```")) {
+    cleanText = cleanText.substring(0, cleanText.length - 3);
+  }
+
+  cleanText = cleanText.trim();
+
+  // Si sigue fallando y no era markdown, podemos aislar de { a }
+  if (!cleanText.startsWith("{")) {
+    const firstBrace = cleanText.indexOf('{');
+    const lastBrace = cleanText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+    }
+  }
+
+  try {
+    return JSON.parse(cleanText);
+  } catch (err) {
+    console.error("[JSON Parse Error] Raw text:", rawText);
+    throw new Error("Gemini returned invalid JSON structure.");
+  }
 }
 
 // --- CLASSE GENERADORA DE DOCX (MIGRADA AL SERVEI) ---
