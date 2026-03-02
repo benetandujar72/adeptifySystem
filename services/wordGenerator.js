@@ -8,28 +8,51 @@ const {
 
 async function fetchImageBuffer(prompt) {
   try {
-    const encode = encodeURIComponent(prompt);
-    const res = await fetch(`https://image.pollinations.ai/prompt/${encode}?width=800&height=450&nologo=true`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+    const apiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
+    if (!apiKey) {
+      console.warn("[WordGenerator] GEMINI_API_KEY is not set. Skipping image generation.");
+      return null;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
 
     if (!res.ok) {
-      console.warn(`[WordGenerator] Image fetch failed: ${res.status}`);
+      const errText = await res.text();
+      console.warn(`[WordGenerator] Gemini Image fetch failed (${res.status}): ${errText}`);
       return null;
     }
 
-    const contentType = res.headers.get('content-type');
-    if (contentType && !contentType.includes('image')) {
-      console.warn(`[WordGenerator] Image fetch returned invalid content type: ${contentType}`);
-      return null;
+    const payload = await res.json();
+
+    // El modelo gemini-3-pro-image-preview ahora suele devolver en formato de candidates -> parts -> inlineData -> data (base64)
+    if (payload.candidates && payload.candidates.length > 0) {
+      const parts = payload.candidates[0].content?.parts || [];
+      const imagePart = parts.find(p => p.inlineData && p.inlineData.data);
+      if (imagePart) {
+        return Buffer.from(imagePart.inlineData.data, 'base64');
+      }
     }
 
-    const arrayBuffer = await res.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    // Alternative schema
+    if (payload.predictions && payload.predictions.length > 0) {
+      const b64 = payload.predictions[0].bytesBase64Encoded || payload.predictions[0].image?.imageBytes;
+      if (b64) {
+        return Buffer.from(b64, 'base64');
+      }
+    }
+
+    console.warn(`[WordGenerator] Gemini API completed but returned unexpected image JSON structure.`);
+    return null;
+
   } catch (e) {
-    console.error(`[WordGenerator] Error fetching image:`, e);
+    console.error(`[WordGenerator] Error fetching Gemini image:`, e);
     return null;
   }
 }
