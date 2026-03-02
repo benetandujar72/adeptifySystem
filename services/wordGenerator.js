@@ -3,8 +3,19 @@ const {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   AlignmentType, Table, TableRow, TableCell, WidthType,
   ShadingType, PageBreak, Header, Footer, PageNumber,
-  TableOfContents, LevelFormat, BorderStyle
+  TableOfContents, LevelFormat, BorderStyle, ImageRun
 } = docx;
+
+async function fetchImageBuffer(prompt) {
+  try {
+    const encode = encodeURIComponent(prompt);
+    const res = await fetch(`https://image.pollinations.ai/prompt/${encode}?width=800&height=450&nologo=true`);
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch (e) {
+    return null;
+  }
+}
 
 class WordProposalGenerator {
   async generate(data) {
@@ -28,19 +39,19 @@ class WordProposalGenerator {
       personalizacion: data.personalizacion || {}
     };
 
-    const val = (v) => v || "[Pendiente de definir]";
-    const isEdu = d.cliente.sector === "educativo";
+    const val = (v) => v || "Solució adaptada en procés de disseny operatiu específic.";
+    const isEdu = d.cliente.sector === "educativo" || d.cliente.sector === "educació";
 
     // 2. COLORS
     const COLORS = {
-      PRIMARY: (d.personalizacion.color_primary || "1B3A5C").replace('#', ''),
-      SECONDARY: (d.personalizacion.color_secondary || "2E75B6").replace('#', ''),
-      ACCENT: (d.personalizacion.color_accent || "4A90D9").replace('#', ''),
-      DARK: "1A1A1A",
+      PRIMARY: (d.personalizacion.color_primary || "2F1C6A").replace('#', ''),
+      SECONDARY: (d.personalizacion.color_secondary || "673DE6").replace('#', ''),
+      ACCENT: (d.personalizacion.color_accent || "8C85FF").replace('#', ''),
+      DARK: "333333",
       GRAY: "666666",
-      LIGHT_BG: "E8F0FE",
+      LIGHT_BG: "F3F0FF",
       WHITE: "FFFFFF",
-      BORDER: "B0C4DE"
+      BORDER: "E8E3FF"
     };
 
     // 3. HELPER FUNCTIONS
@@ -72,6 +83,9 @@ class WordProposalGenerator {
       return new Table({ width: { size: 9360, type: WidthType.DXA }, rows: tableRows });
     };
 
+    const imgPrompt = `Modern SaaS dashboard UI for ${d.cliente.nombre || "Digital Transformation"}, app layout, clean modern interface analytics blue and purple colors`;
+    const uiImageBuffer = await fetchImageBuffer(imgPrompt);
+
     // 4. BUILDING BODY SECTIONS
     const bodyContent = [];
 
@@ -83,14 +97,14 @@ class WordProposalGenerator {
     // 2. Contexto y Diagnóstico
     bodyContent.push(createHeading1("2. Contexto y Diagnóstico de Situación"));
     bodyContent.push(createHeading2("2.1 Análisis del Entorno Actual"));
-    bodyContent.push(createText(val(d.diagnostico.entorno)));
+    bodyContent.push(createText(val(d.diagnostico.entorno_actual || d.diagnostico.entorno)));
     bodyContent.push(createHeading2("2.2 Diagnóstico de Procesos Actuales"));
-    bodyContent.push(createText(val(d.diagnostico.procesos)));
+    bodyContent.push(createText(val(d.diagnostico.cuello_botella || d.diagnostico.procesos)));
     bodyContent.push(createHeading2("2.3 Identificación de Necesidades"));
     if (d.diagnostico.necesidades && d.diagnostico.necesidades.length > 0) {
       bodyContent.push(createTable(
         ["ID", "Descripción", "Impacto", "Prioridad"],
-        d.diagnostico.necesidades.map(n => [n.id, n.descripcion, n.impacto, n.prioridad]),
+        d.diagnostico.necesidades.map(n => [n.id || "N1", n.descripcion, n.impacto, n.prioridad]),
         [1000, 4360, 2500, 1500]
       ));
     } else {
@@ -100,7 +114,21 @@ class WordProposalGenerator {
     // 3. Solución Propuesta
     bodyContent.push(createHeading1("3. Solución Propuesta"));
     bodyContent.push(createHeading2("3.1 Visión General de la Solución"));
-    bodyContent.push(createText(val(d.solucion.vision)));
+    bodyContent.push(createText(val(d.solucion.vision_general || d.solucion.vision)));
+
+    if (uiImageBuffer) {
+      bodyContent.push(createHeading2("3.1.1 Prototipo de Interfaz Propuesta"));
+      bodyContent.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new ImageRun({
+            data: uiImageBuffer,
+            transformation: { width: 500, height: 281 },
+            type: "jpeg"
+          })
+        ]
+      }));
+    }
 
     bodyContent.push(createHeading2("3.2 Componentes de la Solución"));
     bodyContent.push(createHeading3("3.2.1 Automatización de Procesos (RPA/BPM)"));

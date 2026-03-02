@@ -44,7 +44,7 @@ const getSupabaseAdmin = () => {
 };
 
 // --- GEMINI RESILIENT CALLER ---
-async function callGemini(prompt, modelId = "gemini-3.1-pro-preview") {
+async function callGemini(prompt, modelId = "gemini-2.5-flash") {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
@@ -54,13 +54,13 @@ async function callGemini(prompt, modelId = "gemini-3.1-pro-preview") {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: "application/json" }
+      tools: [{ googleSearch: {} }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.3 }
     })
   });
 
   const data = await response.json();
   if (data.error) {
-    if (modelId.includes("3.1")) return callGemini(prompt, "gemini-1.5-pro");
     throw new Error(data.error.message);
   }
 
@@ -77,25 +77,73 @@ app.post('/api/automation/capture', async (req, res) => {
   const { url } = req.body;
   try {
     console.info(`[automation] Scraping URL: ${url}`);
-    const fetchResp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.google.com/' } });
-    const html = await fetchResp.text();
-    const $ = cheerio.load(html);
-    const text = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
 
-    const prompt = `Actua com a consultor sènior d'Adeptify. Analitza aquesta web i genera un JSON amb la següent estructura exacta:
+    // Attempt basic fallback scrape
+    let text = "";
+    try {
+      const fetchResp = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } });
+      const html = await fetchResp.text();
+      const $ = cheerio.load(html);
+      text = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
+    } catch (e) {
+      text = `Error scraping ${url}. El asistente debe buscar información en internet sobre esta entidad.`;
+    }
+
+    const prompt = `
+Eres un consultor sénior especializado en transformación digital, automatización de procesos e implementación de IA para empresas e instituciones. Trabajas para Adeptify Systems.
+
+REGLA CRÍTICA — PROHIBICIÓN ABSOLUTA DE PLACEHOLDERS:
+NUNCA incluyas "Pendiente de definir", "A completar", "TBD", "N/A" o variantes entre corchetes.
+CADA sección DEBE contener contenido real, concreto y profesional.
+INFIERE contenido razonable basándote en el contexto del cliente y BÚSCALO CON GOOGLE SEARCH (la herramienta está activada) si necesitas datos específicos de la escuela/empresa.
+
+REGLAS DE SECCIONES (Aplica esto al generar proposal_data):
+- 3.3 Arquitectura: Genera diagrama textual real (ej. Web -> CRM -> Automations).
+- 5.1 Temporal: Mínimo 6 fases reales. Proyecto estándar PYME: 8 semanas, Edu: 10-12 semanas.
+- 7.1 Inversión: Desglose concreto de importes. Si no hay datos, infiere (PYME: 3k-8k, Edu: 6k-15k).
+- 7.3 ROI: Calcula ROI con horas ahorradas y periodo de amortización.
+- 8.2 SLA: Genera tabla real 3 niveles (Crítico <4h, Estándar <24h, Consultas).
+- 9 Riesgos: 5 riesgos estándar adaptados con mitigaciones reales.
+- 10 Casos de Éxito: Inventa o infiere 2 casos hiperrealistas similares a la entidad analizada (ej. "Escuela X: Reducción 60% tiempo matrícula").
+- 11.1 Validez: 30 días.
+- 11.4 Supuestos: 3 supuestos, 4 exclusiones.
+- 12 Pasos: 5 acciones con responsables y fechas (Semanas 1-4).
+- Firma: Usa "Responsable autoritzat" y "Direcció" si no sabes nombres exactos. NUNCA en blanco.
+
+Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "proposal_data":
 {
-  "company_name": "Nom de l'escola o empresa",
-  "contact_email": "Email de contacte extret o deduït",
+  "company_name": "Nom de l'escola o empresa extret o investigat",
+  "contact_email": "Email extret o deduït",
   "recommended_solution": "Breu descripció de la solució proposada",
   "needs_detected": ["Necessitat 1", "Necessitat 2", "Necessitat 3"],
-  "recommended_services": ["Servei suggerit 1", "Servei suggerit 2"],
-  "main_bottleneck": "Coll d'ampolla principal detectat",
-  "estimated_budget_range": "Ex: 5.000€ - 8.000€",
-  "custom_pitch": "Resum executiu o pitch personalitzat per a l'empresa"
+  "recommended_services": ["Servei 1", "Servei 2"],
+  "main_bottleneck": "Coll d'ampolla detectat o inferit",
+  "estimated_budget_range": "Estimació en base a les regles",
+  "custom_pitch": "Resum executiu o pitch increïblement personalitzat",
+  "proposal_data": {
+    "consultora": { "nombre": "Adeptify Systems" },
+    "cliente": { "nombre": "...", "tipo": "...", "sector": "...", "contacto_nombre": "Responsable autoritzat", "contacto_cargo": "Direcció" },
+    "propuesta": { "referencia": "PROP-9403", "fecha": "2026-03-02", "version": "1.0", "validez_dias": 30 },
+    "diagnostico": { "resumen_ejecutivo": "...", "entorno_actual": "...", "cuello_botella": "...", "necesidades": [ {"id":"N1","descripcion":"...","impacto":"Alt","prioridad":"Alta"} ] },
+    "solucion": { "vision_general": "...", "componentes": { "automatizacion": "...", "plataforma": "...", "integraciones": "...", "ia": "..." }, "arquitectura": { "capas": ["Frontend", "Backend..."], "integraciones_externas": ["..."], "tecnologias": ["n8n", "OpenAI API", "PostgreSQL"], "flujo_datos": "..." }, "diferenciadores": ["IA nativa"] },
+    "cronograma": { "duracion_total": "10 setmanes", "fases": [ {"nombre": "...", "duracion": "Setmana 1-2", "actividades": ["..."], "entregables": ["..."]} ] },
+    "equipo": [ {"rol": "Consultor IT", "nombre": "Equip Adeptify", "dedicacion": "Alta", "experiencia": "Expert"} ],
+    "economia": { "rango_presupuesto": "...", "moneda": "EUR", "conceptos": [ {"descripcion": "...", "importe": 3500, "porcentaje": 45} ], "total": 8000, "condiciones_pago": "50% inici + 50% entrega", "roi": { "horas_ahorradas_semana": 15, "coste_hora_estimado": 25, "ahorro_anual_estimado": 19500, "periodo_amortizacion_meses": 5, "roi_porcentaje": 144 } },
+    "garantias": { "periodo_garantia": "6 mesos", "sla": [ {"servicio": "Suport", "tiempo_respuesta": "< 4h", "tiempo_resolucion": "< 24h", "disponibilidad": "99.5%"} ] },
+    "riesgos": [ {"riesgo": "...", "probabilidad": "Media", "impacto": "Alto", "mitigacion": "..."} ],
+    "casos_exito": [ {"cliente": "...", "sector": "...", "reto": "...", "solucion": "...", "resultados": "..."} ],
+    "condiciones": { "propiedad_intelectual": "...", "confidencialidad": "...", "supuestos": ["..."], "exclusiones": ["..."] },
+    "proximos_pasos": [ {"accion": "...", "responsable": "...", "plazo": "..."} ]
+  }
 }
-IDIOMA: CATALÀ. TEXT: ${text}`;
 
-    const result = await callGemini(prompt);
+IDIOMA DE RESPOSTA (pel contingut): CATALÀ.
+Usa a fons la eina "googleSearch" per investigar la URL proporcionada i el nom de l'entitat, la seva història i el que fan.
+TEXT OBTINGUT: ${text}
+`;
+
+    // Utiliza un modelo estándar moderno, flash 2.5 soporte tool calling
+    const result = await callGemini(prompt, "gemini-2.5-flash");
     res.json(result);
   } catch (e) {
     console.error("[Capture Error]", e.message);

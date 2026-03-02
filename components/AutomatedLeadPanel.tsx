@@ -17,6 +17,7 @@ interface AIAnalysis {
   custom_pitch: string;
   video_script?: string;
   estimated_hours_lost_per_week?: number;
+  proposal_data?: any;
 }
 
 const AutomatedLeadPanel: React.FC = () => {
@@ -89,6 +90,9 @@ const AutomatedLeadPanel: React.FC = () => {
   };
 
   const buildMappedDocxData = () => {
+    if (analysis?.proposal_data) {
+      return analysis.proposal_data;
+    }
     return {
       consultora: { nombre: "Adeptify Systems", logo_url: "https://adeptify.es/logo.png" },
       cliente: { nombre: lead.name, contacto: lead.email, sector: "educativo" },
