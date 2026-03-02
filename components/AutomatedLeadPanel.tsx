@@ -21,7 +21,7 @@ interface AIAnalysis {
 }
 
 const AutomatedLeadPanel: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [lead, setLead] = useState<LeadData>({ email: '', name: '', companyDescription: '' });
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -64,7 +64,7 @@ const AutomatedLeadPanel: React.FC = () => {
       const resp = await fetch('/api/automation/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default' })
+        body: JSON.stringify({ url: scrapeUrl, tenantSlug: 'default', lang: language || 'ca' })
       });
 
       clearInterval(stepInterval);
@@ -164,21 +164,21 @@ const AutomatedLeadPanel: React.FC = () => {
       doc.setFontSize(28);
       doc.text("ADEPTIFY SYSTEMS", 20, 35);
       doc.setFontSize(12);
-      doc.text("CONSULTORIA ESTRATÈGICA EN INTEL·LIGÈNCIA ARTIFICIAL", 20, 45);
+      doc.text(t.report_subtitle || "CONSULTORIA ESTRATÈGICA EN INTEL·LIGÈNCIA ARTIFICIAL", 20, 45);
 
       doc.setTextColor(slate[0], slate[1], slate[2]);
       doc.setFontSize(14);
-      doc.text("INFORME D'AUDITORIA I PROPOSTA DE TRANSFORMACIÓ", 20, 80);
+      doc.text(t.report_title || "INFORME D'AUDITORIA I PROPOSTA DE TRANSFORMACIÓ", 20, 80);
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text(`PREPARAT PER A: ${lead.name.toUpperCase()}`, 20, 90);
-      doc.text(`DATA: ${new Date().toLocaleDateString()}`, 20, 97);
+      doc.text(`${t.report_prepared || "PREPARAT PER A:"} ${lead.name.toUpperCase()}`, 20, 90);
+      doc.text(`${t.report_date || "DATA:"} ${new Date().toLocaleDateString()}`, 20, 97);
 
       // Section: Executive Summary
       doc.setDrawColor(226, 232, 240);
       doc.line(20, 105, 190, 105);
       doc.setFont("helvetica", "bold");
-      doc.text("1. RESUM EXECUTIU", 20, 115);
+      doc.text(t.report_section1 || "1. RESUM EXECUTIU", 20, 115);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       const splitPitch = doc.splitTextToSize(analysis.custom_pitch, 170);
@@ -187,7 +187,7 @@ const AutomatedLeadPanel: React.FC = () => {
       // Section: Recommended Solutions
       let y = 160;
       doc.setFont("helvetica", "bold");
-      doc.text("2. SOLUCIONS ESTRATÈGIQUES SUGGERIDES", 20, y);
+      doc.text(t.report_section2 || "2. SOLUCIONS ESTRATÈGIQUES SUGGERIDES", 20, y);
       doc.setFont("helvetica", "normal");
       (analysis.recommended_services || []).forEach(service => {
         y += 8;
@@ -199,13 +199,13 @@ const AutomatedLeadPanel: React.FC = () => {
       y = 30;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
-      doc.text("3. ELS NOSTRES SERVEIS PER A CENTRES EDUCATIUS", 20, y);
+      doc.text(t.report_section3 || "3. ELS NOSTRES SERVEIS PER A CENTRES EDUCATIUS", 20, y);
 
       const portfolio = [
-        { name: "Automatització de Processos", action: "Sincronització preinscripcions ERP/SGA, control d'assistència, generació massiva d'informes." },
-        { name: "Digital Twin & Quadre de Comanament", action: "Panells interactius amb indicadors acadèmics i financers en temps real." },
-        { name: "Portal Famílies UNIFICAT", action: "Comunicació AFA/Centre en un únic flux digital sense friccions." },
-        { name: "Formació Docent IA", action: "Capacitació pràctica per reduir la càrrega administrativa al professorat." }
+        { name: t.port_name_1 || "Automatització de Processos", action: t.port_action_1 || "Sincronització preinscripcions ERP/SGA, control d'assistència, generació massiva d'informes." },
+        { name: t.port_name_2 || "Digital Twin & Quadre de Comanament", action: t.port_action_2 || "Panells interactius amb indicadors acadèmics i financers en temps real." },
+        { name: t.port_name_3 || "Portal Famílies UNIFICAT", action: t.port_action_3 || "Comunicació AFA/Centre en un únic flux digital sense friccions." },
+        { name: t.port_name_4 || "Formació Docent IA", action: t.port_action_4 || "Capacitació pràctica per reduir la càrrega administrativa al professorat." }
       ];
 
       y += 15;
@@ -226,17 +226,17 @@ const AutomatedLeadPanel: React.FC = () => {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text("VOLS VEURE COM HO FEM?", 30, y + 15);
+      doc.text(t.report_cta1 || "VOLS VEURE COM HO FEM?", 30, y + 15);
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text("Agenda una sessió de consultoria estratègica personalitzada.", 30, y + 25);
+      doc.text(t.report_cta2 || "Agenda una sessió de consultoria estratègica personalitzada.", 30, y + 25);
       doc.text("EMAIL: bandujar@edutac.es", 30, y + 40);
       doc.text("WEB: www.adeptify.es", 30, y + 48);
 
       // Final Footer
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text("adeptify.es • Carrer de l'Avenir, Barcelona • Document Confidencial", 105, 285, { align: "center" });
+      doc.text(t.report_footer || "adeptify.es • Carrer de l'Avenir, Barcelona • Document Confidencial", 105, 285, { align: "center" });
 
       const pdfBase64 = doc.output('datauristring').split(',')[1];
       const recipient = isTestMode ? testEmail : lead.email;
@@ -247,7 +247,7 @@ const AutomatedLeadPanel: React.FC = () => {
         const docxResp = await fetch('/api/automation/generate-docx', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leadData: buildMappedDocxData() })
+          body: JSON.stringify({ leadData: buildMappedDocxData(), lang: language || 'ca' })
         });
         if (docxResp.ok) {
           const blob = await docxResp.blob();
@@ -297,7 +297,7 @@ const AutomatedLeadPanel: React.FC = () => {
       const resp = await fetch('/api/automation/generate-docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadData: mappedDocxData })
+        body: JSON.stringify({ leadData: mappedDocxData, lang: language || 'ca' })
       });
       if (!resp.ok) throw new Error("Falla al generar el DOCX");
 

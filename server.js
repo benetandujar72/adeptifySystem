@@ -103,7 +103,8 @@ const { WordProposalGenerator } = require('./services/wordGenerator.js');
 // --- ENDPOINTS ---
 
 app.post('/api/automation/capture', async (req, res) => {
-  const { url } = req.body;
+  const { url, lang } = req.body;
+  const targetLang = lang === 'es' ? 'CASTELLANO' : (lang === 'eu' ? 'EUSKERA' : 'CATALÀ');
   try {
     console.info(`[automation] Scraping URL: ${url}`);
 
@@ -141,24 +142,24 @@ REGLAS DE SECCIONES (Aplica esto al generar proposal_data):
 
 Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "proposal_data":
 {
-  "company_name": "Nom de l'escola o empresa extret o investigat",
-  "contact_email": "Email extret o deduït",
-  "recommended_solution": "Breu descripció de la solució proposada",
-  "needs_detected": ["Necessitat 1", "Necessitat 2", "Necessitat 3"],
-  "recommended_services": ["Servei 1", "Servei 2"],
-  "main_bottleneck": "Coll d'ampolla detectat o inferit",
-  "estimated_budget_range": "Estimació en base a les regles",
-  "custom_pitch": "Resum executiu o pitch increïblement personalitzat",
+  "company_name": "Nombre de la empresa extraido o investigado",
+  "contact_email": "Email extraido",
+  "recommended_solution": "Breve descripción de la solución",
+  "needs_detected": ["Necesidad 1", "Necesidad 2"],
+  "recommended_services": ["Servicio 1", "Servicio 2"],
+  "main_bottleneck": "Cuello de botella",
+  "estimated_budget_range": "Estimacion",
+  "custom_pitch": "Pitch hiper realista en un parrafo",
   "proposal_data": {
     "consultora": { "nombre": "Adeptify Systems" },
-    "cliente": { "nombre": "...", "tipo": "...", "sector": "...", "contacto_nombre": "Responsable autoritzat", "contacto_cargo": "Direcció" },
+    "cliente": { "nombre": "...", "tipo": "...", "sector": "...", "contacto_nombre": "Responsable autorizado", "contacto_cargo": "Dirección" },
     "propuesta": { "referencia": "PROP-9403", "fecha": "2026-03-02", "version": "1.0", "validez_dias": 30 },
-    "diagnostico": { "resumen_ejecutivo": "...", "entorno_actual": "...", "cuello_botella": "...", "necesidades": [ {"id":"N1","descripcion":"...","impacto":"Alt","prioridad":"Alta"} ] },
+    "diagnostico": { "resumen_ejecutivo": "...", "entorno_actual": "...", "cuello_botella": "...", "necesidades": [ {"id":"N1","descripcion":"...","impacto":"Alto","prioridad":"Alta"} ] },
     "solucion": { "vision_general": "...", "componentes": { "automatizacion": "...", "plataforma": "...", "integraciones": "...", "ia": "..." }, "arquitectura": { "capas": ["Frontend", "Backend..."], "integraciones_externas": ["..."], "tecnologias": ["n8n", "OpenAI API", "PostgreSQL"], "flujo_datos": "..." }, "diferenciadores": ["IA nativa"] },
-    "cronograma": { "duracion_total": "10 setmanes", "fases": [ {"nombre": "...", "duracion": "Setmana 1-2", "actividades": ["..."], "entregables": ["..."]} ] },
-    "equipo": [ {"rol": "Consultor IT", "nombre": "Equip Adeptify", "dedicacion": "Alta", "experiencia": "Expert"} ],
-    "economia": { "rango_presupuesto": "...", "moneda": "EUR", "conceptos": [ {"descripcion": "...", "importe": 3500, "porcentaje": 45} ], "total": 8000, "condiciones_pago": "50% inici + 50% entrega", "roi": { "horas_ahorradas_semana": 15, "coste_hora_estimado": 25, "ahorro_anual_estimado": 19500, "periodo_amortizacion_meses": 5, "roi_porcentaje": 144 } },
-    "garantias": { "periodo_garantia": "6 mesos", "sla": [ {"servicio": "Suport", "tiempo_respuesta": "< 4h", "tiempo_resolucion": "< 24h", "disponibilidad": "99.5%"} ] },
+    "cronograma": { "duracion_total": "10 semanas", "fases": [ {"nombre": "...", "duracion": "Semana 1-2", "actividades": ["..."], "entregables": ["..."]} ] },
+    "equipo": [ {"rol": "Consultor IT", "nombre": "Equipo Adeptify", "dedicacion": "Alta", "experiencia": "Experto"} ],
+    "economia": { "rango_presupuesto": "...", "moneda": "EUR", "conceptos": [ {"descripcion": "...", "importe": 3500, "porcentaje": 45} ], "total": 8000, "condiciones_pago": "50% inicio + 50% entrega", "roi": { "horas_ahorradas_semana": 15, "coste_hora_estimado": 25, "ahorro_anual_estimado": 19500, "periodo_amortizacion_meses": 5, "roi_porcentaje": 144 } },
+    "garantias": { "periodo_garantia": "6 meses", "sla": [ {"servicio": "Soporte", "tiempo_respuesta": "< 4h", "tiempo_resolucion": "< 24h", "disponibilidad": "99.5%"} ] },
     "riesgos": [ {"riesgo": "...", "probabilidad": "Media", "impacto": "Alto", "mitigacion": "..."} ],
     "casos_exito": [ {"cliente": "...", "sector": "...", "reto": "...", "solucion": "...", "resultados": "..."} ],
     "condiciones": { "propiedad_intelectual": "...", "confidencialidad": "...", "supuestos": ["..."], "exclusiones": ["..."] },
@@ -166,9 +167,9 @@ Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "pr
   }
 }
 
-IDIOMA DE RESPOSTA (pel contingut): CATALÀ.
-Usa a fons la eina "googleSearch" per investigar la URL proporcionada i el nom de l'entitat, la seva història i el que fan.
-TEXT OBTINGUT: ${text}
+IDIOMA DE RESPUESTA PARA EL CONTENIDO DEL JSON Y LA PROPUESTA (MUY IMPORTANTE, SIEMPRE DEBE SER ESTE, EXCEPTO CLAVES JSON QUE VAN EN EL JSON EXACTO): ${targetLang}.
+Usa a fondo la herramienta "googleSearch" para investigar la URL proporcionada y el nombre de la entidad, su historia y lo que hacen.
+TEXTO OBTENIDO DEL SCRAPER INICIAL: ${text}
 `;
 
     // Utiliza un modelo estándar moderno, flash 2.5 soporte tool calling
@@ -238,7 +239,7 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
 app.post('/api/automation/generate-docx', async (req, res) => {
   try {
     const generator = new WordProposalGenerator();
-    const buffer = await generator.generate(req.body.leadData);
+    const buffer = await generator.generate(req.body.leadData, req.body.lang || 'ca');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').send(buffer);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
