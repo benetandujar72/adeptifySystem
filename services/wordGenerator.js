@@ -9,10 +9,27 @@ const {
 async function fetchImageBuffer(prompt) {
   try {
     const encode = encodeURIComponent(prompt);
-    const res = await fetch(`https://image.pollinations.ai/prompt/${encode}?width=800&height=450&nologo=true`);
+    const res = await fetch(`https://image.pollinations.ai/prompt/${encode}?width=800&height=450&nologo=true`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+
+    if (!res.ok) {
+      console.warn(`[WordGenerator] Image fetch failed: ${res.status}`);
+      return null;
+    }
+
+    const contentType = res.headers.get('content-type');
+    if (contentType && !contentType.includes('image')) {
+      console.warn(`[WordGenerator] Image fetch returned invalid content type: ${contentType}`);
+      return null;
+    }
+
     const arrayBuffer = await res.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (e) {
+    console.error(`[WordGenerator] Error fetching image:`, e);
     return null;
   }
 }
