@@ -23,8 +23,9 @@ export const centerInsightsService = {
       const resp = await fetch(`${BASE_URL}/documents/by-center?center_name=${encodeURIComponent(centerNameOrKey)}`);
       if (resp.ok) {
         const data = await resp.json();
-        const dafoDoc = data.find((d: any) => d.tipus === 'dafo');
-        const proposalDoc = data.find((d: any) => d.tipus === 'custom_proposal' || d.tipus === 'proposal');
+        const docs: any[] = Array.isArray(data) ? data : (data.documents || []);
+        const dafoDoc = docs.find((d: any) => d.tipus === 'dafo');
+        const proposalDoc = docs.find((d: any) => d.tipus === 'custom_proposal' || d.tipus === 'proposal');
 
         if (dafoDoc || proposalDoc) {
           return {

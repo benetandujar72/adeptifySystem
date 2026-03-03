@@ -10,7 +10,8 @@ export const centerArtifactsService = {
       const resp = await fetch(`${BASE_URL}/documents/by-center?center_name=${encodeURIComponent(centerName)}`);
       if (resp.ok) {
         const data = await resp.json();
-        return data.map((d: any) => ({
+        const docs: any[] = Array.isArray(data) ? data : (data.documents || []);
+        return docs.map((d: any) => ({
           id: String(d.id),
           tenantSlug: tenantSlug,
           centerKey: normalizeCenterKey(centerName),
