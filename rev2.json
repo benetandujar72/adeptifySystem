@@ -1,0 +1,168 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Service",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/build-enable-automatic-updates": "false",
+      "run.googleapis.com/build-id": "11084941-380e-4210-a0ed-c0e5d8dbff2a",
+      "run.googleapis.com/build-image-uri": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/cloud-run-source-deploy/adeptifysystem",
+      "run.googleapis.com/build-name": "projects/1061852826388/locations/europe-west1/builds/11084941-380e-4210-a0ed-c0e5d8dbff2a",
+      "run.googleapis.com/build-source-location": "gs://run-sources-gen-lang-client-0757991117-europe-west1/services/adeptifysystem/1772451077.063962-e6883c7d057242778d994cb0e653f581.zip#1772451080144909",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "558.0.0",
+      "run.googleapis.com/ingress": "all",
+      "run.googleapis.com/ingress-status": "all",
+      "run.googleapis.com/maxScale": "20",
+      "run.googleapis.com/operation-id": "ba0863ac-8781-4e76-8f28-869a3cc62674",
+      "run.googleapis.com/urls": "[\"https://adeptifysystem-1061852826388.europe-west1.run.app\",\"https://adeptifysystem-x7qi7vmulq-ew.a.run.app\"]",
+      "serving.knative.dev/creator": "1061852826388-compute@developer.gserviceaccount.com",
+      "serving.knative.dev/lastModifier": "1061852826388-compute@developer.gserviceaccount.com"
+    },
+    "creationTimestamp": "2025-12-23T15:28:42.926196Z",
+    "generation": 58,
+    "labels": {
+      "cloud.googleapis.com/location": "europe-west1",
+      "commit-sha": "7cd073023f2c12be9e145974a07b9f9b59587b21",
+      "gcb-build-id": "57ce0a6e-b598-45fb-bd10-d2ffb56f1938",
+      "gcb-trigger-id": "e5758afe-9cce-4d82-b356-e31113401059",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "name": "adeptifysystem",
+    "namespace": "1061852826388",
+    "resourceVersion": "AAZMCS8o4GY",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/1061852826388/services/adeptifysystem",
+    "uid": "1f8f340d-200d-40a7-9d75-7e13cbe4ef6e"
+  },
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/maxScale": "20",
+          "run.googleapis.com/client-name": "gcloud",
+          "run.googleapis.com/client-version": "558.0.0"
+        },
+        "labels": {
+          "client.knative.dev/nonce": "vzyuowkcvk",
+          "commit-sha": "7cd073023f2c12be9e145974a07b9f9b59587b21",
+          "gcb-build-id": "57ce0a6e-b598-45fb-bd10-d2ffb56f1938",
+          "gcb-trigger-id": "e5758afe-9cce-4d82-b356-e31113401059",
+          "managed-by": "gcp-cloud-build-deploy-cloud-run",
+          "run.googleapis.com/startupProbeType": "Default"
+        }
+      },
+      "spec": {
+        "containerConcurrency": 80,
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "SMTP_HOST",
+                "value": "smtp.gmail.com"
+              },
+              {
+                "name": "SMTP_PORT",
+                "value": "587"
+              },
+              {
+                "name": "SMTP_SECURE",
+                "value": "false"
+              },
+              {
+                "name": "SMTP_USER",
+                "value": "bandujar@edutac.es"
+              },
+              {
+                "name": "CONTACT_TO",
+                "value": "bandujar@edutac.es"
+              },
+              {
+                "name": "CONTACT_FROM_NAME",
+                "value": "Adeptify Consultor"
+              },
+              {
+                "name": "GEMINI_API_KEY",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "GEMINI_API_KEY"
+                  }
+                }
+              },
+              {
+                "name": "SMTP_PASS",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "latest",
+                    "name": "SMTP_PASS"
+                  }
+                }
+              }
+            ],
+            "image": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/adeptify/adeptifysystem:61744cde-c060-4ba2-a460-99c152ec8ca0",
+            "ports": [
+              {
+                "containerPort": 2705,
+                "name": "http1"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "1000m",
+                "memory": "512Mi"
+              }
+            },
+            "startupProbe": {
+              "failureThreshold": 1,
+              "periodSeconds": 240,
+              "tcpSocket": {
+                "port": 2705
+              },
+              "timeoutSeconds": 240
+            }
+          }
+        ],
+        "serviceAccountName": "1061852826388-compute@developer.gserviceaccount.com",
+        "timeoutSeconds": 300
+      }
+    },
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100
+      }
+    ]
+  },
+  "status": {
+    "address": {
+      "url": "https://adeptifysystem-x7qi7vmulq-ew.a.run.app"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-03-02T11:49:49.888614Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:49:27.889140Z",
+        "status": "True",
+        "type": "ConfigurationsReady"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:49:49.819424Z",
+        "status": "True",
+        "type": "RoutesReady"
+      }
+    ],
+    "latestCreatedRevisionName": "adeptifysystem-00058-78h",
+    "latestReadyRevisionName": "adeptifysystem-00058-78h",
+    "observedGeneration": 58,
+    "traffic": [
+      {
+        "latestRevision": true,
+        "percent": 100,
+        "revisionName": "adeptifysystem-00058-78h"
+      }
+    ],
+    "url": "https://adeptifysystem-x7qi7vmulq-ew.a.run.app"
+  }
+}

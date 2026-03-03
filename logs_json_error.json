@@ -1,0 +1,514 @@
+[
+  {
+    "insertId": "69a5a5690002399624005ff1",
+    "labels": {
+      "commit-sha": "f88f0b7823bcd329664a576c8c62da07bdf0eaef",
+      "gcb-build-id": "7cfe50c9-744e-4bdd-adb4-32062e08315b",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c47b24e55078dd283735ff5567c846fd0ae528d9020e0ec5ec1b606cc0b1607f3aa9a67adfba1d664f13406c3f240dd8e14c762d5764b6de2b6e252fbb5ae86c2ed6e525d00e68f910b79c",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T14:57:45.495744415Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00224-r84",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Gemini returned invalid JSON structure.",
+    "timestamp": "2026-03-02T14:57:45.145814Z"
+  },
+  {
+    "insertId": "69a5a5690002329101e05bfe",
+    "labels": {
+      "commit-sha": "f88f0b7823bcd329664a576c8c62da07bdf0eaef",
+      "gcb-build-id": "7cfe50c9-744e-4bdd-adb4-32062e08315b",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c47b24e55078dd283735ff5567c846fd0ae528d9020e0ec5ec1b606cc0b1607f3aa9a67adfba1d664f13406c3f240dd8e14c762d5764b6de2b6e252fbb5ae86c2ed6e525d00e68f910b79c",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T14:57:45.155835068Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00224-r84",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[JSON Parse Error] Raw text: ```json",
+    "timestamp": "2026-03-02T14:57:45.144017Z"
+  },
+  {
+    "insertId": "69a59cc10004f9ca5b4231c4",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c40998c2b0bbcb8ff954b6914d46ef79d054026c5c145ba534ff22637350a6a058f1b8dd2bec13f7a145d8f6bf2222f24bd1f925236044c0ddd055fb531272edc9756c03051646f93de5",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T14:20:49.687977751Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00221-m59",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Gemini returned invalid JSON structure.",
+    "timestamp": "2026-03-02T14:20:49.326090Z"
+  },
+  {
+    "insertId": "69a59cc10004f3c02a9278c9",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c40998c2b0bbcb8ff954b6914d46ef79d054026c5c145ba534ff22637350a6a058f1b8dd2bec13f7a145d8f6bf2222f24bd1f925236044c0ddd055fb531272edc9756c03051646f93de5",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T14:20:49.365061794Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00221-m59",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[JSON Parse Error] Raw text: ```json",
+    "timestamp": "2026-03-02T14:20:49.324544Z"
+  },
+  {
+    "insertId": "69a5865500075e344c204026",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c426e0bb23bfb72dc3995e1be9d830042c0cadef9de03b59fa0685c89036ee48a8c0e58f05b4cee3854c193c0a83ea9f7b69b54929ec6494f117d08016f5e6f68b177962ca5e9b07e9194e",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:45:09.828714989Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00220-vlr",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Gemini returned invalid JSON structure.",
+    "timestamp": "2026-03-02T12:45:09.482868Z"
+  },
+  {
+    "insertId": "69a58655000755180b4db24d",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c426e0bb23bfb72dc3995e1be9d830042c0cadef9de03b59fa0685c89036ee48a8c0e58f05b4cee3854c193c0a83ea9f7b69b54929ec6494f117d08016f5e6f68b177962ca5e9b07e9194e",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:45:09.488108273Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00220-vlr",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[JSON Parse Error] Raw text: ```json",
+    "timestamp": "2026-03-02T12:45:09.480536Z"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CIn0kOHmpea4rwE"
+      }
+    ],
+    "insertId": "69a5860200098d1533e82a09",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c426e0bb23bfb72dc3995e1be9d830042c0cadef9de03b59fa0685c89036ee48a8c0e58f05b4cee3854c193c0a83ea9f7b69b54929ec6494f117d08016f5e6f68b177962ca5e9b07e9194e",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:43:46.631636387Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00220-vlr",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "ERROR",
+    "textPayload": "SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)\n    at JSON.parse (<anonymous>)\n    at parse (/app/node_modules/body-parser/lib/types/json.js:92:19)\n    at /app/node_modules/body-parser/lib/read.js:128:18\n    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n    at invokeCallback (/app/node_modules/raw-body/index.js:238:16)\n    at done (/app/node_modules/raw-body/index.js:227:7)\n    at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)\n    at IncomingMessage.emit (node:events:519:28)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)",
+    "timestamp": "2026-03-02T12:43:46.625941Z"
+  },
+  {
+    "insertId": "69a5832c00037004fbc23b56",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] SyntaxError: Expected ',' or ']' after array element in JSON at position 19950 (line 367 column 5)",
+    "timestamp": "2026-03-02T12:31:40.225284Z"
+  },
+  {
+    "errorGroups": [
+      {
+        "id": "CIn0kOHmpea4rwE"
+      }
+    ],
+    "insertId": "69a5807000096f16c1aff61a",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:20:00.623261260Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "ERROR",
+    "textPayload": "SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)\n    at JSON.parse (<anonymous>)\n    at parse (/app/node_modules/body-parser/lib/types/json.js:92:19)\n    at /app/node_modules/body-parser/lib/read.js:128:18\n    at AsyncResource.runInAsyncScope (node:async_hooks:214:14)\n    at invokeCallback (/app/node_modules/raw-body/index.js:238:16)\n    at done (/app/node_modules/raw-body/index.js:227:7)\n    at IncomingMessage.onEnd (/app/node_modules/raw-body/index.js:287:7)\n    at IncomingMessage.emit (node:events:519:28)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)",
+    "timestamp": "2026-03-02T12:20:00.618262Z"
+  },
+  {
+    "insertId": "69a57d7b0009901c18360900",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:07:23.964111411Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T12:07:23.626716Z"
+  },
+  {
+    "insertId": "69a57d7b00098f3308306e95",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:07:23.633617160Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Gemini API Error] {",
+    "timestamp": "2026-03-02T12:07:23.626483Z"
+  },
+  {
+    "insertId": "69a57cec00017b58a94300fb",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:05:00.435352431Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T12:05:00.097112Z"
+  },
+  {
+    "insertId": "69a57cec00017ab281f6e51b",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:05:00.101404856Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Gemini API Error] {",
+    "timestamp": "2026-03-02T12:05:00.096946Z"
+  },
+  {
+    "insertId": "69a57cdb0008ae83c0b958f5",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:04:43.906348719Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T12:04:43.568963Z"
+  },
+  {
+    "insertId": "69a57cdb0008ada137bde22d",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4d6ca124a3ec6a6b422b61afba09346a7a359d8f21ad1b8ce297d154d33d761368e17e4cddec157fcbdd70a0f8c97d27c0ffb4d3a0a9e74850c3d5884c30fc6db20adf68e85398b8afd80",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:04:43.574976820Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Gemini API Error] {",
+    "timestamp": "2026-03-02T12:04:43.568737Z"
+  },
+  {
+    "insertId": "69a575b500061a135a8dc44c",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4eec407c5b439aafd71c1ba692323724afbc9223a6a877a314c540e2a0267ba14f4fe54f056f683fdae8d9d8c875ceab3d36e769d4ae0f438255d81e6ffe4de4739f7b65bacf9836f85d3",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T11:34:13.735025521Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] Error: Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T11:34:13.399891Z"
+  },
+  {
+    "insertId": "69a575b500061729a755c86b",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4eec407c5b439aafd71c1ba692323724afbc9223a6a877a314c540e2a0267ba14f4fe54f056f683fdae8d9d8c875ceab3d36e769d4ae0f438255d81e6ffe4de4739f7b65bacf9836f85d3",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T11:34:13.405243235Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00218-2t8",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Gemini API Error] {",
+    "timestamp": "2026-03-02T11:34:13.399145Z"
+  },
+  {
+    "insertId": "69a568eb000252578f29844b",
+    "labels": {
+      "commit-sha": "5549f0bb6000c8f3b8edd6260dde74329791f65a",
+      "gcb-build-id": "34f222d5-abad-4acf-973a-257fa4b3bf43",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4bd1d5ca1638e3958cde44183844e1aebb2d08db91b9a4a927bb7068f31e3bde6f5bdb23f3e3de7b462dceee6993db923e2c3eed782d44b06d9d43c2229c2f51766bf5bdfa2e7ff6f133f",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T10:39:39.336865210Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00217-dxd",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error] Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T10:39:39.152151Z"
+  },
+  {
+    "insertId": "69a568e60005236f2ba71236",
+    "labels": {
+      "commit-sha": "5549f0bb6000c8f3b8edd6260dde74329791f65a",
+      "gcb-build-id": "34f222d5-abad-4acf-973a-257fa4b3bf43",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4bd1d5ca1638e3958cde44183844e1aebb2d08db91b9a4a927bb7068f31e3bde6f5bdb23f3e3de7b462dceee6993db923e2c3eed782d44b06d9d43c2229c2f51766bf5bdfa2e7ff6f133f",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T10:39:34.341371448Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00217-dxd",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error] Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T10:39:34.336751Z"
+  },
+  {
+    "insertId": "69a568c10004f472475e923c",
+    "labels": {
+      "commit-sha": "5549f0bb6000c8f3b8edd6260dde74329791f65a",
+      "gcb-build-id": "34f222d5-abad-4acf-973a-257fa4b3bf43",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4bd1d5ca1638e3958cde44183844e1aebb2d08db91b9a4a927bb7068f31e3bde6f5bdb23f3e3de7b462dceee6993db923e2c3eed782d44b06d9d43c2229c2f51766bf5bdfa2e7ff6f133f",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T10:38:57.329627938Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00217-dxd",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error] Tool use with a response mime type: 'application/json' is unsupported",
+    "timestamp": "2026-03-02T10:38:57.324722Z"
+  }
+]

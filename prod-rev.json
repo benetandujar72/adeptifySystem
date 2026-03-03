@@ -1,0 +1,158 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Revision",
+  "metadata": {
+    "annotations": {
+      "autoscaling.knative.dev/maxScale": "20",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "558.0.0",
+      "run.googleapis.com/operation-id": "0fbf0634-0cac-4688-80cb-262e238e3ef4",
+      "run.googleapis.com/startup-cpu-boost": "true",
+      "serving.knative.dev/creator": "1061852826388-compute@developer.gserviceaccount.com"
+    },
+    "creationTimestamp": "2026-03-02T11:19:33.627394Z",
+    "generation": 1,
+    "labels": {
+      "client.knative.dev/nonce": "ufpclrggxp",
+      "cloud.googleapis.com/location": "europe-west1",
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run",
+      "run.googleapis.com/startupProbeType": "Default",
+      "serving.knative.dev/configuration": "adeptify-consultor",
+      "serving.knative.dev/configurationGeneration": "218",
+      "serving.knative.dev/route": "adeptify-consultor",
+      "serving.knative.dev/service": "adeptify-consultor",
+      "serving.knative.dev/serviceUid": "3bb8c90b-2e5f-4be4-99b6-fcc4028d28f2"
+    },
+    "name": "adeptify-consultor-00218-2t8",
+    "namespace": "1061852826388",
+    "ownerReferences": [
+      {
+        "apiVersion": "serving.knative.dev/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "Configuration",
+        "name": "adeptify-consultor",
+        "uid": "951e642a-36b3-4f0c-90ba-2f5465694768"
+      }
+    ],
+    "resourceVersion": "AAZMCMOGdCA",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/1061852826388/revisions/adeptify-consultor-00218-2t8",
+    "uid": "c0a5be09-78f2-4707-bd65-1fe3339b8e19"
+  },
+  "spec": {
+    "containerConcurrency": 80,
+    "containers": [
+      {
+        "env": [
+          {
+            "name": "SMTP_HOST",
+            "value": "smtp.gmail.com"
+          },
+          {
+            "name": "SMTP_PORT",
+            "value": "587"
+          },
+          {
+            "name": "SMTP_SECURE",
+            "value": "false"
+          },
+          {
+            "name": "SMTP_USER",
+            "value": "bandujar@edutac.es"
+          },
+          {
+            "name": "CONTACT_TO",
+            "value": "bandujar@edutac.es"
+          },
+          {
+            "name": "CONTACT_FROM_NAME",
+            "value": "Adeptify Consultor"
+          },
+          {
+            "name": "GEMINI_API_KEY",
+            "valueFrom": {
+              "secretKeyRef": {
+                "key": "latest",
+                "name": "GEMINI_API_KEY"
+              }
+            }
+          },
+          {
+            "name": "SMTP_PASS",
+            "valueFrom": {
+              "secretKeyRef": {
+                "key": "latest",
+                "name": "SMTP_PASS"
+              }
+            }
+          }
+        ],
+        "image": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/cloud-run-source-deploy/adeptifysystem/adeptify-consultor@sha256:01f4c14751061bd6cdc87d2021322c0d297f6763035f3efcbb2a32b89f694e3b",
+        "name": "adeptify-consultor-1",
+        "ports": [
+          {
+            "containerPort": 2705,
+            "name": "http1"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "cpu": "1000m",
+            "memory": "512Mi"
+          }
+        },
+        "startupProbe": {
+          "failureThreshold": 1,
+          "periodSeconds": 240,
+          "tcpSocket": {
+            "port": 2705
+          },
+          "timeoutSeconds": 240
+        }
+      }
+    ],
+    "serviceAccountName": "1061852826388-compute@developer.gserviceaccount.com",
+    "timeoutSeconds": 300
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-03-02T11:19:42.832642Z",
+        "message": "Deploying revision succeeded in 9.2s.",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:19:42.901530Z",
+        "severity": "Info",
+        "status": "True",
+        "type": "Active"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:19:42.790007Z",
+        "message": "Containers became healthy in 1.86s.",
+        "status": "True",
+        "type": "ContainerHealthy"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:19:39.196029Z",
+        "message": "Container image import completed in 3.48s.",
+        "status": "True",
+        "type": "ContainerReady"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T11:19:40.569965Z",
+        "message": "Provisioning imported containers completed in 1.37s. Checking container health. This will wait for up to 4m for the configured startup probe, including an initial delay of 0s.",
+        "status": "True",
+        "type": "ResourcesAvailable"
+      }
+    ],
+    "imageDigest": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/cloud-run-source-deploy/adeptifysystem/adeptify-consultor@sha256:01f4c14751061bd6cdc87d2021322c0d297f6763035f3efcbb2a32b89f694e3b",
+    "logUrl": "https://console.cloud.google.com/logs/viewer?project=gen-lang-client-0757991117&resource=cloud_run_revision/service_name/adeptify-consultor/revision_name/adeptify-consultor-00218-2t8&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22adeptify-consultor%22%0Aresource.labels.revision_name%3D%22adeptify-consultor-00218-2t8%22",
+    "observedGeneration": 1
+  }
+}

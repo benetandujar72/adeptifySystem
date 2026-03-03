@@ -548,7 +548,27 @@ const ca = {
 
   expansionTitle: "Expansió per Proximitat",
   expansionDesc: "Utilitza els teus èxits per captar centres veïns.",
-  expansionProjectBtn: "Projectar Nodes"
+  expansionProjectBtn: "Projectar Nodes",
+
+  // PDF Report
+  report_subtitle: "CONSULTORIA ESTRATÈGICA EN INTEL·LIGÈNCIA ARTIFICIAL",
+  report_title: "INFORME D'AUDITORIA I PROPOSTA DE TRANSFORMACIÓ",
+  report_prepared: "PREPARAT PER A:",
+  report_date: "DATA:",
+  report_section1: "1. RESUM EXECUTIU",
+  report_section2: "2. SOLUCIONS ESTRATÈGIQUES SUGGERIDES",
+  report_section3: "3. ELS NOSTRES SERVEIS PER A CENTRES EDUCATIUS",
+  port_name_1: "Automatització de Processos",
+  port_action_1: "Sincronització preinscripcions ERP/SGA, control d'assistència, generació massiva d'informes.",
+  port_name_2: "Digital Twin & Quadre de Comanament",
+  port_action_2: "Panells interactius amb indicadors acadèmics i financers en temps real.",
+  port_name_3: "Portal Famílies UNIFICAT",
+  port_action_3: "Comunicació AFA/Centre en un únic flux digital sense friccions.",
+  port_name_4: "Formació Docent IA",
+  port_action_4: "Capacitació pràctica per reduir la càrrega administrativa al professorat.",
+  report_cta1: "VOLS VEURE COM HO FEM?",
+  report_cta2: "Agenda una sessió de consultoria estratègica personalitzada.",
+  report_footer: "adeptify.es • Carrer de l'Avenir, Barcelona • Document Confidencial"
 };
 
 const es = {
@@ -1098,7 +1118,27 @@ const es = {
 
   expansionTitle: "Expansión por Proximidad",
   expansionDesc: "Utiliza tus éxitos para captar centros vecinos.",
-  expansionProjectBtn: "Proyectar Nodos"
+  expansionProjectBtn: "Proyectar Nodos",
+
+  // PDF Report
+  report_subtitle: "CONSULTORÍA ESTRATÉGICA EN INTELIGENCIA ARTIFICIAL",
+  report_title: "INFORME DE AUDITORÍA Y PROPUESTA DE TRANSFORMACIÓN",
+  report_prepared: "PREPARADO PARA:",
+  report_date: "FECHA:",
+  report_section1: "1. RESUMEN EJECUTIVO",
+  report_section2: "2. SOLUCIONES ESTRATÉGICAS SUGERIDAS",
+  report_section3: "3. NUESTROS SERVICIOS PARA CENTROS EDUCATIVOS",
+  port_name_1: "Automatización de Procesos",
+  port_action_1: "Sincronización preinscripciones ERP/SGA, control de asistencia, generación masiva de informes.",
+  port_name_2: "Digital Twin & Cuadro de Mando",
+  port_action_2: "Paneles interactivos con indicadores académicos y financieros en tiempo real.",
+  port_name_3: "Portal Familias UNIFICADO",
+  port_action_3: "Comunicación AFA/Centro en un único flujo digital sin fricciones.",
+  port_name_4: "Formación Docente IA",
+  port_action_4: "Capacitación práctica para reducir la carga administrativa al profesor.",
+  report_cta1: "¿QUIERES VER CÓMO LO HACEMOS?",
+  report_cta2: "Agenda una sesión de consultoría estratégica personalizada.",
+  report_footer: "adeptify.es • Carrer de l'Avenir, Barcelona • Documento Confidencial"
 };
 
 const eu: typeof ca = {
@@ -1287,7 +1327,27 @@ const eu: typeof ca = {
   lpContactMsgPlaceholder: "Azaldu laburki zure proiektua edo zer prozesu automatizatu nahi dituzun...",
   lpContactSubmit: "Eskaera bidali",
   lpContactSuccess: "Eskerrik asko! Zure eskaera jaso dugu eta laster jarriko gara harremanetan.",
-  lpContactError: "Errorea bidaltzean. Mesedez, saiatu berriro."
+  lpContactError: "Errorea bidaltzean. Mesedez, saiatu berriro.",
+
+  // PDF Report
+  report_subtitle: "ADIMEN ARTIFIZIALEAN AHOLKULARITZA ESTRATEGIKOA",
+  report_title: "AUDITORIA ETA ERALDAKETA PROPOSAMENAREN TXOSTENA",
+  report_prepared: "HONEGATIK PRESTATUA:",
+  report_date: "DATA:",
+  report_section1: "1. LABURPEN EXEKUTIBOA",
+  report_section2: "2. IRADOKITAKO SOLUZIO ESTRATEGIKOAK",
+  report_section3: "3. IKASTETXEENTZAKO GURE ZERBITZUAK",
+  port_name_1: "Prozesuen Automatizazioa",
+  port_action_1: "ERP/SGA aurreinskripzioen sinkronizazioa, asistentzia kontrola, txostenen sorkuntza masiboa.",
+  port_name_2: "Biki Digitala eta Aginte-Taula",
+  port_action_2: "Panel interaktiboak denbora errealeko adierazle akademiko eta finantzarioekin.",
+  port_name_3: "Familientzako Atari BATUA",
+  port_action_3: "IGE/Ikastetxea komunikazioa fluxu digital bakarrean frikziorik gabe.",
+  port_name_4: "IA Irakasleen Prestakuntza",
+  port_action_4: "Irakasleen karga administratiboa murrizteko prestakuntza praktikoa.",
+  report_cta1: "NOLA EGITEN DUGUN IKUSI NAHI DUZU?",
+  report_cta2: "Antolatu aholkularitza estrategikoko saio pertsonalizatu bat.",
+  report_footer: "adeptify.es • Carrer de l'Avenir, Barcelona • Dokumentu Konfidentziala"
 };
 
 export const translations = { ca, es, eu };

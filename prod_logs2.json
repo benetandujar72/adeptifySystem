@@ -1,0 +1,642 @@
+[
+  {
+    "httpRequest": {
+      "latency": "0.734768093s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "POST",
+      "requestSize": "15691",
+      "requestUrl": "https://consultor.adeptify.es/api/automation/generate-docx",
+      "responseSize": "17089",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5839900006d5dbc7b4a21",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:33:29.030951017Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "8a29838831044014",
+    "timestamp": "2026-03-02T12:33:28.286415Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/6001b98879f6c3bc1588dcb1342eabe0",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69a58358000c4735ffe3a800",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-03-02T12:32:24.855656055Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[automation] Calling Gemini for URL analysis...",
+    "timestamp": "2026-03-02T12:32:24.804661Z"
+  },
+  {
+    "insertId": "69a58357000d017b76c7e2fd",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-03-02T12:32:23.860118873Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[automation] Scraping URL: https://agora.xtec.cat/insbitacola/",
+    "timestamp": "2026-03-02T12:32:23.852347Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "39.767975522s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "POST",
+      "requestSize": "1079",
+      "requestUrl": "https://consultor.adeptify.es/api/automation/capture",
+      "responseSize": "17057",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5837f00095bc8bd54eedb",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:33:03.617546292Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "0759fc91c0d2f22c",
+    "timestamp": "2026-03-02T12:32:23.840146Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/748770b905b207c299e8bf820ad6a373",
+    "traceSampled": true
+  },
+  {
+    "httpRequest": {
+      "latency": "0.005743179s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "1025",
+      "requestUrl": "https://consultor.adeptify.es/assets/index-BHwY5pAP.css",
+      "responseSize": "215",
+      "serverIp": "142.251.209.83",
+      "status": 304,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5832f0007f6075ac8f4c6",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:31:43.567904315Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "305cce776174d465",
+    "timestamp": "2026-03-02T12:31:43.510334Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/af12eff27efa66fe10dc07872c910fa0",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69a5832c0003702a511a12e1",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    at async /app/server.js:148:20",
+    "timestamp": "2026-03-02T12:31:40.225322Z"
+  },
+  {
+    "insertId": "69a5832c00037026e4519611",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+    "timestamp": "2026-03-02T12:31:40.225318Z"
+  },
+  {
+    "insertId": "69a5832c00037021616e0347",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    at callGemini (/app/server.js:69:15)",
+    "timestamp": "2026-03-02T12:31:40.225313Z"
+  },
+  {
+    "insertId": "69a5832c0003701d4622998b",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "    at JSON.parse (<anonymous>)",
+    "timestamp": "2026-03-02T12:31:40.225309Z"
+  },
+  {
+    "insertId": "69a5832c00037004fbc23b56",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:31:40.231723404Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[Capture Error Trace] SyntaxError: Expected ',' or ']' after array element in JSON at position 19950 (line 367 column 5)",
+    "timestamp": "2026-03-02T12:31:40.225284Z"
+  },
+  {
+    "insertId": "69a5830e00080f76d2df1352",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-03-02T12:31:10.642497634Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[automation] Calling Gemini for URL analysis...",
+    "timestamp": "2026-03-02T12:31:10.528246Z"
+  },
+  {
+    "insertId": "69a5830d0004a21c0b17f845",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-03-02T12:31:09.308681044Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[automation] Scraping URL: https://agora.xtec.cat/insbitacola/",
+    "timestamp": "2026-03-02T12:31:09.303644Z"
+  },
+  {
+    "httpRequest": {
+      "latency": "30.954465633s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "POST",
+      "requestSize": "1080",
+      "requestUrl": "https://consultor.adeptify.es/api/automation/capture",
+      "responseSize": "295",
+      "serverIp": "142.251.209.83",
+      "status": 500,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5832c00038e829a2dfa54",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:31:40.238482131Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "ERROR",
+    "spanId": "03be3d34785fce17",
+    "timestamp": "2026-03-02T12:31:09.277087Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/fe398465ef688027a0a0549a72797dc9",
+    "traceSampled": true
+  },
+  {
+    "httpRequest": {
+      "latency": "0.005222170s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "1015",
+      "requestUrl": "https://consultor.adeptify.es/favicon.ico",
+      "responseSize": "2120",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5830100026072ca64132c",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:30:57.278369781Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "392a8bdea9fd70e6",
+    "timestamp": "2026-03-02T12:30:57.148857Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/d5a01e11edf05edfcf6743a4ea15eb92"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.012281959s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "948",
+      "requestUrl": "https://consultor.adeptify.es/env.js",
+      "responseSize": "531",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a5830000077564ae7a6053",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:30:56.612193032Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "035c1db13a9ce139",
+    "timestamp": "2026-03-02T12:30:56.474859Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/21cba6032c6630a7cf6743a4ea15e0f4"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.040503888s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "1002",
+      "requestUrl": "https://consultor.adeptify.es/assets/index-0ArBi59-.js",
+      "responseSize": "1298420",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a583000007d9ab6fa3e19a",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:30:56.612193032Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "fa26469a314c9e24",
+    "timestamp": "2026-03-02T12:30:56.472629Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/671f45788ec8f5a2cf6743a4ea15ecfa"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.016898809s",
+      "protocol": "HTTP/1.1",
+      "referer": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "1016",
+      "requestUrl": "https://consultor.adeptify.es/assets/index-BHwY5pAP.css",
+      "responseSize": "59976",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a583000007756536247e2c",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:30:56.612193032Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "f576b33d974a7695",
+    "timestamp": "2026-03-02T12:30:56.470581Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/41ad04ded550cf8fcf6743a4ea15eafd"
+  },
+  {
+    "httpRequest": {
+      "latency": "0.040297828s",
+      "protocol": "HTTP/1.1",
+      "remoteIp": "37.222.152.7",
+      "requestMethod": "GET",
+      "requestSize": "1089",
+      "requestUrl": "https://consultor.adeptify.es/t/free-5dc2ox",
+      "responseSize": "2120",
+      "serverIp": "142.251.209.83",
+      "status": 200,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+    },
+    "insertId": "69a58300000430939e220757",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Frequests",
+    "receiveTimestamp": "2026-03-02T12:30:56.281520180Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "spanId": "5155787acc009604",
+    "timestamp": "2026-03-02T12:30:56.222817Z",
+    "trace": "projects/gen-lang-client-0757991117/traces/6ac35e9db832297bcf6743a4ea15ed82",
+    "traceSampled": true
+  },
+  {
+    "insertId": "69a58288000f232abdd5be73",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstdout",
+    "receiveTimestamp": "2026-03-02T12:28:57.044585959Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "Adeptify 2.0 on 2705",
+    "timestamp": "2026-03-02T12:28:56.992042Z"
+  },
+  {
+    "insertId": "69a58288000f21da4da2fbc2",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c4c1000407c3b65ddcd83852facbf4e50bc3ed2e87d902484ffc2861b23e8535d7cd815f2e53463723557ed89d8bedea99bf657e89b57fe3022999130c01c865fb151e0b3707f63b205705",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fvarlog%2Fsystem",
+    "receiveTimestamp": "2026-03-02T12:28:57.153579843Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00219-7dt",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "severity": "INFO",
+    "textPayload": "Default STARTUP TCP probe succeeded after 1 attempt for container \"adeptify-consultor-1\" on port 2705.",
+    "timestamp": "2026-03-02T12:28:56.991706Z"
+  }
+]

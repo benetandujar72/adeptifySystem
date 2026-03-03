@@ -1,0 +1,52 @@
+[
+  {
+    "insertId": "69a59cc10004f3c02a9278c9",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c40998c2b0bbcb8ff954b6914d46ef79d054026c5c145ba534ff22637350a6a058f1b8dd2bec13f7a145d8f6bf2222f24bd1f925236044c0ddd055fb531272edc9756c03051646f93de5",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T14:20:49.365061794Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00221-m59",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[JSON Parse Error] Raw text: ```json",
+    "timestamp": "2026-03-02T14:20:49.324544Z"
+  },
+  {
+    "insertId": "69a58655000755180b4db24d",
+    "labels": {
+      "commit-sha": "b125a66ad3ea998bf078523b6fc5a523279b9726",
+      "gcb-build-id": "269e0100-33dc-4af3-bb60-0958fcc82706",
+      "gcb-trigger-id": "3b0798b3-3adc-4b3b-a27a-cceb32022bc1",
+      "gcb-trigger-region": "global",
+      "instanceId": "00da6cd2c426e0bb23bfb72dc3995e1be9d830042c0cadef9de03b59fa0685c89036ee48a8c0e58f05b4cee3854c193c0a83ea9f7b69b54929ec6494f117d08016f5e6f68b177962ca5e9b07e9194e",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run"
+    },
+    "logName": "projects/gen-lang-client-0757991117/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-03-02T12:45:09.488108273Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "adeptify-consultor",
+        "location": "europe-west1",
+        "project_id": "gen-lang-client-0757991117",
+        "revision_name": "adeptify-consultor-00220-vlr",
+        "service_name": "adeptify-consultor"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[JSON Parse Error] Raw text: ```json",
+    "timestamp": "2026-03-02T12:45:09.480536Z"
+  }
+]

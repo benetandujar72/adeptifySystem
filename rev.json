@@ -1,0 +1,122 @@
+{
+  "apiVersion": "serving.knative.dev/v1",
+  "kind": "Revision",
+  "metadata": {
+    "annotations": {
+      "autoscaling.knative.dev/maxScale": "20",
+      "run.googleapis.com/build-source-location": "{\"adeptifysystem-1\":\"gs://run-sources-gen-lang-client-0757991117-europe-west1/services/adeptifysystem/1772066525.844393-9286b49f392642fe8150383389ca026b.zip#1772066525853390\"}",
+      "run.googleapis.com/client-name": "gcloud",
+      "run.googleapis.com/client-version": "554.0.0",
+      "run.googleapis.com/operation-id": "2e908d22-5637-4472-aa5b-4ee23461dd31",
+      "serving.knative.dev/creator": "bandujar@edutac.es"
+    },
+    "creationTimestamp": "2026-02-26T00:43:20.873335Z",
+    "generation": 1,
+    "labels": {
+      "client.knative.dev/nonce": "piqyxjcurc",
+      "cloud.googleapis.com/location": "europe-west1",
+      "commit-sha": "7cd073023f2c12be9e145974a07b9f9b59587b21",
+      "gcb-build-id": "57ce0a6e-b598-45fb-bd10-d2ffb56f1938",
+      "gcb-trigger-id": "e5758afe-9cce-4d82-b356-e31113401059",
+      "managed-by": "gcp-cloud-build-deploy-cloud-run",
+      "run.googleapis.com/startupProbeType": "Default",
+      "serving.knative.dev/configuration": "adeptifysystem",
+      "serving.knative.dev/configurationGeneration": "54",
+      "serving.knative.dev/service": "adeptifysystem",
+      "serving.knative.dev/serviceUid": "1f8f340d-200d-40a7-9d75-7e13cbe4ef6e"
+    },
+    "name": "adeptifysystem-00054-nqw",
+    "namespace": "1061852826388",
+    "ownerReferences": [
+      {
+        "apiVersion": "serving.knative.dev/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "Configuration",
+        "name": "adeptifysystem",
+        "uid": "384a8388-b90c-4491-9d5a-9d969647d1e6"
+      }
+    ],
+    "resourceVersion": "AAZMB96YV1g",
+    "selfLink": "/apis/serving.knative.dev/v1/namespaces/1061852826388/revisions/adeptifysystem-00054-nqw",
+    "uid": "3e92e1aa-a91d-4f61-927c-a3190552f94a"
+  },
+  "spec": {
+    "containerConcurrency": 80,
+    "containers": [
+      {
+        "env": [
+          {
+            "name": "DATABASE_URL",
+            "value": "sqlite+aiosqlite:///app/campaign_crm.db"
+          }
+        ],
+        "image": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/cloud-run-source-deploy/adeptifysystem@sha256:db46619d296c771ce9de75ab894287b48edd42836a979ccee0c7bd23ebb73d6a",
+        "name": "adeptifysystem-1",
+        "ports": [
+          {
+            "containerPort": 8080,
+            "name": "http1"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "cpu": "1000m",
+            "memory": "512Mi"
+          }
+        },
+        "startupProbe": {
+          "failureThreshold": 1,
+          "periodSeconds": 240,
+          "tcpSocket": {
+            "port": 8080
+          },
+          "timeoutSeconds": 240
+        }
+      }
+    ],
+    "serviceAccountName": "1061852826388-compute@developer.gserviceaccount.com",
+    "timeoutSeconds": 300
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-03-02T10:15:43.271768Z",
+        "message": "Deploying revision succeeded in 15.59s.",
+        "reason": "Retired",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T10:15:43.271768Z",
+        "message": "Revision retired.",
+        "reason": "Retired",
+        "severity": "Info",
+        "status": "False",
+        "type": "Active"
+      },
+      {
+        "lastTransitionTime": "2026-02-26T00:43:36.434565Z",
+        "message": "Containers became healthy in 7.4s.",
+        "status": "True",
+        "type": "ContainerHealthy"
+      },
+      {
+        "lastTransitionTime": "2026-02-26T00:43:27.105039Z",
+        "message": "Container image import completed in 5.78s.",
+        "status": "True",
+        "type": "ContainerReady"
+      },
+      {
+        "lastTransitionTime": "2026-03-02T10:15:43.271768Z",
+        "message": "Revision retired.",
+        "reason": "Retired",
+        "status": "Unknown",
+        "type": "ResourcesAvailable"
+      }
+    ],
+    "imageDigest": "europe-west1-docker.pkg.dev/gen-lang-client-0757991117/cloud-run-source-deploy/adeptifysystem@sha256:db46619d296c771ce9de75ab894287b48edd42836a979ccee0c7bd23ebb73d6a",
+    "logUrl": "https://console.cloud.google.com/logs/viewer?project=gen-lang-client-0757991117&resource=cloud_run_revision/service_name/adeptifysystem/revision_name/adeptifysystem-00054-nqw&advancedFilter=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22adeptifysystem%22%0Aresource.labels.revision_name%3D%22adeptifysystem-00054-nqw%22",
+    "observedGeneration": 1
+  }
+}

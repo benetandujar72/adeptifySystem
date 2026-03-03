@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
+import { supabase } from '../services/supabaseClient';
 import { jsPDF } from 'jspdf';
 
 interface LeadData {
@@ -19,6 +20,8 @@ interface AIAnalysis {
   estimated_hours_lost_per_week?: number;
   proposal_data?: any;
   image_prompt?: string;
+  company_name?: string;
+  recommended_solution?: string;
 }
 
 const AutomatedLeadPanel: React.FC = () => {
@@ -72,13 +75,29 @@ const AutomatedLeadPanel: React.FC = () => {
       const data = await resp.json();
 
       if (data.company_name) {
+        // Auto-register lead into Supabase
+        const contactEmail = data.contact_email || `contacto@${new URL(scrapeUrl).hostname.replace('www.', '')}`;
+        const { data: dbLead, error } = await supabase!
+          .from('leads')
+          .upsert({
+            tenant_slug: 'default',
+            email: contactEmail,
+            company_name: data.company_name,
+            source: scrapeUrl,
+            ai_needs_analysis: data,
+            status: 'new'
+          }, { onConflict: 'tenant_slug,email' })
+          .select()
+          .single();
+
         setLead({
+          id: dbLead?.id,
           name: data.company_name,
-          email: data.contact_email || '',
+          email: contactEmail,
           companyDescription: data.recommended_solution || ''
         });
         setAnalysis(data);
-        setStatusMsg('Anàlisi IA completada amb èxit.');
+        setStatusMsg('Anàlisi IA completada amb èxit i Lead registrat.');
       } else {
         setStatusMsg('Error: No s\'ha pogut extreure informació. Revisa la URL.');
       }
@@ -91,60 +110,18 @@ const AutomatedLeadPanel: React.FC = () => {
   };
 
   const buildMappedDocxData = () => {
-    if (analysis?.proposal_data) {
-      return { ...analysis.proposal_data, image_prompt: analysis.image_prompt };
+    // Send strategic JSON directly. Server will map operational boilerplate.
+    if (analysis) {
+      return {
+        ...analysis.proposal_data,
+        image_prompt: analysis.image_prompt,
+        custom_pitch: analysis.custom_pitch,
+        company_name: analysis.company_name,
+        estimated_budget_range: analysis.estimated_budget_range,
+        recommended_solution: analysis.recommended_solution
+      };
     }
-    return {
-      consultora: { nombre: "Adeptify Systems", logo_url: "https://adeptify.es/logo.png" },
-      cliente: { nombre: lead.name, contacto: lead.email, sector: "educativo" },
-      propuesta: { fecha: new Date().toLocaleDateString(), referencia: `PROP-${Math.floor(Math.random() * 10000)}`, version: "1.0" },
-      proyecto: {
-        titulo: "Transformació Digital Integral",
-        resumen: analysis?.custom_pitch || "Proposta estratègica generada per a l'eficiència operativa.",
-        alcance: "Digitalització, automatització de processos i implementació IA",
-        inversion_total: analysis?.estimated_budget_range || "A pressupostar"
-      },
-      diagnostico: {
-        entorno: `Anàlisi automàtic del centre ${lead.name}`,
-        procesos: `S'ha detectat que el principal coll d'ampolla és: ${analysis?.main_bottleneck || "Processos manuals o desconnectats."}`,
-        necesidades: (analysis?.needs_detected || []).map((n: string, i: number) => ({ id: `N${i + 1}`, descripcion: n, impacto: "Alt", prioridad: "Alta" }))
-      },
-      solucion: {
-        vision: "Crear un ecosistema digital autònom i eficient.",
-        componentes: {
-          automatizacion: "Eliminació de tasques manuals repetitives.",
-          plataforma: "Integració de campus virtual o portals de comunicació.",
-          integraciones: "Connexió nativa amb eines existents.",
-          ia_datos: "Anàlisi predictiu i bessons digitals (Digital Twin)."
-        },
-        diferenciadores: [
-          { nombre: "Tecnologia Adeptify", valor: "Intel·ligència Artificial nativa" },
-          { nombre: "Velocitat", valor: "Desplegament ràpid" }
-        ]
-      },
-      metodologia: {
-        enfoque: "Agile, iteratiu i centrat en el ROI.",
-        fases: [
-          { nombre: "Auditoria", duracion: "1-2 setmanes", descripcion: "Anàlisi profund", entregables: "Informe detallat" },
-          { nombre: "Desplegament", duracion: "2-4 setmanes", descripcion: "Implementació tècnica", entregables: "Sistemes en producció" },
-          { nombre: "Avaluació", duracion: "Continua", descripcion: "Seguiment de KPIs", entregables: "Dashboards ROI" }
-        ]
-      },
-      cronograma: { fases: [], hitos: "Revisió trimestral i avaluació contínua" },
-      equipo: [
-        { rol: "Consultor AI", nombre: "Equip Adeptify", dedicacion: "Alta", experiencia: "Expert" }
-      ],
-      economia: {
-        conceptos: (analysis?.recommended_services || []).map((s: string) => ({ concepto: s, importe: "A definir", porcentaje: "N/A" })),
-        condiciones_pago: "A acordar en la sessió estratègica.",
-        roi_detalle: "S'analitzarà el ROI específic mitjançant eines de Digital Twin."
-      },
-      garantias: { descripcion: "Acompanyament tècnic garantit." },
-      casos_exito: { educativo: "Implementacions exitoses a més de 20 centres catalans.", empresarial: "Múltiples automatitzacions industrials resoltes." },
-      condiciones: { propiedad_intelectual: "Propietat d'Adeptify", confidencialidad: "Estricta" },
-      personalizacion: { color_primary: "1E1B4B", color_secondary: "4338CA", color_accent: "818CF8" },
-      image_prompt: analysis?.image_prompt
-    };
+    return {};
   };
 
   const generateAndSendProposal = async () => {

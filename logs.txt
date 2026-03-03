@@ -1,0 +1,75 @@
+2026-03-01 17:56:17 INFO:     Child process [134] died
+2026-03-01 17:56:18 INFO:     Waiting for child process [137]
+2026-03-01 17:56:19 INFO:     Child process [137] died
+2026-03-01 17:56:24 INFO:     Waiting for child process [135]
+2026-03-01 17:56:24 INFO:     Child process [135] died
+2026-03-01 17:56:25 INFO:     Waiting for child process [138]
+2026-03-01 17:56:25 INFO:     Child process [138] died
+2026-03-01 17:56:30 INFO:     Waiting for child process [136]
+2026-03-01 17:56:30 INFO:     Child process [136] died
+2026-03-01 17:56:31 INFO:     Waiting for child process [139]
+2026-03-01 17:56:31 INFO:     Child process [139] died
+2026-03-01 17:56:36 INFO:     Waiting for child process [137]
+2026-03-01 17:56:36 INFO:     Child process [137] died
+2026-03-01 17:56:37 INFO:     Waiting for child process [140]
+2026-03-01 17:56:37 INFO:     Child process [140] died
+2026-03-01 17:56:43 INFO:     Waiting for child process [138]
+2026-03-01 17:56:44 INFO:     Child process [138] died
+2026-03-01 17:56:44 INFO:     Waiting for child process [141]
+2026-03-01 17:56:44 INFO:     Child process [141] died
+2026-03-01 17:56:50 INFO:     Waiting for child process [142]
+2026-03-01 17:56:50 INFO:     Waiting for child process [139]
+2026-03-01 17:56:51 INFO:     Child process [142] died
+2026-03-01 17:56:51 INFO:     Child process [139] died
+2026-03-01 17:56:57 INFO:     Waiting for child process [140]
+2026-03-01 17:56:57 INFO:     Waiting for child process [143]
+2026-03-01 17:56:57 INFO:     Child process [143] died
+2026-03-01 17:56:57 INFO:     Child process [140] died
+2026-03-01 17:57:03 INFO:     Waiting for child process [144]
+2026-03-01 17:57:03 INFO:     Child process [144] died
+2026-03-01 17:57:04 INFO:     Waiting for child process [141]
+2026-03-01 17:57:04 INFO:     Child process [141] died
+2026-03-01 17:57:10 INFO:     Waiting for child process [142]
+2026-03-01 17:57:10 INFO:     Child process [142] died
+2026-03-01 17:57:11 INFO:     Waiting for child process [145]
+2026-03-01 17:57:11 INFO:     Child process [145] died
+2026-03-01 17:57:17 INFO:     Waiting for child process [146]
+2026-03-01 17:57:17 INFO:     Child process [146] died
+2026-03-01 17:57:17 INFO:     Waiting for child process [143]
+2026-03-01 17:57:17 INFO:     Child process [143] died
+2026-03-01 17:57:23 INFO:     Waiting for child process [147]
+2026-03-01 17:57:23 INFO:     Child process [147] died
+2026-03-01 17:57:24 INFO:     Waiting for child process [144]
+2026-03-01 17:57:24 INFO:     Child process [144] died
+2026-03-01 17:57:29 INFO:     Waiting for child process [148]
+2026-03-01 17:57:29 INFO:     Child process [148] died
+2026-03-01 17:57:30 INFO:     Waiting for child process [145]
+2026-03-01 17:57:30 INFO:     Child process [145] died
+2026-03-02 10:15:38 Adeptify 2.0 on 8080
+2026-03-02 10:36:32 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/
+2026-03-02 10:36:33 Adeptify 2.0 on 8080
+2026-03-02 10:36:34 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/assets/index-BHwY5pAP.css
+2026-03-02 10:36:34 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/assets/index-HPHWFJR4.js
+2026-03-02 10:36:34 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/env.js
+2026-03-02 10:36:35 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 10:36:35 GET 304 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 10:36:35 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 10:36:55 GET 304 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 11:20:14 Adeptify 2.0 on 8080
+2026-03-02 11:26:23 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/
+2026-03-02 11:26:23 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/assets/index-BHwY5pAP.css
+2026-03-02 11:26:23 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/env.js
+2026-03-02 11:26:23 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/assets/index-HPHWFJR4.js
+2026-03-02 11:26:25 GET 200 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 11:26:28 GET 304 https://adeptifysystem-1061852826388.europe-west1.run.app/favicon.ico
+2026-03-02 11:27:19 POST 500 https://adeptifysystem-1061852826388.europe-west1.run.app/api/automation/capture
+2026-03-02 11:27:20 [automation] Scraping URL: https://www.joanpelegri.cat/
+2026-03-02 11:27:22 [automation] Calling Gemini for URL analysis...
+2026-03-02 11:27:22 [Capture Error Trace] Error: Missing GEMINI_API_KEY
+2026-03-02 11:27:22     at callGemini (/app/server.js:49:22)
+2026-03-02 11:27:22     at /app/server.js:148:26
+2026-03-02 11:27:22     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+2026-03-02 11:27:33 POST 500 https://adeptifysystem-1061852826388.europe-west1.run.app/api/automation/digital-twin
+2026-03-02 11:27:34 POST 500 https://adeptifysystem-1061852826388.europe-west1.run.app/api/automation/digital-twin
+2026-03-02 11:32:44 Adeptify 2.0 on 8080
+2026-03-02 11:49:48 Adeptify 2.0 on 2705

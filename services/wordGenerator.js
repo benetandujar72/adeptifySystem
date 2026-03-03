@@ -19,7 +19,7 @@ async function fetchImageBuffer(prompt) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
+        contents: [{ parts: [{ text: "CRITICAL: NO DASHBOARDS. NO TEXT. " + prompt }] }]
       })
     });
 
@@ -59,24 +59,93 @@ async function fetchImageBuffer(prompt) {
 
 class WordProposalGenerator {
   async generate(data, lang = 'ca') {
-    // 1. SAFE DATA DESTRUCTURING WITH DEFAULTS
+    // 1. BUILD ROBUST DATA MAPPING
+    // Strategy comes from Gemini. Operations come from static expert templates.
+    const company = data.company_name || 'Entidad';
+
     const d = {
-      consultora: data.consultora || {},
-      cliente: data.cliente || {},
-      propuesta: data.propuesta || {},
-      proyecto: data.proyecto || {},
-      diagnostico: data.diagnostico || {},
-      solucion: data.solucion || { componentes: {} },
-      metodologia: data.metodologia || {},
-      cronograma: data.cronograma || {},
-      equipo: data.equipo || [],
-      economia: data.economia || {},
-      garantias: data.garantias || {},
-      riesgos: data.riesgos || [],
-      casos_exito: data.casos_exito || {},
-      condiciones: data.condiciones || {},
-      proximos_pasos: data.proximos_pasos || [],
-      personalizacion: data.personalizacion || {}
+      consultora: { nombre: "Adeptify Systems", logo_url: "https://adeptify.es/logo.png" },
+      cliente: { nombre: company, contacto: data.contact_email || 'Dirección', sector: "General" },
+      propuesta: { fecha: new Date().toLocaleDateString(), referencia: `PROP-${Math.floor(Math.random() * 10000)}`, version: "1.0", validez_dias: 30 },
+      proyecto: {
+        titulo: "Transformació Digital Integral",
+        resumen: data.custom_pitch || "Proposta estratègica generada per a l'eficiència operativa.",
+        alcance: "Digitalització, automatització de processos i implementació IA",
+        inversion_total: data.estimated_budget_range || "A pressupostar"
+      },
+      diagnostico: data.proposal_data?.diagnostico || {
+        entorno_actual: `Anàlisi automàtic del centre ${company}`,
+        cuello_botella: `S'ha detectat que el principal coll d'ampolla és: ${data.main_bottleneck || "Processos manuals."}`,
+        necesidades: (data.needs_detected || []).map((n, i) => ({ id: `N${i + 1}`, descripcion: n, impacto: "Alt", prioridad: "Alta" }))
+      },
+      solucion: data.proposal_data?.solucion || {
+        vision_general: "Crear un ecosistema digital autònom i eficient.",
+        componentes: {
+          automatizacion: "Eliminació de tasques manuals.",
+          plataforma: "Integració en processos diaris.",
+          integraciones: "Connexió nativa.",
+          ia: "Anàlisi predictiu i IA."
+        },
+        arquitectura: { capas: ["Frontend", "Backend"], tecnologias: ["AI", "Automations"], flujo_datos: "Datos centralizados y sincronizados." },
+        diferenciadores: ["Tecnologia Adeptify", "Velocitat"]
+      },
+      // --- HARDCODED ROBUST EXPERT TEMPLATES ---
+      metodologia: {
+        enfoque: "Utilitzem metodologies àgils (Scrum/Kanban) per garantir lliuraments ràpids i adaptables. El nostre enfocament es centra en el ROI des del dia 1, minimitzant la interrupció operativa de l'equip actual.",
+        fases: [
+          { nombre: "Fase 1: Auditoria Tècnica", duracion: "1-2 setmanes", descripcion: "Analitzem cada procés manual al detall per mapar l'arquitectura de dades.", entregables: "Document d'Arquitectura i Mapatge" },
+          { nombre: "Fase 2: Desenvolupament Core", duracion: "3-5 setmanes", descripcion: "Construcció dels fluxos d'automatització principals i models d'IA.", entregables: "Sistemes en sandbox" },
+          { nombre: "Fase 3: Integració i QA", duracion: "1-2 setmanes", descripcion: "Connexió amb els sistemes actuals i proves d'estrès.", entregables: "UAT (User Acceptance Testing) firmat" },
+          { nombre: "Fase 4: Desplegament i Formació", duracion: "1 setmana", descripcion: "Posada en producció i transferència de coneixement a l'equip.", entregables: "Sistemes en viu i manuals" }
+        ]
+      },
+      cronograma: {
+        duracion_total: "8-10 setmanes (Estimat)",
+        fases: [
+          { nombre: "Auditoria", duracion: "Setmana 1-2", actividades: ["Kickoff", "Mapatge"], entregables: ["Blueprint"] },
+          { nombre: "Construcció", duracion: "Setmana 3-7", actividades: ["Codi", "IA Training"], entregables: ["Beta"] },
+          { nombre: "Llançament", duracion: "Setmana 8-10", actividades: ["Formació", "Go-Live"], entregables: ["Producció"] }
+        ]
+      },
+      equipo: [
+        { rol: "Director de Projecte (PM)", nombre: "Equip Adeptify", dedicacion: "20%", experiencia: "Sènior (+10 anys)" },
+        { rol: "Arquitecte Cloud/IA", nombre: "Equip Adeptify", dedicacion: "40%", experiencia: "Sènior" },
+        { rol: "Enginyer d'Automatitzacions", nombre: "Equip Adeptify", dedicacion: "100%", experiencia: "Sènior" }
+      ],
+      economia: data.proposal_data?.economia || {
+        rango_presupuesto: data.estimated_budget_range || "8.000€", moneda: "EUR",
+        conceptos: (data.recommended_services || []).map(s => ({ descripcion: s, importe: 3000, porcentaje: 50 })),
+        total: 6000, condiciones_pago: "50% a l'inici, 50% al lliurament i validació (Go-Live).",
+        roi: { horas_ahorradas_semana: 20, coste_hora_estimado: 25, ahorro_anual_estimado: 24000, periodo_amortizacion_meses: 4, roi_porcentaje: 200 }
+      },
+      garantias: {
+        periodo_garantia: "6 mesos d'acompanyament gratuït post-llançament.",
+        sla: [
+          { servicio: "Caiguda Crítica (S0)", tiempo_respuesta: "< 2h", tiempo_resolucion: "< 12h", disponibilidad: "99.9%" },
+          { servicio: "Bug Funcional (S1)", tiempo_respuesta: "< 12h", tiempo_resolucion: "< 48h", disponibilidad: "99.0%" },
+          { servicio: "Consultes/Dudas (S2)", tiempo_respuesta: "< 24h", tiempo_resolucion: "N/A", disponibilidad: "Horari Laboral" }
+        ]
+      },
+      riesgos: [
+        { riesgo: "Resistència al canvi per part del personal", probabilidad: "Alta", impacto: "Alt", mitigacion: "Pla de formació inclusiu i interfícies simplificades." },
+        { riesgo: "Incompatibilitat amb APIs delegades", probabilidad: "Mitja", impacto: "Alt", mitigacion: "Estudi viabilitat previ i utilització de WebScraping si falla l'API." }
+      ],
+      casos_exito: data.proposal_data?.casos_exito || [
+        { cliente: "Cas Confidencial", sector: "Servei", reto: "Processos manuals lents", solucion: "IA + Automatització", resultados: "Reducció 80% temps admin" }
+      ],
+      condiciones: {
+        propiedad_intelectual: "El codi desenvolupat i els fluxos a mida seran propietat intel·lectual del client un cop abonat el 100% de la factura. Adeptify manté el dret de les llibreries core de base.",
+        confidencialidad: "Estricta. Acord de confidencialitat (NDA) signat per defecte abans del kickoff.",
+        supuestos: ["Accés remot a sistemes del client necessari.", "Llicències de tercers (ex: OpenAI) no incloses."],
+        exclusiones: ["Canvis d'abast legislatiu posteriors a la firma."]
+      },
+      proximos_pasos: [
+        { accion: "Revisió conjunta del document", responsable: "Ambdós", plazo: "Dies 1-3" },
+        { accion: "Firma i abonament de l'inici", responsable: "Client", plazo: "Dies 4-6" },
+        { accion: "Reunió Launch (Kickoff)", responsable: "Adeptify", plazo: "Dia 7" }
+      ],
+      personalizacion: { color_primary: "1E1B4B", color_secondary: "4338CA", color_accent: "818CF8" },
+      image_prompt: data.image_prompt
     };
 
     // Dictionary mappings based on language
