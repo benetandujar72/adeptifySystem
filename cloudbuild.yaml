@@ -162,8 +162,7 @@ availableSecrets:
       env: 'SB_PUBLISHABLE_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
       env: 'SUPABASE_DB_URL'
-    # Used by server.js Supabase admin client (lead tracking, interactions).
-    # Create with: gcloud secrets create SUPABASE_SERVICE_ROLE_KEY --replication-policy=automatic
-    - versionName: projects/$PROJECT_ID/secrets/SUPABASE_SERVICE_ROLE_KEY/versions/latest
-      env: 'SUPABASE_SERVICE_ROLE_KEY'
+    # NOTE: SUPABASE_SERVICE_ROLE_KEY is NOT listed here because availableSecrets
+    # only allows secrets that are consumed by a build step via secretEnv.
+    # It is injected into Cloud Run at runtime via --set-secrets (step 3).
 
