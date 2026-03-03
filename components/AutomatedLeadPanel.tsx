@@ -196,7 +196,10 @@ const AutomatedLeadPanel: React.FC = () => {
         throw new Error(err.error || 'Error iniciant el sistema multi-agent');
       }
 
-      const { jobId } = await startResp.json();
+      const { jobId, message } = await startResp.json();
+      if (message) {
+        setStatusMsg(message);
+      }
       const es = new EventSource(`/api/automation/full-report/stream/${jobId}`);
       eventSourceRef.current = es;
 
@@ -588,15 +591,14 @@ const AutomatedLeadPanel: React.FC = () => {
               <button
                 onClick={reportError ? handleGenerateFullReport : handleGenerateFullReport}
                 disabled={isGeneratingReport || !!reportDocxBase64}
-                className={`w-full py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${
-                  reportDocxBase64
+                className={`w-full py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${reportDocxBase64
                     ? 'bg-green-600/20 text-green-300 cursor-default border border-green-700/30'
-                  : reportError
-                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-900/40 cursor-pointer'
-                  : isGeneratingReport
-                    ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
-                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
-                }`}
+                    : reportError
+                      ? 'bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-900/40 cursor-pointer'
+                      : isGeneratingReport
+                        ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
+                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
+                  }`}
               >
                 {reportDocxBase64 ? (
                   <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Informe Generat — Descarrega el Botó Verd</>

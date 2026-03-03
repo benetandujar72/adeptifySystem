@@ -109,6 +109,96 @@ const { WordProposalGenerator } = require('./services/wordGenerator.js');
 
 // --- ENDPOINTS ---
 
+app.post('/api/v1/documents/sync', async (req, res) => {
+  try {
+    const { center_name, document: doc, tenant_slug } = req.body;
+    if (!center_name || !doc) return res.status(400).json({ error: "Missing center_name or document" });
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase admin client not initialized");
+
+    const centerKey = center_name.toLowerCase().trim()
+      .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const tenantSlug = tenant_slug || req.headers['x-tenant-slug'] || 'default';
+
+    // 1. INSERT a center_artifacts (historial immutable)
+    const { data: artifact, error: artifactError } = await supabase.from('center_artifacts').insert({
+      tenant_slug: tenantSlug,
+      center_key: centerKey,
+      center_name,
+      artifact_type: doc.tipus,
+      payload_json: doc.payload || doc
+    }).select().single();
+
+    if (artifactError) throw artifactError;
+
+    // 2. UPSERT a center_insights_v2 si és dafo o custom_proposal
+    if (['dafo', 'custom_proposal'].includes(doc.tipus)) {
+      const { error: upsertError } = await supabase.from('center_insights_v2').upsert({
+        tenant_slug: tenantSlug,
+        center_key: centerKey,
+        center_name,
+        dafo_json: doc.tipus === 'dafo' ? (doc.payload || doc) : undefined,
+        dafo_generated_at: doc.tipus === 'dafo' ? new Date().toISOString() : undefined,
+        custom_proposal_json: doc.tipus === 'custom_proposal' ? (doc.payload || doc) : undefined,
+        custom_generated_at: doc.tipus === 'custom_proposal' ? new Date().toISOString() : undefined,
+      }, { onConflict: 'tenant_slug,center_key' });
+      if (upsertError) console.error("[Sync] Error upserting center_insights_v2:", upsertError);
+    }
+
+    // 3. Retornar format que espera centerArtifactsService
+    res.json({
+      id: artifact.id,
+      tenant_slug: tenantSlug,
+      center_key: centerKey,
+      center_name,
+      tipus: artifact.artifact_type,
+      payload: artifact.payload_json,
+      created_at: artifact.created_at
+    });
+  } catch (e) {
+    console.error("[Documents Sync Error]", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/v1/documents/by-center', async (req, res) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase admin client not initialized");
+
+    const tenantSlug = req.query.tenant_slug || 'default';
+    let query = supabase.from('center_artifacts')
+      .select('*')
+      .eq('tenant_slug', tenantSlug)
+      .order('created_at', { ascending: false });
+
+    if (req.query.center_name) {
+      const centerKey = req.query.center_name.toLowerCase().trim()
+        .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      query = query.eq('center_key', centerKey);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    res.json({
+      documents: data.map(a => ({
+        id: a.id,
+        tenant_slug: a.tenant_slug,
+        center_key: a.center_key,
+        center_name: a.center_name,
+        tipus: a.artifact_type,
+        payload: a.payload_json,
+        created_at: a.created_at
+      }))
+    });
+  } catch (e) {
+    console.error("[Documents By-Center Error]", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/automation/capture', async (req, res) => {
   const { url, lang } = req.body;
   const targetLang = lang === 'es' ? 'CASTELLANO' : (lang === 'eu' ? 'EUSKERA' : 'CATALÀ');
@@ -218,8 +308,21 @@ app.post('/api/automation/migrate-data', async (req, res) => {
 });
 
 app.post('/api/automation/network-prospecting', async (req, res) => {
+  const { referenceCenterName, location } = req.body;
+  const prompt = `Ets un estrateg d'expansió per a consultores educatives.
+Centre de referència: "${referenceCenterName || 'centre educatiu'}" a "${location || 'Catalunya'}".
+Identifica 5 centres educatius similars de la mateixa zona.
+Retorna EXACTAMENT aquest JSON sense markdown:
+{
+  "expansion_nodes": [
+    { "name": "...", "location": "Municipi, Comarca", "type": "concertat|privat|públic",
+      "estimated_students": 500, "digital_maturity": "baix|mig|alt",
+      "opportunity_score": 8, "pitch": "Per què és un bon candidat.",
+      "contact_approach": "Com contactar-los." }
+  ]
+}`;
   try {
-    const result = await callGemini(`Estratègia d'expansió des de ${req.body.referenceCenterName} (JSON: expansion_nodes[]).`);
+    const result = await callGemini(prompt, "gemini-2.5-flash");
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -297,6 +400,36 @@ async function runFullReportJob(jobId, datosCliente) {
 
     job.status = 'done';
     job.result = { doc, docxBase64, rawJsonBase64, clientName };
+
+    // Send email with the generated report
+    try {
+      const host = process.env.SMTP_HOST;
+      const emailTo = datosCliente?.cliente?.email || process.env.CONTACT_TO;
+      if (host && emailTo) {
+        const transporter = nodemailer.createTransport({ host, port: Number(process.env.SMTP_PORT || 587), secure: false, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
+
+        let attachments = [];
+        if (docxBase64) {
+          attachments.push({ filename: `Informe_${clientName.replace(/\s+/g, '_')}.docx`, content: docxBase64, encoding: 'base64' });
+        }
+
+        const htmlBody = `<div style="font-family:sans-serif;">Hola,<br><br>S'ha completat la generació del teu informe personalitzat iteratiu amb IA sobre: <strong>${clientName}</strong>.<br><br>Trobaràs l'informe generat adjunt en aquest missatge.<br><br>Salutacions,<br>Equip Adeptify</div>`;
+
+        await transporter.sendMail({
+          from: process.env.SMTP_USER,
+          to: emailTo,
+          subject: `El teu informe personalitzat de ${clientName} està llest`,
+          html: htmlBody,
+          attachments
+        });
+        console.log(`[MultiAgent] Email enviat correctament a ${emailTo}`);
+        push('progress', { agent: 'ORQUESTADOR', message: `Informe enviat correctament a ${emailTo}`, fase: 5 });
+      }
+    } catch (emailErr) {
+      console.error('[MultiAgent] Fallada al enviar email:', emailErr.message);
+      push('progress', { agent: 'ORQUESTADOR', message: `No s'ha pogut enviar per email: ${emailErr.message}`, fase: 5 });
+    }
+
     // Don't send 'doc' in complete event — it's large and can overload SSE
     push('complete', { docxBase64, rawJsonBase64, clientName });
   } catch (e) {
@@ -323,6 +456,7 @@ app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), as
       tipo: req.body?.client_type || 'empresa',
       sector: req.body?.sector || 'General',
       web: url || '',
+      email: req.body?.contact_email || req.body?.email || process.env.CONTACT_TO
     },
     sistemas_existentes: req.body?.systems || [],
     proposta: {
@@ -343,7 +477,10 @@ app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), as
   // Clean up job after 30 min
   setTimeout(() => reportJobs.delete(jobId), 30 * 60 * 1000);
 
-  res.json({ jobId });
+  res.json({
+    jobId,
+    message: "S'ha iniciat la creació de l'informe detallat amb IA. Rebràs un correu electrònic amb l'informe completat un cop finalitzi el procés. Mentrestant, pots continuar treballant."
+  });
 });
 
 // 2) SSE stream for job progress — use with EventSource(url) on the frontend
@@ -384,8 +521,8 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
 
 // Health check (Cloud Run / load balancers)
 app.get('/healthz', (_req, res) => res.status(200).json({ ok: true }));
-app.get('/health',  (_req, res) => res.status(200).json({ ok: true }));
-app.get('/readyz',  (_req, res) => res.status(200).json({ ok: true }));
+app.get('/health', (_req, res) => res.status(200).json({ ok: true }));
+app.get('/readyz', (_req, res) => res.status(200).json({ ok: true }));
 
 // Runtime browser config — served dynamically so Cloud Run env vars reach the SPA.
 // MUST be registered BEFORE express.static, otherwise dist/env.js (empty placeholder) wins.
@@ -393,8 +530,8 @@ app.get('/env.js', (_req, res) => {
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   const safeEnv = {
-    SUPABASE_URL:       process.env.SUPABASE_URL       || process.env.VITE_SUPABASE_URL       || '',
-    SUPABASE_ANON_KEY:  process.env.SUPABASE_ANON_KEY  || process.env.VITE_SUPABASE_ANON_KEY  || '',
+    SUPABASE_URL: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '',
     SB_PUBLISHABLE_KEY: process.env.SB_PUBLISHABLE_KEY || process.env.VITE_SB_PUBLISHABLE_KEY || '',
   };
   res.send(`// Generated at request time; do not commit.\nwindow.__ADEPTIFY_ENV__ = ${JSON.stringify(safeEnv)};\n`);
