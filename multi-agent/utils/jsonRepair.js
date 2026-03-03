@@ -3,106 +3,174 @@ const Anthropic = require('@anthropic-ai/sdk');
 const client = new Anthropic();
 
 /**
+ * Detecta si un texto JSON está truncado comprobando:
+ * - Número de { sin cerrar o [ sin cerrar
+ * - Cadenas de texto abiertas (número impar de " no escapadas fuera de contexto)
+ */
+function detectTruncation(text) {
+    let braces = 0;
+    let brackets = 0;
+    let inString = false;
+    let escaped = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\' && inString) { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{') braces++;
+        else if (ch === '}') braces--;
+        else if (ch === '[') brackets++;
+        else if (ch === ']') brackets--;
+    }
+
+    // Truncado si hay strings sin cerrar o estructuras sin cerrar
+    return inString || braces > 0 || brackets > 0;
+}
+
+/**
+ * Extraer JSON bien formado entre el primer { y el último } válido.
+ * Esto es seguro SOLO si el JSON no está truncado.
+ */
+function extractJsonBlock(text) {
+    const first = text.indexOf('{');
+    const firstArr = text.indexOf('[');
+    // Preferir el primero que aparezca
+    const start = (first === -1) ? firstArr :
+        (firstArr === -1) ? first :
+            Math.min(first, firstArr);
+    if (start === -1) return null;
+
+    const isObj = text[start] === '{';
+    const openChar = isObj ? '{' : '[';
+    const closeChar = isObj ? '}' : ']';
+
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    let endPos = -1;
+
+    for (let i = start; i < text.length; i++) {
+        const ch = text[i];
+        if (escaped) { escaped = false; continue; }
+        if (ch === '\\' && inString) { escaped = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === openChar) depth++;
+        else if (ch === closeChar) {
+            depth--;
+            if (depth === 0) { endPos = i; break; }
+        }
+    }
+
+    if (endPos === -1) return null;
+    return text.substring(start, endPos + 1);
+}
+
+/**
  * Parsea un JSON de forma robusta:
- * 1. Intenta parsear directamente
- * 2. Extrae entre { } o [ ]
- * 3. Si hay truncación ("Unterminated string"), usa Claude para completar el JSON
+ * 1. Limpiar markdown
+ * 2. Intentar parseo directo
+ * 3. Extraer bloque JSON válido (si no hay truncación)
+ * 4. Si hay truncación → continuar con Claude
+ * 5. Fallback: retry con prompt estricto
  */
 async function parseJsonRobust(text, agentId = 'AGENT', inputData = null, systemPrompt = '') {
     // 1. Limpiar markdown
     let cleaned = text.trim();
-    const codeBlock = cleaned.match(/```json\s*([\s\S]*?)```/);
+    const codeBlock = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlock) cleaned = codeBlock[1].trim();
 
     // 2. Intentar parseo directo
     try {
         return JSON.parse(cleaned);
-    } catch (e) {
-        // 3. Extraer entre llaves
-        const first = cleaned.indexOf('{');
-        const last = cleaned.lastIndexOf('}');
-        if (first !== -1 && last !== -1) {
+    } catch (_) { /* continuar */ }
+
+    // 3. Detectar si hay truncación
+    const truncated = detectTruncation(cleaned);
+
+    if (!truncated) {
+        // Intentar extraer el bloque JSON válido
+        const block = extractJsonBlock(cleaned);
+        if (block) {
             try {
-                return JSON.parse(cleaned.substring(first, last + 1));
-            } catch (_) { }
+                return JSON.parse(block);
+            } catch (_) { /* continuar */ }
         }
-
-        // 4. JSON truncado — usar continuación de Claude para completar
-        if (e.message && (e.message.includes('Unterminated') || e.message.includes('position'))) {
-            console.warn(`[${agentId}] JSON truncat detectat. Intentant reparació via Claude...`);
-            return repairTruncatedJson(cleaned, agentId, inputData, systemPrompt);
-        }
-
-        // 5. Fallback: reintentar con prompt estricto
-        if (inputData) {
-            return retryStrictPrompt(agentId, inputData, systemPrompt, text);
-        }
-
-        throw new Error(`[${agentId}] JSON invàlid: ${e.message}`);
     }
-}
 
-/**
- * Usa la API de Claude con "prefill" del assistant para continuar un JSON truncado.
- */
-async function repairTruncatedJson(truncatedText, agentId, inputData, systemPrompt) {
+    // 4. JSON truncado o inválido → reparación via Claude
+    console.warn(`[${agentId}] JSON invàlid/truncat detectat (truncat=${truncated}). Reparant via Claude...`);
     try {
-        // El text truncado es el inicio del output de l'assistant
-        // Li diem a Claude que continuï des d'on es va quedar
-        const repairMsg = await client.messages.create({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 8192,
-            temperature: 0,
-            system: systemPrompt || 'Ets un assistent que completa JSON truncat. Continua el JSON exactament des d\'on s\'ha tallat, sense repetir el contingut anterior.',
-            messages: [
-                {
-                    role: 'user',
-                    content: `El siguiente JSON quedó incompleto/truncado. Complétalo desde donde se cortó y devuelve ÚNICAMENTE el fragmento que falta para que sea JSON válido (NO repitas el contenido que ya existe):\n\nJSON TRUNCADO:\n${truncatedText.substring(0, 8000)}`
-                }
-            ]
-        });
-
-        const continuation = repairMsg.content
-            .filter(b => b.type === 'text')
-            .map(b => b.text)
-            .join('');
-
-        const combined = truncatedText + continuation;
-
-        // Intentar parsear el resultado combinado
-        try {
-            return JSON.parse(combined);
-        } catch (_) {
-            // Si sigue fallando, buscar JSON bien formado en el resultado combinado
-            const first = combined.indexOf('{');
-            const last = combined.lastIndexOf('}');
-            if (first !== -1 && last !== -1) {
-                return JSON.parse(combined.substring(first, last + 1));
-            }
-        }
+        return await repairTruncatedJson(cleaned, agentId, inputData, systemPrompt);
     } catch (repairErr) {
         console.warn(`[${agentId}] Reparació fallida: ${repairErr.message}`);
     }
 
-    // Último recurso: retry con prompt estricto y datos reducidos
-    if (inputData) return retryStrictPrompt(agentId, inputData, systemPrompt, truncatedText);
-    throw new Error(`[${agentId}] No s'ha pogut reparar el JSON truncat`);
+    // 5. Último recurso: retry con prompt estricto
+    if (inputData) {
+        return retryStrictPrompt(agentId, inputData, systemPrompt);
+    }
+
+    throw new Error(`[${agentId}] No s'ha pogut parsejar el JSON després de tots els intents`);
 }
 
 /**
- * Reintenta la llamada con un prompt más estricto y datos resumidos.
+ * Usa Claude para completar un JSON truncado usando la técnica de prefill del assistant.
  */
-async function retryStrictPrompt(agentId, inputData, systemPrompt, previousOutput = '') {
-    console.log(`[${agentId}] Reintentant amb prompt estricte i max_tokens reduïts per assegurar JSON complet...`);
-    const message = await client.messages.create({
+async function repairTruncatedJson(truncatedText, agentId, inputData, systemPrompt) {
+    // Limitar el texto truncado a 10000 chars para no exceder context
+    const snippet = truncatedText.substring(0, 10000);
+
+    const repairMsg = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
-        temperature: 0.1,
-        system: systemPrompt || 'Responde ÚNICAMENTE con JSON válido, sin markdown ni texto adicional.',
+        temperature: 0,
+        system: 'Ets un assistent expert en reparació de JSON. El teu únic treball és completar el JSON truncat. Respon ÚNICAMENT amb el fragment que falta (el que cal afegir al final) per tancar el JSON correctament. Sense cap explicació ni text addicional.',
         messages: [
             {
                 role: 'user',
-                content: `Responde ÚNICAMENTE con un objeto JSON válido y completo. Sin markdown. Sin texto adicional. El JSON debe estar completamente cerrado.\n\nDatos:\n${JSON.stringify(inputData, null, 2).substring(0, 4000)}`
+                content: `El siguiente JSON está incompleto (truncado). Devuelve ÚNICAMENTE el fragmento de texto que falta al final para que el JSON sea válido y completo. No repitas nada del JSON ya existente.\n\nJSON TRUNCADO:\n${snippet}`
+            }
+        ]
+    });
+
+    const continuation = repairMsg.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('');
+
+    const combined = truncatedText + continuation;
+
+    // Intentar parsear directo
+    try {
+        return JSON.parse(combined);
+    } catch (_) { /* continuar */ }
+
+    // Intentar extraer bloque válido
+    const block = extractJsonBlock(combined);
+    if (block) {
+        return JSON.parse(block);
+    }
+
+    throw new Error(`[${agentId}] La continuació de Claude no ha generat un JSON vàlid`);
+}
+
+/**
+ * Reintenta la llamada al agente con un prompt más estricto y datos resumidos.
+ */
+async function retryStrictPrompt(agentId, inputData, systemPrompt) {
+    console.log(`[${agentId}] Reintentant amb prompt estricte...`);
+    const message = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        temperature: 0,
+        system: systemPrompt || 'Responde ÚNICAMENTE con JSON válido y completo, sin markdown ni texto adicional.',
+        messages: [
+            {
+                role: 'user',
+                content: `Genera un JSON válido y COMPLETO (con todas las llaves cerradas). Sin markdown. Sin texto adicional.\n\nDatos:\n${JSON.stringify(inputData, null, 2).substring(0, 3000)}`
             }
         ]
     });

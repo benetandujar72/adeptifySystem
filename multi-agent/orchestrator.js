@@ -24,11 +24,11 @@ const AGENT_MAP = {
 };
 
 // ── Budget control ────────────────────────────────────────────────────────────
-const PRICE_INPUT_PER_M  = 3.00;   // USD per million tokens (claude-sonnet-4-6)
+const PRICE_INPUT_PER_M = 3.00;   // USD per million tokens (claude-sonnet-4-6)
 const PRICE_OUTPUT_PER_M = 15.00;
-const USD_TO_EUR         = 0.92;
-const BUDGET_WARN_EUR    = 1.50;   // warn user
-const BUDGET_STOP_EUR    = 5.00;   // hard stop (abort remaining agents)
+const USD_TO_EUR = 0.92;
+const BUDGET_WARN_EUR = 1.50;   // warn user
+const BUDGET_STOP_EUR = 5.00;   // hard stop (abort remaining agents)
 
 // ── AG-12 compact input ───────────────────────────────────────────────────────
 // AG-12 receives ALL previous outputs — we trim to avoid exceeding context limits
@@ -37,7 +37,7 @@ function buildAG12Input(consolidado) {
   const d = consolidado;
 
   const first = (arr, n = 3) => Array.isArray(arr) ? arr.slice(0, n) : [];
-  const short  = (s, max = 600) => typeof s === 'string' && s.length > max ? s.slice(0, max) + '…' : (s || '');
+  const short = (s, max = 600) => typeof s === 'string' && s.length > max ? s.slice(0, max) + '…' : (s || '');
 
   return {
     datos_cliente: d.datos_cliente,
@@ -163,7 +163,7 @@ async function orchestrate(datosCliente, onProgress) {
 
   const onTokens = (usage, agentId) => {
     if (!usage || budgetExceeded) return;
-    tokens.input  += usage.input_tokens  || 0;
+    tokens.input += usage.input_tokens || 0;
     tokens.output += usage.output_tokens || 0;
     const costUSD = (tokens.input / 1e6 * PRICE_INPUT_PER_M) + (tokens.output / 1e6 * PRICE_OUTPUT_PER_M);
     const costEUR = costUSD * USD_TO_EUR;
@@ -171,13 +171,13 @@ async function orchestrate(datosCliente, onProgress) {
     if (typeof onProgress === 'function') {
       onProgress('TOKENS', JSON.stringify({
         agent: agentId,
-        delta_input: usage.input_tokens  || 0,
+        delta_input: usage.input_tokens || 0,
         delta_output: usage.output_tokens || 0,
-        total_input:  tokens.input,
+        total_input: tokens.input,
         total_output: tokens.output,
-        cost_eur:     Math.round(costEUR * 1000) / 1000,
-        budget_eur:   BUDGET_STOP_EUR,
-        budget_pct:   Math.min(100, Math.round((costEUR / BUDGET_STOP_EUR) * 100)),
+        cost_eur: Math.round(costEUR * 1000) / 1000,
+        budget_eur: BUDGET_STOP_EUR,
+        budget_pct: Math.min(100, Math.round((costEUR / BUDGET_STOP_EUR) * 100)),
       }), -1);
     }
 
@@ -221,10 +221,17 @@ async function orchestrate(datosCliente, onProgress) {
 
   emit('AG-05', "Dissenyant experiencia d'usuari (UX/UI)...", 2);
   emit('AG-06', 'Planificant integracions de sistemes...', 2);
-  const [res05, res06] = await Promise.all([
-    ag05.run(inp({ necesidades: resultados.ag01, arquitectura: resultados.ag04 })),
-    ag06.run(inp({ sistemas: resultados.ag03, arquitectura: resultados.ag04 })),
-  ]);
+  let res05 = {}, res06 = {};
+  try {
+    const [r5, r6] = await Promise.all([
+      ag05.run(inp({ necesidades: resultados.ag01, arquitectura: resultados.ag04 })),
+      ag06.run(inp({ sistemas: resultados.ag03, arquitectura: resultados.ag04 })),
+    ]);
+    res05 = r5; res06 = r6;
+  } catch (e05_06) {
+    console.error('[ERROR FASE-2] AG-05/AG-06:', e05_06.message);
+    emit('AG-05', `AVÍS: Error en fase 2 — ${e05_06.message}. Continuant amb dades parcials...`, 2);
+  }
   resultados.ag05 = res05; emit('AG-05', 'UX/UI completat', 2);
   resultados.ag06 = res06; emit('AG-06', 'Integracions completades', 2);
 
