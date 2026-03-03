@@ -280,13 +280,25 @@ async function runFullReportJob(jobId, datosCliente) {
     });
 
     push('progress', { agent: 'DOCX', message: 'Generant document Word...', fase: 5 });
-    const buffer = await generateDocxBuffer(doc, datosCliente);
-    const docxBase64 = buffer.toString('base64');
 
+    // Store raw doc for download even if DOCX generation fails
     const clientName = datosCliente?.cliente?.nombre || 'Client';
+    const rawJsonBase64 = Buffer.from(JSON.stringify(doc, null, 2), 'utf-8').toString('base64');
+
+    let docxBase64 = null;
+    try {
+      const buffer = await generateDocxBuffer(doc, datosCliente);
+      docxBase64 = buffer.toString('base64');
+      console.log(`[MultiAgent] DOCX OK — ${Math.round(buffer.length / 1024)} KB`);
+    } catch (docxErr) {
+      console.error('[MultiAgent] DOCX generation failed:', docxErr.message);
+      push('progress', { agent: 'DOCX', message: `Advertència DOCX: ${docxErr.message} — el JSON es pot descarregar igualment`, fase: 5 });
+    }
+
     job.status = 'done';
-    job.result = { doc, docxBase64, clientName };
-    push('complete', { docxBase64, clientName, doc });
+    job.result = { doc, docxBase64, rawJsonBase64, clientName };
+    // Don't send 'doc' in complete event — it's large and can overload SSE
+    push('complete', { docxBase64, rawJsonBase64, clientName });
   } catch (e) {
     console.error('[MultiAgent] Error:', e.message);
     if (reportJobs.get(jobId)) {

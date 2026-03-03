@@ -72,6 +72,7 @@ const AutomatedLeadPanel: React.FC = () => {
   const [reportFase, setReportFase] = useState(0);
   const [reportError, setReportError] = useState<string | null>(null);
   const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0, cost_eur: 0, budget_pct: 0 });
+  const [reportRawJsonBase64, setReportRawJsonBase64] = useState<string | null>(null);
   const BUDGET_EUR = 5.00; // must match orchestrator BUDGET_STOP_EUR
   const progressRef = useRef<HTMLDivElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -154,6 +155,7 @@ const AutomatedLeadPanel: React.FC = () => {
     setReportProgress([]);
     setReportFase(0);
     setReportError(null);
+    setReportRawJsonBase64(null);
     setTokenUsage({ input: 0, output: 0, cost_eur: 0, budget_pct: 0 });
     setStatusMsg('');
     eventSourceRef.current?.close();
@@ -214,10 +216,14 @@ const AutomatedLeadPanel: React.FC = () => {
 
       es.addEventListener('complete', (e: MessageEvent) => {
         const data = JSON.parse(e.data);
-        setReportDocxBase64(data.docxBase64);
+        if (data.docxBase64) setReportDocxBase64(data.docxBase64);
+        if (data.rawJsonBase64) setReportRawJsonBase64(data.rawJsonBase64);
         setReportClientName(data.clientName || lead.name);
-        setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: 'Informe complet generat correctament!', fase: 5 }]);
-        setStatusMsg('Informe de 14 Agents completat. Descarrega el document Word.');
+        const msg = data.docxBase64
+          ? 'Informe complet generat. Descarrega el document Word.'
+          : 'Agents completats. El DOCX ha fallat — descarrega el JSON per revisar.';
+        setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
+        setStatusMsg(msg);
         setIsGeneratingReport(false);
         es.close();
       });
@@ -257,6 +263,18 @@ const AutomatedLeadPanel: React.FC = () => {
     const a = document.createElement('a');
     a.href = url;
     a.download = `Proposta_Adeptify_${(reportClientName || lead.name).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.docx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadRawJson = () => {
+    if (!reportRawJsonBase64) return;
+    const json = atob(reportRawJsonBase64);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Document_AG12_${(reportClientName || lead.name).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -462,12 +480,20 @@ const AutomatedLeadPanel: React.FC = () => {
                   <h3 className="text-2xl font-black">Informe Complet — 14 Agents IA</h3>
                   <p className="text-slate-400 text-xs mt-1">13 seccions · Portada · Índex automàtic · ROI · Cronograma · RGPD · Change Management</p>
                 </div>
-                {reportDocxBase64 && (
-                  <button onClick={downloadFullReport} className="ml-4 bg-green-500 hover:bg-green-400 text-white px-6 py-3 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all shadow-lg flex items-center gap-2 shrink-0">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    .docx
-                  </button>
-                )}
+                <div className="flex flex-col gap-2 ml-4 shrink-0">
+                  {reportDocxBase64 && (
+                    <button onClick={downloadFullReport} className="bg-green-500 hover:bg-green-400 text-white px-5 py-2.5 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all shadow-lg flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      .docx
+                    </button>
+                  )}
+                  {reportRawJsonBase64 && (
+                    <button onClick={downloadRawJson} className="bg-slate-600 hover:bg-slate-500 text-slate-200 px-5 py-2.5 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      json
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Token usage live counter */}
@@ -498,7 +524,7 @@ const AutomatedLeadPanel: React.FC = () => {
                     <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${tokenUsage.budget_pct >= 80 ? 'bg-red-500' : tokenUsage.budget_pct >= 50 ? 'bg-amber-400' : 'bg-emerald-500'}`}
-                        style={{ width: `${Math.min(100, tokenUsage.budget_pct)}%` }}
+                        style={{ width: `${Math.max(tokenUsage.budget_pct > 0 ? 3 : 0, Math.min(100, tokenUsage.budget_pct))}%` }}
                       />
                     </div>
                   </div>

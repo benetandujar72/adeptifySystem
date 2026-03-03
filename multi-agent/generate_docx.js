@@ -91,12 +91,26 @@ function spacer() {
 
 // ─── Helper de tabla ──────────────────────────────────────────────────────────
 
-function makeTable(rows, colWidths) {
-  if (!rows || rows.length === 0) return spacer();
+function normalizeTable(rows) {
+  // Ensure all rows have the same number of columns (DOCX requires it).
+  // Also ensure rows are arrays of primitive values.
+  if (!rows || !Array.isArray(rows) || rows.length === 0) return [];
+  const cleaned = rows.map(r => Array.isArray(r) ? r.map(c => (c === null || c === undefined ? '' : String(c))) : []);
+  const maxCols = Math.max(...cleaned.map(r => r.length));
+  if (maxCols === 0) return [];
+  return cleaned.map(r => {
+    while (r.length < maxCols) r.push('');
+    return r;
+  });
+}
 
-  const numCols = rows[0].length;
+function makeTable(rows, colWidths) {
+  const normalized = normalizeTable(rows);
+  if (normalized.length === 0) return spacer();
+
+  const numCols = normalized[0].length;
   const defaultWidths = Array(numCols).fill(Math.floor(TB.width_total / numCols));
-  const widths = colWidths || defaultWidths;
+  const widths = colWidths ? colWidths.slice(0, numCols) : defaultWidths;
 
   return new Table({
     width: { size: TB.width_total, type: WidthType.DXA },
@@ -108,7 +122,7 @@ function makeTable(rows, colWidths) {
       insideH:{ style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
       insideV:{ style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
     },
-    rows: rows.map((row, rowIdx) => {
+    rows: normalized.map((row, rowIdx) => {
       const isHeader = rowIdx === 0;
       return new TableRow({
         tableHeader: isHeader,
@@ -539,22 +553,44 @@ async function generateDocxBuffer(docData, datosCliente) {
   const clientData = datosCliente || docData.datos_cliente || doc_data.datos_cliente || {};
   const clientName = clientData?.cliente?.nombre || doc_data.metadata?.cliente || 'Client';
 
+  // Log which sections are present to diagnose empty-doc issues
+  const sectionKeys = ['s1_resumen_ejecutivo','s2_contexto_diagnostico','s3_solucion',
+    's4_metodologia','s5_cronograma','s6_devops','s7_seguridad','s8_economia',
+    's9_riesgos','s10_change_management','s11_condiciones','s12_casos_exito','s13_proximos_pasos'];
+  const present = sectionKeys.filter(k => doc_data[k] && typeof doc_data[k] === 'object');
+  console.log(`[DOCX] Client: ${clientName} | Sections found: ${present.length}/13 (${present.join(', ')})`);
+
   const cover = buildCoverSection({ ...doc_data, datos_cliente: clientData });
+
+  // Wrap each section render in try-catch to avoid one bad section killing the whole document
+  const tryRender = (fn, data, sectionName) => {
+    try { return fn(data); }
+    catch (e) {
+      console.warn(`[DOCX] Section ${sectionName} render error: ${e.message}`);
+      return [heading2(`${sectionName} (error de renderització)`), body('Contingut no disponible.'), spacer()];
+    }
+  };
+
   const mainChildren = [
-    ...renderSection1(doc_data.s1_resumen_ejecutivo),
-    ...renderSection2(doc_data.s2_contexto_diagnostico),
-    ...renderSection3(doc_data.s3_solucion),
-    ...renderSection4(doc_data.s4_metodologia),
-    ...renderSection5(doc_data.s5_cronograma),
-    ...renderSection6(doc_data.s6_devops),
-    ...renderSection7(doc_data.s7_seguridad),
-    ...renderSection8(doc_data.s8_economia),
-    ...renderSection9(doc_data.s9_riesgos),
-    ...renderSection10(doc_data.s10_change_management),
-    ...renderSection11(doc_data.s11_condiciones),
-    ...renderSection12(doc_data.s12_casos_exito),
-    ...renderSection13(doc_data.s13_proximos_pasos),
+    ...tryRender(renderSection1, doc_data.s1_resumen_ejecutivo, 'S1'),
+    ...tryRender(renderSection2, doc_data.s2_contexto_diagnostico, 'S2'),
+    ...tryRender(renderSection3, doc_data.s3_solucion, 'S3'),
+    ...tryRender(renderSection4, doc_data.s4_metodologia, 'S4'),
+    ...tryRender(renderSection5, doc_data.s5_cronograma, 'S5'),
+    ...tryRender(renderSection6, doc_data.s6_devops, 'S6'),
+    ...tryRender(renderSection7, doc_data.s7_seguridad, 'S7'),
+    ...tryRender(renderSection8, doc_data.s8_economia, 'S8'),
+    ...tryRender(renderSection9, doc_data.s9_riesgos, 'S9'),
+    ...tryRender(renderSection10, doc_data.s10_change_management, 'S10'),
+    ...tryRender(renderSection11, doc_data.s11_condiciones, 'S11'),
+    ...tryRender(renderSection12, doc_data.s12_casos_exito, 'S12'),
+    ...tryRender(renderSection13, doc_data.s13_proximos_pasos, 'S13'),
   ];
+
+  // DOCX sections must have at least one child — add placeholder if empty
+  if (mainChildren.length === 0) {
+    mainChildren.push(body('Document en blanc — no s\'han pogut renderitzar les seccions.'));
+  }
 
   const document = new Document({
     title: `Proposta Adeptify — ${clientName}`,
@@ -585,7 +621,9 @@ async function generateDocxBuffer(docData, datosCliente) {
     ],
   });
 
-  return Packer.toBuffer(document);
+  const buffer = await Packer.toBuffer(document);
+  console.log(`[DOCX] Buffer generated: ${Math.round(buffer.length / 1024)} KB | Children: ${mainChildren.length}`);
+  return buffer;
 }
 
 module.exports = { generateDocx, generateDocxBuffer };
