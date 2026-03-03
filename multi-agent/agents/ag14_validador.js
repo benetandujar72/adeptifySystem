@@ -14,7 +14,7 @@ const AGENT_ID = 'AG-14';
 async function run(inputData) {
   console.log(`[${AGENT_ID}] Iniciando análisis...`);
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8192,
     temperature: TEMPERATURE,
     system: SYSTEM_PROMPT,
@@ -61,7 +61,7 @@ async function parseJson(text, inputData) {
 async function retryWithStricterPrompt(inputData, previousOutput) {
   console.log(`[${AGENT_ID}] Reintentando con prompt estricto...`);
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-5-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8192,
     temperature: 0.1,
     system: SYSTEM_PROMPT,
