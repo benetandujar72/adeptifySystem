@@ -1,0 +1,14 @@
+{
+  "name": "adeptify-multi-agent",
+  "version": "1.0.0",
+  "description": "Sistema multi-agente de 14 agentes para generación de informes de consultoría Adeptify",
+  "main": "orchestrator.js",
+  "scripts": {
+    "start": "node orchestrator.js datos_cliente.json",
+    "docx": "node generate_docx.js outputs/consolidado_final.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "docx": "^9.6.0"
+  }
+}

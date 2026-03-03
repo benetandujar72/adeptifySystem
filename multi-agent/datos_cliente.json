@@ -1,0 +1,22 @@
+{
+  "cliente": {
+    "nombre": "Escola Joan Pelegrí",
+    "tipo": "educacion",
+    "sector": "Educació concertada",
+    "tamano": "800 alumnes, 60 docents",
+    "ubicacion": "Barcelona",
+    "web": "https://joanpelegri.cat"
+  },
+  "sistemas_existentes": [
+    { "nombre": "Alexia", "tipo": "SGA", "uso": "Gestió acadèmica i comunicació amb famílies" },
+    { "nombre": "Moodle", "tipo": "LMS", "uso": "Campus Virtual" },
+    { "nombre": "WordPress", "tipo": "Web", "uso": "Web institucional" },
+    { "nombre": "Gmail / Google Workspace", "tipo": "Email", "uso": "Comunicació interna i externa" }
+  ],
+  "proposta": {
+    "idioma": "ca",
+    "tipus_projecte": "Transformació digital captació i admissions",
+    "pressupost_orientatiu": "8000-12000",
+    "termini_desitjat": "4 mesos"
+  }
+}
