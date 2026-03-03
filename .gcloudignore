@@ -1,0 +1,15 @@
+# Usar .gitignore como base, pero permitir el dist/ generado localmente
+.git
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.production
+.venv/
+production/
+.claude/
+scripts/
+*.md
+*.txt
+!multi-agent/prompts/*.txt
+supabase/d.log

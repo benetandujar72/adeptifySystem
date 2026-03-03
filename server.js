@@ -559,11 +559,21 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
   res.flushHeaders();
 
   let cursor = 0;
+  let heartbeatCount = 0;
+
+  // Heartbeat cada 20s para prevenir QUIC_NETWORK_IDLE_TIMEOUT en Cloud Run
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: ping ${++heartbeatCount}\n\n`);
+    } catch (_) { }
+  }, 20000);
+
   const interval = setInterval(() => {
     const job = reportJobs.get(jobId);
     if (!job) {
       res.write(`event: error\ndata: ${JSON.stringify({ message: 'Job no trobat' })}\n\n`);
       clearInterval(interval);
+      clearInterval(heartbeat);
       res.end();
       return;
     }
@@ -577,12 +587,17 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
 
     if (job.status === 'done' || job.status === 'error') {
       clearInterval(interval);
+      clearInterval(heartbeat);
       res.end();
     }
   }, 300);
 
-  req.on('close', () => clearInterval(interval));
+  req.on('close', () => {
+    clearInterval(interval);
+    clearInterval(heartbeat);
+  });
 });
+
 
 // Health check (Cloud Run / load balancers)
 app.get('/healthz', (_req, res) => res.status(200).json({ ok: true }));
