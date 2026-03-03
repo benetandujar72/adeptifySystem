@@ -51,58 +51,103 @@ const getSupabaseAdmin = () => {
 };
 
 // --- GEMINI RESILIENT CALLER ---
-async function callGemini(prompt, modelId = "gemini-2.5-flash") {
+async function callGemini(prompt, modelId = "gemini-1.5-flash") {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      tools: [{ googleSearch: {} }],
-      generationConfig: { temperature: 0.3 }
-    })
-  });
+  // Try the requested model, fall back to gemini-1.5-flash if it fails
+  const modelsToTry = modelId === "gemini-1.5-flash" ? ["gemini-1.5-flash"] : [modelId, "gemini-1.5-flash"];
 
-  const data = await response.json();
-  if (data.error) {
-    console.error(`[Gemini API Error]`, data.error);
-    throw new Error(data.error.message);
-  }
+  let lastError = null;
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const rawText = data.candidates[0].content.parts[0].text;
-  let cleanText = rawText.trim();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }],
+          generationConfig: { temperature: 0.3 }
+        })
+      });
 
-  if (cleanText.startsWith("```json")) {
-    cleanText = cleanText.substring(7);
-  } else if (cleanText.startsWith("```")) {
-    cleanText = cleanText.substring(3);
-  }
+      const data = await response.json();
+      if (data.error) {
+        console.error(`[Gemini API Error] model=${model}`, data.error);
+        lastError = new Error(data.error.message);
+        continue; // try next model
+      }
 
-  if (cleanText.endsWith("```")) {
-    cleanText = cleanText.substring(0, cleanText.length - 3);
-  }
+      if (!data.candidates || data.candidates.length === 0) {
+        console.error(`[Gemini] No candidates returned by ${model}. Full response:`, JSON.stringify(data).substring(0, 500));
+        lastError = new Error(`Gemini model ${model} returned no candidates`);
+        continue;
+      }
 
-  cleanText = cleanText.trim();
+      const candidate = data.candidates[0];
+      if (!candidate.content || !candidate.content.parts) {
+        console.error(`[Gemini] Candidate has no content/parts. finishReason=${candidate.finishReason}`);
+        lastError = new Error(`Gemini finished with reason: ${candidate.finishReason || 'UNKNOWN'}`);
+        continue;
+      }
 
-  // Si sigue fallando y no era markdown, podemos aislar de { a }
-  if (!cleanText.startsWith("{")) {
-    const firstBrace = cleanText.indexOf('{');
-    const lastBrace = cleanText.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      cleanText = cleanText.substring(firstBrace, lastBrace + 1);
+      // Find the first part that has text
+      const textPart = candidate.content.parts.find(p => typeof p.text === 'string' && p.text.trim().length > 0);
+      if (!textPart) {
+        console.error(`[Gemini] No text part found in response parts:`, JSON.stringify(candidate.content.parts).substring(0, 300));
+        lastError = new Error("Gemini returned response with no text content");
+        continue;
+      }
+
+      let cleanText = textPart.text.trim();
+
+      if (cleanText.startsWith("```json")) {
+        cleanText = cleanText.substring(7);
+      } else if (cleanText.startsWith("```")) {
+        cleanText = cleanText.substring(3);
+      }
+
+      if (cleanText.endsWith("```")) {
+        cleanText = cleanText.substring(0, cleanText.length - 3);
+      }
+
+      cleanText = cleanText.trim();
+
+      // Extract JSON object if surrounded by other text
+      if (!cleanText.startsWith("{") && !cleanText.startsWith("[")) {
+        const firstBrace = cleanText.indexOf('{');
+        const firstBracket = cleanText.indexOf('[');
+        let start = -1;
+        if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
+        else if (firstBrace !== -1) start = firstBrace;
+        else if (firstBracket !== -1) start = firstBracket;
+
+        if (start !== -1) {
+          const lastBrace = cleanText.lastIndexOf('}');
+          const lastBracket = cleanText.lastIndexOf(']');
+          const end = Math.max(lastBrace, lastBracket);
+          if (end !== -1) cleanText = cleanText.substring(start, end + 1);
+        }
+      }
+
+      try {
+        return JSON.parse(cleanText);
+      } catch (err) {
+        console.error(`[JSON Parse Error] model=${model} raw:`, textPart.text.substring(0, 500));
+        lastError = new Error("Gemini returned invalid JSON structure.");
+        continue;
+      }
+    } catch (fetchErr) {
+      console.error(`[Gemini Fetch Error] model=${model}:`, fetchErr.message);
+      lastError = fetchErr;
     }
   }
 
-  try {
-    return JSON.parse(cleanText);
-  } catch (err) {
-    console.error("[JSON Parse Error] Raw text:", rawText);
-    throw new Error("Gemini returned invalid JSON structure.");
-  }
+  throw lastError || new Error("All Gemini model attempts failed");
 }
+
 
 // --- CLASSE GENERADORA DE DOCX (MIGRADA AL SERVEI) ---
 const { WordProposalGenerator } = require('./services/wordGenerator.js');
