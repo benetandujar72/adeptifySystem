@@ -120,8 +120,9 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
+      # 3600s = 1h — needed for the 14-agent SSE stream (agents take 8-12 min)
       - '--timeout'
-      - '300'
+      - '3600'
 
       # Secrets injected as env vars inside the container at runtime.
       # server.js reads SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY for the admin client.

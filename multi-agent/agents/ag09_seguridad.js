@@ -26,6 +26,7 @@ async function run(inputData) {
     ],
   });
 
+  if (typeof inputData._onTokens === 'function') inputData._onTokens(message.usage, AGENT_ID);
   const text = message.content
     .filter((block) => block.type === 'text')
     .map((block) => block.text)
@@ -72,6 +73,7 @@ async function retryWithStricterPrompt(inputData, previousOutput) {
       },
     ],
   });
+  if (typeof inputData._onTokens === 'function') inputData._onTokens(message.usage, AGENT_ID);
   const text = message.content
     .filter((b) => b.type === 'text')
     .map((b) => b.text)

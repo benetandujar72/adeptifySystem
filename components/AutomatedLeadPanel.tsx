@@ -70,12 +70,21 @@ const AutomatedLeadPanel: React.FC = () => {
   const [reportDocxBase64, setReportDocxBase64] = useState<string | null>(null);
   const [reportClientName, setReportClientName] = useState('');
   const [reportFase, setReportFase] = useState(0);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0, cost_eur: 0 });
   const progressRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (progressRef.current) progressRef.current.scrollTop = progressRef.current.scrollHeight;
   }, [reportProgress]);
+
+  useEffect(() => {
+    if (reportError && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [reportError]);
 
   useEffect(() => () => { eventSourceRef.current?.close(); }, []);
 
@@ -143,6 +152,8 @@ const AutomatedLeadPanel: React.FC = () => {
     setReportDocxBase64(null);
     setReportProgress([]);
     setReportFase(0);
+    setReportError(null);
+    setTokenUsage({ input: 0, output: 0, cost_eur: 0 });
     setStatusMsg('');
     eventSourceRef.current?.close();
 
@@ -187,9 +198,17 @@ const AutomatedLeadPanel: React.FC = () => {
       eventSourceRef.current = es;
 
       es.addEventListener('progress', (e: MessageEvent) => {
-        const data = JSON.parse(e.data) as AgentEvent;
+        const data = JSON.parse(e.data) as AgentEvent & { message: string };
+        // TOKENS event: update token counter, don't add to log
+        if (data.agent === 'TOKENS') {
+          try {
+            const t = JSON.parse(data.message);
+            setTokenUsage({ input: t.total_input, output: t.total_output, cost_eur: t.cost_eur });
+          } catch { /* ignore */ }
+          return;
+        }
         setReportProgress(prev => [...prev, data]);
-        if (data.fase) setReportFase(data.fase);
+        if (data.fase && data.fase > 0) setReportFase(data.fase);
       });
 
       es.addEventListener('complete', (e: MessageEvent) => {
@@ -203,19 +222,28 @@ const AutomatedLeadPanel: React.FC = () => {
       });
 
       es.addEventListener('error', (e: MessageEvent) => {
-        const data = e.data ? JSON.parse(e.data) : { message: 'Error desconegut' };
-        setStatusMsg(`Error: ${data.message}`);
+        const data = e.data ? JSON.parse(e.data) : { message: 'Error desconegut al servidor' };
+        const errMsg = data.message || 'Error desconegut';
+        setReportError(errMsg);
+        setReportProgress(prev => [...prev, { agent: 'ERROR', message: `ERROR: ${errMsg}`, fase: 0 }]);
         setIsGeneratingReport(false);
         es.close();
       });
 
+      // onerror fires on connection issues — distinguish real errors from reconnects
       es.onerror = () => {
+        if (es.readyState === EventSource.CONNECTING) return; // auto-reconnect, wait
         if (es.readyState === EventSource.CLOSED) return;
-        setStatusMsg('Connexió perduda. El job continua en segon pla.');
+        const msg = 'Connexió SSE perduda (timeout o xarxa). Comprova els logs del servidor.';
+        setReportError(msg);
+        setReportProgress(prev => [...prev, { agent: 'ERROR', message: msg, fase: 0 }]);
         setIsGeneratingReport(false);
+        es.close();
       };
     } catch (err: any) {
-      setStatusMsg(`Error: ${err.message}`);
+      const msg = err.message || 'Error desconegut';
+      setReportError(msg);
+      setReportProgress(prev => [...prev, { agent: 'ERROR', message: `ERROR: ${msg}`, fase: 0 }]);
       setIsGeneratingReport(false);
     }
   };
@@ -427,7 +455,7 @@ const AutomatedLeadPanel: React.FC = () => {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-indigo-400 animate-pulse" />
+                    <div className={`w-3 h-3 rounded-full ${reportError ? 'bg-red-500' : 'bg-indigo-400 animate-pulse'}`} />
                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-300">Sistema Multi-Agent Claude</span>
                   </div>
                   <h3 className="text-2xl font-black">Informe Complet — 14 Agents IA</h3>
@@ -441,29 +469,63 @@ const AutomatedLeadPanel: React.FC = () => {
                 )}
               </div>
 
-              {/* Progress */}
+              {/* Token usage live counter */}
+              {(isGeneratingReport || tokenUsage.input > 0) && (
+                <div className="mb-4 grid grid-cols-3 gap-3">
+                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens entrada</div>
+                    <div className="text-sm font-black text-indigo-300 font-mono">{tokenUsage.input.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens sortida</div>
+                    <div className="text-sm font-black text-purple-300 font-mono">{tokenUsage.output.toLocaleString()}</div>
+                  </div>
+                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Cost estimat</div>
+                    <div className="text-sm font-black text-amber-300 font-mono">{tokenUsage.cost_eur.toFixed(3)} €</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress log */}
               {(isGeneratingReport || reportProgress.length > 0) && (
                 <div className="mb-6">
                   <div className="flex gap-1.5 mb-3">
                     {[1, 2, 3, 4, 5].map(f => (
-                      <div key={f} className={`flex-1 h-1.5 rounded-full transition-all duration-700 ${f <= reportFase ? 'bg-indigo-400' : 'bg-slate-700'}`} />
+                      <div key={f} className={`flex-1 h-1.5 rounded-full transition-all duration-700 ${reportError ? 'bg-red-700' : f <= reportFase ? 'bg-indigo-400' : 'bg-slate-700'}`} />
                     ))}
                   </div>
-                  {reportFase > 0 && <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-2">{FASE_LABELS[reportFase]}</p>}
+                  {reportFase > 0 && !reportError && <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-300 mb-2">{FASE_LABELS[reportFase]}</p>}
                   <div ref={progressRef} className="bg-slate-800/60 rounded-2xl p-4 max-h-52 overflow-y-auto space-y-1 font-mono text-xs">
-                    {reportProgress.map((ev, i) => (
-                      <div key={i} className={`flex items-start gap-3 ${ev.message.includes('completat') || ev.message.includes('completada') || ev.message.includes('Informe') ? 'text-green-400' : 'text-slate-300'}`}>
-                        <span className="text-indigo-400 shrink-0 font-black text-[10px]">{ev.agent}</span>
-                        <span>{ev.message}</span>
-                      </div>
-                    ))}
-                    {isGeneratingReport && (
+                    {reportProgress.map((ev, i) => {
+                      const isErr = ev.agent === 'ERROR';
+                      const isDone = !isErr && (ev.message.includes('completat') || ev.message.includes('completada') || ev.message.includes('Informe'));
+                      return (
+                        <div key={i} ref={isErr ? errorRef : undefined}
+                          className={`flex items-start gap-3 ${isErr ? 'text-red-400 font-bold' : isDone ? 'text-green-400' : 'text-slate-300'}`}>
+                          <span className={`shrink-0 font-black text-[10px] ${isErr ? 'text-red-500' : 'text-indigo-400'}`}>{ev.agent}</span>
+                          <span>{ev.message}</span>
+                        </div>
+                      );
+                    })}
+                    {isGeneratingReport && !reportError && (
                       <div className="flex items-center gap-2 text-indigo-300 pt-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
                         <span>Processant agents...</span>
                       </div>
                     )}
                   </div>
+
+                  {/* Error callout */}
+                  {reportError && (
+                    <div ref={errorRef} className="mt-3 p-4 bg-red-900/40 border border-red-700/60 rounded-2xl">
+                      <p className="text-[9px] font-black uppercase text-red-400 mb-1 tracking-widest">Error detectat</p>
+                      <p className="text-xs text-red-300 font-mono">{reportError}</p>
+                      <button onClick={handleGenerateFullReport} className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-600 text-white text-[9px] font-black uppercase rounded-xl tracking-widest transition-all">
+                        Reintenta
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -480,24 +542,30 @@ const AutomatedLeadPanel: React.FC = () => {
               )}
 
               <button
-                onClick={handleGenerateFullReport}
+                onClick={reportError ? handleGenerateFullReport : handleGenerateFullReport}
                 disabled={isGeneratingReport || !!reportDocxBase64}
                 className={`w-full py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${
-                  reportDocxBase64 ? 'bg-green-600/20 text-green-300 cursor-default border border-green-700/30'
-                  : isGeneratingReport ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
+                  reportDocxBase64
+                    ? 'bg-green-600/20 text-green-300 cursor-default border border-green-700/30'
+                  : reportError
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-900/40 cursor-pointer'
+                  : isGeneratingReport
+                    ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
                 }`}
               >
                 {reportDocxBase64 ? (
                   <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Informe Generat — Descarrega el Botó Verd</>
+                ) : reportError ? (
+                  <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> ERROR — Clica per Reintentar</>
                 ) : isGeneratingReport ? (
                   <><div className="w-4 h-4 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin" /> Generant Informe ({reportProgress.filter(e => e.message.includes('completat') || e.message.includes('completada')).length}/14)...</>
                 ) : (
                   <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> Generar Informe Complet (14 Agents IA)</>
                 )}
               </button>
-              {!isGeneratingReport && !reportDocxBase64 && (
-                <p className="text-center text-[9px] text-slate-500 mt-3 tracking-wide">Temps estimat: 8-12 min · Claude Sonnet 4.5 · 13 seccions · Portada + Índex</p>
+              {!isGeneratingReport && !reportDocxBase64 && !reportError && (
+                <p className="text-center text-[9px] text-slate-500 mt-3 tracking-wide">Temps estimat: 8-12 min · Claude Sonnet 4.6 · 13 seccions · Portada + Índex</p>
               )}
             </div>
           </div>

@@ -23,25 +23,53 @@ const AGENT_MAP = {
   'AG-09': ag09, 'AG-10': ag10, 'AG-12': ag12, 'AG-13': ag13, 'AG-14': ag14,
 };
 
+// Pricing claude-sonnet-4-6 (USD per million tokens)
+const PRICE_INPUT_PER_M  = 3.00;
+const PRICE_OUTPUT_PER_M = 15.00;
+
 /**
- * @param {object} datosCliente - Client data object
- * @param {function} [onProgress] - Optional callback(agentId, message, fase)
+ * @param {object} datosCliente
+ * @param {function} [onProgress] - callback(agentId, message, fase, tokenInfo?)
  */
 async function orchestrate(datosCliente, onProgress) {
+  const tokens = { input: 0, output: 0 };
+
+  const onTokens = (usage, agentId) => {
+    if (!usage) return;
+    tokens.input  += usage.input_tokens  || 0;
+    tokens.output += usage.output_tokens || 0;
+    const costUSD = (tokens.input / 1e6 * PRICE_INPUT_PER_M) + (tokens.output / 1e6 * PRICE_OUTPUT_PER_M);
+    const costEUR = costUSD * 0.92;
+    if (typeof onProgress === 'function') {
+      onProgress('TOKENS', JSON.stringify({
+        agent: agentId,
+        delta_input:  usage.input_tokens  || 0,
+        delta_output: usage.output_tokens || 0,
+        total_input:  tokens.input,
+        total_output: tokens.output,
+        cost_eur:     Math.round(costEUR * 1000) / 1000,
+      }), -1);
+    }
+  };
+
   const emit = (agentId, message, fase) => {
     console.log(`[${agentId}] ${message}`);
     if (typeof onProgress === 'function') onProgress(agentId, message, fase);
   };
+
+  // Helper: inject token callback into inputData
+  const inp = (extra) => ({ ...datosCliente, ...extra, _onTokens: onTokens });
+
   const resultados = {};
 
-  // FASE 1: Analisis en paralelo
+  // FASE 1: Analisi en paralel
   emit('AG-01', 'Analitzant requeriments del client...', 1);
   emit('AG-02', 'Investigant mercat i competencia...', 1);
   emit('AG-03', 'Auditant sistemes existents...', 1);
   const [res01, res02, res03] = await Promise.all([
-    ag01.run(datosCliente),
-    ag02.run(datosCliente),
-    ag03.run(datosCliente),
+    ag01.run(inp({})),
+    ag02.run(inp({})),
+    ag03.run(inp({})),
   ]);
   resultados.ag01 = res01; emit('AG-01', 'Requeriments completats', 1);
   resultados.ag02 = res02; emit('AG-02', 'Analisi de mercat completada', 1);
@@ -49,38 +77,30 @@ async function orchestrate(datosCliente, onProgress) {
 
   // FASE 2: Disseny
   emit('AG-04', 'Dissenyant arquitectura de la solucio...', 2);
-  resultados.ag04 = await ag04.run({
-    ...datosCliente,
-    necesidades: resultados.ag01,
-    sistemas: resultados.ag03,
-  });
+  resultados.ag04 = await ag04.run(inp({ necesidades: resultados.ag01, sistemas: resultados.ag03 }));
   emit('AG-04', 'Arquitectura completada', 2);
 
   emit('AG-05', "Dissenyant experiencia d'usuari (UX/UI)...", 2);
   emit('AG-06', 'Planificant integracions de sistemes...', 2);
   const [res05, res06] = await Promise.all([
-    ag05.run({ ...datosCliente, necesidades: resultados.ag01, arquitectura: resultados.ag04 }),
-    ag06.run({ ...datosCliente, sistemas: resultados.ag03, arquitectura: resultados.ag04 }),
+    ag05.run(inp({ necesidades: resultados.ag01, arquitectura: resultados.ag04 })),
+    ag06.run(inp({ sistemas: resultados.ag03, arquitectura: resultados.ag04 })),
   ]);
   resultados.ag05 = res05; emit('AG-05', 'UX/UI completat', 2);
   resultados.ag06 = res06; emit('AG-06', 'Integracions completades', 2);
 
   // FASE 3: Planificacio
   emit('AG-07', 'Planificant projecte i cronograma...', 3);
-  resultados.ag07 = await ag07.run({
-    ...datosCliente,
-    arquitectura: resultados.ag04,
-    integraciones: resultados.ag06,
-  });
+  resultados.ag07 = await ag07.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 }));
   emit('AG-07', 'Pla de projecte completat', 3);
 
   emit('AG-08', 'Definint estrategia DevOps...', 3);
   emit('AG-09', 'Avaluant seguretat i compliment RGPD...', 3);
   emit('AG-10', 'Calculant proposta economica i ROI...', 3);
   const [res08, res09, res10] = await Promise.all([
-    ag08.run({ ...datosCliente, arquitectura: resultados.ag04, integraciones: resultados.ag06 }),
-    ag09.run({ ...datosCliente, arquitectura: resultados.ag04, integraciones: resultados.ag06 }),
-    ag10.run({ ...datosCliente, arquitectura: resultados.ag04, cronograma: resultados.ag07 }),
+    ag08.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 })),
+    ag09.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 })),
+    ag10.run(inp({ arquitectura: resultados.ag04, cronograma: resultados.ag07 })),
   ]);
   resultados.ag08 = res08; emit('AG-08', 'DevOps completat', 3);
   resultados.ag09 = res09; emit('AG-09', 'Seguretat i RGPD completats', 3);
@@ -91,25 +111,17 @@ async function orchestrate(datosCliente, onProgress) {
   emit('AG-11', 'Estil visual Adeptify aplicat', 4);
 
   emit('AG-13', 'Elaborant pla de gestio del canvi...', 4);
-  resultados.ag13 = await ag13.run({
-    ...datosCliente,
-    arquitectura: resultados.ag04,
-    ux: resultados.ag05,
-    cronograma: resultados.ag07,
-  });
+  resultados.ag13 = await ag13.run(inp({ arquitectura: resultados.ag04, ux: resultados.ag05, cronograma: resultados.ag07 }));
   emit('AG-13', 'Gestio del canvi completada', 4);
 
   const consolidado = buildConsolidado(datosCliente, resultados);
 
   emit('AG-12', 'Redactant document final integrat (pot trigar 1-2 min)...', 4);
-  resultados.ag12 = await ag12.run(consolidado);
+  resultados.ag12 = await ag12.run({ ...consolidado, _onTokens: onTokens });
   emit('AG-12', 'Document redactat', 4);
 
   emit('AG-14', 'Validant qualitat del document...', 4);
-  resultados.ag14 = await ag14.run({
-    documento_integrado: resultados.ag12,
-    consolidado,
-  });
+  resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado, _onTokens: onTokens });
   emit('AG-14', `Validacio: ${resultados.ag14.resultado_validacion} (score: ${resultados.ag14.puntuacion_calidad})`, 4);
 
   // Cicle de correccio (max 2 iteracions)
@@ -126,15 +138,12 @@ async function orchestrate(datosCliente, onProgress) {
       if (!agModule) { console.warn(`Agent ${agId} no trobat.`); continue; }
       emit(agId, `Re-executant per correccions...`, 4);
       const correccions = acciones.filter((a) => a.agente_responsable === agId);
-      resultados[agKey] = await agModule.run({ ...consolidado, correccions });
+      resultados[agKey] = await agModule.run({ ...consolidado, correccions, _onTokens: onTokens });
     }
 
     consolidado.correcciones_aplicadas = acciones;
-    resultados.ag12 = await ag12.run(buildConsolidado(datosCliente, resultados));
-    resultados.ag14 = await ag14.run({
-      documento_integrado: resultados.ag12,
-      consolidado,
-    });
+    resultados.ag12 = await ag12.run({ ...buildConsolidado(datosCliente, resultados), _onTokens: onTokens });
+    resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado, _onTokens: onTokens });
     emit('AG-14', `Re-validacio #${intentos}: ${resultados.ag14.resultado_validacion} (${resultados.ag14.puntuacion_calidad})`, 4);
   }
 
@@ -144,7 +153,6 @@ async function orchestrate(datosCliente, onProgress) {
     emit('ORQUESTADOR', 'Document generat amb advertencies (2 cicles esgotats)', 4);
   }
 
-  // Guardar consolidado final
   const outputDir = path.join(__dirname, 'outputs');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(
@@ -174,19 +182,13 @@ function buildConsolidado(datosCliente, resultados) {
   };
 }
 
-// Entry point
 if (require.main === module) {
   const dataFile = process.argv[2] || 'datos_cliente.json';
   const filePath = path.isAbsolute(dataFile) ? dataFile : path.join(process.cwd(), dataFile);
-
-  if (!fs.existsSync(filePath)) {
-    console.error(`[ERROR] No se encontro el archivo: ${filePath}`);
-    process.exit(1);
-  }
-
+  if (!fs.existsSync(filePath)) { console.error(`[ERROR] No trobat: ${filePath}`); process.exit(1); }
   const datos = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   orchestrate(datos)
-    .then(() => console.log('\nProceso completado. Ejecuta: node generate_docx.js outputs/consolidado_final.json'))
+    .then(() => console.log('\nComplet. Executa: node generate_docx.js outputs/consolidado_final.json'))
     .catch((err) => { console.error('[ERROR FATAL]', err); process.exit(1); });
 }
 
