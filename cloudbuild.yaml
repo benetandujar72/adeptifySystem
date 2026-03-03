@@ -123,12 +123,29 @@ steps:
       - '--timeout'
       - '300'
 
+      # Secrets injected as env vars inside the container at runtime.
+      # server.js reads SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY for the admin client.
+      # server.js /env.js endpoint reads SUPABASE_URL/ANON_KEY to serve to the browser.
       - '--set-secrets'
-      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest,SMTP_PASS=SMTP_PASS:latest'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest,SMTP_PASS=SMTP_PASS:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SB_PUBLISHABLE_KEY=SB_PUBLISHABLE_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest'
       - '--set-env-vars'
       - 'SMTP_HOST=${_SMTP_HOST},SMTP_PORT=${_SMTP_PORT},SMTP_SECURE=${_SMTP_SECURE},SMTP_USER=${_SMTP_USER},CONTACT_TO=${_CONTACT_TO},CONTACT_FROM_NAME=${_CONTACT_FROM_NAME}'
       - '--port'
       - '2705'
+      # Resource limits: 1 CPU / 512 MiB is enough for the Node server.
+      # Increase to 2 CPU / 1Gi if DOCX/PDF generation causes OOM.
+      - '--cpu'
+      - '1'
+      - '--memory'
+      - '512Mi'
+      # Scale-to-zero when idle (min 0) to reduce cost; max 3 to cap spend.
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '3'
+      # Each instance handles up to 80 concurrent requests.
+      - '--concurrency'
+      - '80'
       - '--quiet'
 
 images:
@@ -145,4 +162,8 @@ availableSecrets:
       env: 'SB_PUBLISHABLE_KEY'
     - versionName: projects/$PROJECT_ID/secrets/SUPABASE_DB_URL/versions/latest
       env: 'SUPABASE_DB_URL'
+    # Used by server.js Supabase admin client (lead tracking, interactions).
+    # Create with: gcloud secrets create SUPABASE_SERVICE_ROLE_KEY --replication-policy=automatic
+    - versionName: projects/$PROJECT_ID/secrets/SUPABASE_SERVICE_ROLE_KEY/versions/latest
+      env: 'SUPABASE_SERVICE_ROLE_KEY'
 

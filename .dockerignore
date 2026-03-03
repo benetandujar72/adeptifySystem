@@ -20,3 +20,21 @@ dist-ssr
 
 # Cloud Build artifacts
 cloudbuild.log
+
+# Env files with secrets (generated at build time by cloudbuild.yaml step 0,
+# must never be baked in from the developer's local machine)
+.env
+.env.*
+
+# Scripts are not needed inside the container
+scripts/
+
+# Dev / misc files that add no value to the image
+*.md
+*.txt
+*.csv
+*.json.bak
+supabase/
+production/
+.claude/
+.venv/

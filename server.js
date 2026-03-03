@@ -258,6 +258,24 @@ app.post('/api/automation/generate-docx', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// Health check (Cloud Run / load balancers)
+app.get('/healthz', (_req, res) => res.status(200).json({ ok: true }));
+app.get('/health',  (_req, res) => res.status(200).json({ ok: true }));
+app.get('/readyz',  (_req, res) => res.status(200).json({ ok: true }));
+
+// Runtime browser config — served dynamically so Cloud Run env vars reach the SPA.
+// MUST be registered BEFORE express.static, otherwise dist/env.js (empty placeholder) wins.
+app.get('/env.js', (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  const safeEnv = {
+    SUPABASE_URL:       process.env.SUPABASE_URL       || process.env.VITE_SUPABASE_URL       || '',
+    SUPABASE_ANON_KEY:  process.env.SUPABASE_ANON_KEY  || process.env.VITE_SUPABASE_ANON_KEY  || '',
+    SB_PUBLISHABLE_KEY: process.env.SB_PUBLISHABLE_KEY || process.env.VITE_SB_PUBLISHABLE_KEY || '',
+  };
+  res.send(`// Generated at request time; do not commit.\nwindow.__ADEPTIFY_ENV__ = ${JSON.stringify(safeEnv)};\n`);
+});
+
 const distDir = path.join(__dirname, 'dist');
 app.use(express.static(distDir));
 app.get('*', (req, res) => {
