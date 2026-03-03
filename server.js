@@ -8,6 +8,13 @@ const { createClient } = require('@supabase/supabase-js');
 const cheerio = require('cheerio');
 const docx = require('docx');
 
+// Multi-agent system
+const { orchestrate } = require('./multi-agent/orchestrator');
+const { generateDocxBuffer } = require('./multi-agent/generate_docx');
+
+// In-memory job store for SSE progress streaming
+const reportJobs = new Map(); // jobId -> { status, events[], result, error }
+
 const {
   Document, Packer, Paragraph, TextRun, HeadingLevel,
   AlignmentType, Table, TableRow, TableCell, WidthType,
@@ -256,6 +263,111 @@ app.post('/api/automation/generate-docx', async (req, res) => {
     const buffer = await generator.generate(req.body.leadData, req.body.lang || 'ca');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').send(buffer);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── Multi-Agent Full Report ──────────────────────────────────────────────────
+// Flow: POST /start → returns jobId → GET /stream/:jobId (EventSource) → SSE events
+
+async function runFullReportJob(jobId, datosCliente) {
+  const job = reportJobs.get(jobId);
+  const push = (type, payload) => { if (job) job.events.push({ type, ...payload }); };
+
+  try {
+    push('progress', { agent: 'ORQUESTADOR', message: 'Sistema multi-agent iniciat (14 agents)', fase: 0 });
+
+    const doc = await orchestrate(datosCliente, (agentId, message, fase) => {
+      push('progress', { agent: agentId, message, fase });
+    });
+
+    push('progress', { agent: 'DOCX', message: 'Generant document Word...', fase: 5 });
+    const buffer = await generateDocxBuffer(doc, datosCliente);
+    const docxBase64 = buffer.toString('base64');
+
+    const clientName = datosCliente?.cliente?.nombre || 'Client';
+    job.status = 'done';
+    job.result = { doc, docxBase64, clientName };
+    push('complete', { docxBase64, clientName, doc });
+  } catch (e) {
+    console.error('[MultiAgent] Error:', e.message);
+    if (reportJobs.get(jobId)) {
+      reportJobs.get(jobId).status = 'error';
+      reportJobs.get(jobId).error = e.message;
+    }
+    push('error', { message: e.message });
+  }
+}
+
+// 1) Start a new multi-agent job
+app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), async (req, res) => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(503).json({ error: 'ANTHROPIC_API_KEY no configurada' });
+  }
+  const { url, lang, datosCliente: clienteRaw } = req.body || {};
+
+  // Build datosCliente from either explicit object or URL analysis result
+  const datosCliente = clienteRaw || {
+    cliente: {
+      nombre: req.body?.company_name || 'Client',
+      tipo: req.body?.client_type || 'empresa',
+      sector: req.body?.sector || 'General',
+      web: url || '',
+    },
+    sistemas_existentes: req.body?.systems || [],
+    proposta: {
+      idioma: lang || 'ca',
+      tipus_projecte: req.body?.recommended_solution || 'Transformacio digital',
+      pressupost_orientatiu: req.body?.estimated_budget_range || '8000-15000',
+      termini_desitjat: '3-4 mesos',
+    },
+    contexto_inicial: req.body?.analysis || {},
+  };
+
+  const jobId = crypto.randomUUID();
+  reportJobs.set(jobId, { status: 'running', events: [], result: null, error: null });
+
+  // Run async (don't await)
+  runFullReportJob(jobId, datosCliente);
+
+  // Clean up job after 30 min
+  setTimeout(() => reportJobs.delete(jobId), 30 * 60 * 1000);
+
+  res.json({ jobId });
+});
+
+// 2) SSE stream for job progress — use with EventSource(url) on the frontend
+app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
+  const { jobId } = req.params;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable nginx buffering
+  res.flushHeaders();
+
+  let cursor = 0;
+  const interval = setInterval(() => {
+    const job = reportJobs.get(jobId);
+    if (!job) {
+      res.write(`event: error\ndata: ${JSON.stringify({ message: 'Job no trobat' })}\n\n`);
+      clearInterval(interval);
+      res.end();
+      return;
+    }
+
+    // Drain new events
+    while (cursor < job.events.length) {
+      const ev = job.events[cursor++];
+      const { type, ...data } = ev;
+      res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+    }
+
+    if (job.status === 'done' || job.status === 'error') {
+      clearInterval(interval);
+      res.end();
+    }
+  }, 300);
+
+  req.on('close', () => clearInterval(interval));
 });
 
 // Health check (Cloud Run / load balancers)

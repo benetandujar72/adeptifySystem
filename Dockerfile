@@ -23,6 +23,7 @@ COPY --from=build /app/dist ./dist
 COPY server.js ./server.js
 COPY services ./services
 COPY templates ./templates
+COPY multi-agent ./multi-agent
 
 EXPOSE 2705
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

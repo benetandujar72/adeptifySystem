@@ -38,3 +38,7 @@ supabase/
 production/
 .claude/
 .venv/
+
+# Keep multi-agent prompt files (needed at runtime by the agent modules)
+!multi-agent/prompts/
+!multi-agent/prompts/*.txt

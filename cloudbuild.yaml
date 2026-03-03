@@ -127,7 +127,7 @@ steps:
       # server.js reads SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY for the admin client.
       # server.js /env.js endpoint reads SUPABASE_URL/ANON_KEY to serve to the browser.
       - '--set-secrets'
-      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest,SMTP_PASS=SMTP_PASS:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SB_PUBLISHABLE_KEY=SB_PUBLISHABLE_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest'
+      - 'GEMINI_API_KEY=GEMINI_API_KEY:latest,SMTP_PASS=SMTP_PASS:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SB_PUBLISHABLE_KEY=SB_PUBLISHABLE_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest'
       - '--set-env-vars'
       - 'SMTP_HOST=${_SMTP_HOST},SMTP_PORT=${_SMTP_PORT},SMTP_SECURE=${_SMTP_SECURE},SMTP_USER=${_SMTP_USER},CONTACT_TO=${_CONTACT_TO},CONTACT_FROM_NAME=${_CONTACT_FROM_NAME}'
       - '--port'
@@ -137,7 +137,7 @@ steps:
       - '--cpu'
       - '1'
       - '--memory'
-      - '512Mi'
+      - '1Gi'
       # Scale-to-zero when idle (min 0) to reduce cost; max 3 to cap spend.
       - '--min-instances'
       - '0'

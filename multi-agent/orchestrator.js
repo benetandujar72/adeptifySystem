@@ -23,111 +23,110 @@ const AGENT_MAP = {
   'AG-09': ag09, 'AG-10': ag10, 'AG-12': ag12, 'AG-13': ag13, 'AG-14': ag14,
 };
 
-async function orchestrate(datosCliente) {
-  const log = (msg) => console.log(`\n[ORQUESTADOR] ${new Date().toISOString()} — ${msg}`);
+/**
+ * @param {object} datosCliente - Client data object
+ * @param {function} [onProgress] - Optional callback(agentId, message, fase)
+ */
+async function orchestrate(datosCliente, onProgress) {
+  const emit = (agentId, message, fase) => {
+    console.log(`[${agentId}] ${message}`);
+    if (typeof onProgress === 'function') onProgress(agentId, message, fase);
+  };
   const resultados = {};
 
-  // ═══════════════════════════════════════════════════════════
-  // FASE 1 — ANÁLISIS (paralelo: AG-01, AG-02, AG-03)
-  // ═══════════════════════════════════════════════════════════
-  log('FASE 1: Análisis en paralelo (AG-01, AG-02, AG-03)...');
+  // FASE 1: Analisis en paralelo
+  emit('AG-01', 'Analitzant requeriments del client...', 1);
+  emit('AG-02', 'Investigant mercat i competencia...', 1);
+  emit('AG-03', 'Auditant sistemes existents...', 1);
   const [res01, res02, res03] = await Promise.all([
     ag01.run(datosCliente),
     ag02.run(datosCliente),
     ag03.run(datosCliente),
   ]);
-  resultados.ag01 = res01;
-  resultados.ag02 = res02;
-  resultados.ag03 = res03;
-  log('✅ FASE 1 completada.');
+  resultados.ag01 = res01; emit('AG-01', 'Requeriments completats', 1);
+  resultados.ag02 = res02; emit('AG-02', 'Analisi de mercat completada', 1);
+  resultados.ag03 = res03; emit('AG-03', 'Auditoria de sistemes completada', 1);
 
-  // ═══════════════════════════════════════════════════════════
-  // FASE 2 — DISEÑO (AG-04 → AG-05 ∥ AG-06)
-  // ═══════════════════════════════════════════════════════════
-  log('FASE 2: Diseño...');
-
+  // FASE 2: Disseny
+  emit('AG-04', 'Dissenyant arquitectura de la solucio...', 2);
   resultados.ag04 = await ag04.run({
     ...datosCliente,
     necesidades: resultados.ag01,
     sistemas: resultados.ag03,
   });
-  log('AG-04 (Arquitectura) completado.');
+  emit('AG-04', 'Arquitectura completada', 2);
 
+  emit('AG-05', "Dissenyant experiencia d'usuari (UX/UI)...", 2);
+  emit('AG-06', 'Planificant integracions de sistemes...', 2);
   const [res05, res06] = await Promise.all([
     ag05.run({ ...datosCliente, necesidades: resultados.ag01, arquitectura: resultados.ag04 }),
     ag06.run({ ...datosCliente, sistemas: resultados.ag03, arquitectura: resultados.ag04 }),
   ]);
-  resultados.ag05 = res05;
-  resultados.ag06 = res06;
-  log('✅ FASE 2 completada.');
+  resultados.ag05 = res05; emit('AG-05', 'UX/UI completat', 2);
+  resultados.ag06 = res06; emit('AG-06', 'Integracions completades', 2);
 
-  // ═══════════════════════════════════════════════════════════
-  // FASE 3 — PLANIFICACIÓN (AG-07 → AG-08 ∥ AG-09 ∥ AG-10)
-  // ═══════════════════════════════════════════════════════════
-  log('FASE 3: Planificación...');
-
+  // FASE 3: Planificacio
+  emit('AG-07', 'Planificant projecte i cronograma...', 3);
   resultados.ag07 = await ag07.run({
     ...datosCliente,
     arquitectura: resultados.ag04,
     integraciones: resultados.ag06,
   });
-  log('AG-07 (Proyecto) completado.');
+  emit('AG-07', 'Pla de projecte completat', 3);
 
+  emit('AG-08', 'Definint estrategia DevOps...', 3);
+  emit('AG-09', 'Avaluant seguretat i compliment RGPD...', 3);
+  emit('AG-10', 'Calculant proposta economica i ROI...', 3);
   const [res08, res09, res10] = await Promise.all([
     ag08.run({ ...datosCliente, arquitectura: resultados.ag04, integraciones: resultados.ag06 }),
     ag09.run({ ...datosCliente, arquitectura: resultados.ag04, integraciones: resultados.ag06 }),
     ag10.run({ ...datosCliente, arquitectura: resultados.ag04, cronograma: resultados.ag07 }),
   ]);
-  resultados.ag08 = res08;
-  resultados.ag09 = res09;
-  resultados.ag10 = res10;
-  log('✅ FASE 3 completada.');
+  resultados.ag08 = res08; emit('AG-08', 'DevOps completat', 3);
+  resultados.ag09 = res09; emit('AG-09', 'Seguretat i RGPD completats', 3);
+  resultados.ag10 = res10; emit('AG-10', 'Proposta economica completada', 3);
 
-  // ═══════════════════════════════════════════════════════════
-  // FASE 4 — DOCUMENTACIÓN (AG-11 → AG-13 → AG-12 → AG-14)
-  // ═══════════════════════════════════════════════════════════
-  log('FASE 4: Documentación...');
-
+  // FASE 4: Documentacio
   resultados.ag11 = ag11.getStyleRules();
-  log('AG-11 (Estilo) aplicado.');
+  emit('AG-11', 'Estil visual Adeptify aplicat', 4);
 
+  emit('AG-13', 'Elaborant pla de gestio del canvi...', 4);
   resultados.ag13 = await ag13.run({
     ...datosCliente,
     arquitectura: resultados.ag04,
     ux: resultados.ag05,
     cronograma: resultados.ag07,
   });
-  log('AG-13 (Change Management) completado.');
+  emit('AG-13', 'Gestio del canvi completada', 4);
 
   const consolidado = buildConsolidado(datosCliente, resultados);
 
+  emit('AG-12', 'Redactant document final integrat (pot trigar 1-2 min)...', 4);
   resultados.ag12 = await ag12.run(consolidado);
-  log('AG-12 (Redactor) completado.');
+  emit('AG-12', 'Document redactat', 4);
 
+  emit('AG-14', 'Validant qualitat del document...', 4);
   resultados.ag14 = await ag14.run({
     documento_integrado: resultados.ag12,
     consolidado,
   });
-  log(`AG-14 (Validación): ${resultados.ag14.resultado_validacion} — score: ${resultados.ag14.puntuacion_calidad}`);
+  emit('AG-14', `Validacio: ${resultados.ag14.resultado_validacion} (score: ${resultados.ag14.puntuacion_calidad})`, 4);
 
-  // ═══════════════════════════════════════════════════════════
-  // CICLO DE CORRECCIÓN (máx 2 iteraciones)
-  // ═══════════════════════════════════════════════════════════
+  // Cicle de correccio (max 2 iteracions)
   let intentos = 0;
   while (resultados.ag14.resultado_validacion === 'RECHAZADO' && intentos < 2) {
     intentos++;
-    log(`⚠️  Ciclo de corrección #${intentos}...`);
-
+    emit('AG-14', `Cicle de correccio #${intentos}...`, 4);
     const acciones = resultados.ag14.acciones_correctivas || [];
     const agentesAfectados = [...new Set(acciones.map((a) => a.agente_responsable))];
 
     for (const agId of agentesAfectados) {
       const agKey = agId.replace('-', '').toLowerCase();
       const agModule = AGENT_MAP[agId];
-      if (!agModule) { console.warn(`Agente ${agId} no encontrado en mapa.`); continue; }
-      log(`Re-ejecutando ${agId}...`);
-      const correcciones = acciones.filter((a) => a.agente_responsable === agId);
-      resultados[agKey] = await agModule.run({ ...consolidado, correcciones });
+      if (!agModule) { console.warn(`Agent ${agId} no trobat.`); continue; }
+      emit(agId, `Re-executant per correccions...`, 4);
+      const correccions = acciones.filter((a) => a.agente_responsable === agId);
+      resultados[agKey] = await agModule.run({ ...consolidado, correccions });
     }
 
     consolidado.correcciones_aplicadas = acciones;
@@ -136,13 +135,13 @@ async function orchestrate(datosCliente) {
       documento_integrado: resultados.ag12,
       consolidado,
     });
-    log(`AG-14 re-validación #${intentos}: ${resultados.ag14.resultado_validacion} — score: ${resultados.ag14.puntuacion_calidad}`);
+    emit('AG-14', `Re-validacio #${intentos}: ${resultados.ag14.resultado_validacion} (${resultados.ag14.puntuacion_calidad})`, 4);
   }
 
   if (resultados.ag14.resultado_validacion === 'APROBADO') {
-    log('✅ DOCUMENTO APROBADO — Generando .docx...');
+    emit('ORQUESTADOR', 'Document APROVAT', 4);
   } else {
-    log('⚠️  Documento no aprobado tras 2 correcciones — se genera igualmente con advertencias.');
+    emit('ORQUESTADOR', 'Document generat amb advertencies (2 cicles esgotats)', 4);
   }
 
   // Guardar consolidado final
@@ -153,7 +152,6 @@ async function orchestrate(datosCliente) {
     JSON.stringify({ ...buildConsolidado(datosCliente, resultados), documento: resultados.ag12 }, null, 2),
     'utf-8'
   );
-  log('Consolidado guardado en outputs/consolidado_final.json');
 
   return resultados.ag12;
 }
@@ -176,34 +174,20 @@ function buildConsolidado(datosCliente, resultados) {
   };
 }
 
-// ─── Entry point ──────────────────────────────────────────────────────────────
+// Entry point
 if (require.main === module) {
   const dataFile = process.argv[2] || 'datos_cliente.json';
   const filePath = path.isAbsolute(dataFile) ? dataFile : path.join(process.cwd(), dataFile);
 
   if (!fs.existsSync(filePath)) {
-    console.error(`[ERROR] No se encontró el archivo: ${filePath}`);
-    console.error('Uso: node orchestrator.js datos_cliente.json');
+    console.error(`[ERROR] No se encontro el archivo: ${filePath}`);
     process.exit(1);
   }
 
   const datos = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  console.log(`\n${'═'.repeat(60)}`);
-  console.log(`  Adeptify Multi-Agent System — Iniciando`);
-  console.log(`  Cliente: ${datos?.cliente?.nombre || 'N/A'}`);
-  console.log(`${'═'.repeat(60)}\n`);
-
   orchestrate(datos)
-    .then((doc) => {
-      console.log(`\n${'═'.repeat(60)}`);
-      console.log('  ✅ Proceso completado. Ejecuta ahora:');
-      console.log('  node generate_docx.js outputs/consolidado_final.json');
-      console.log(`${'═'.repeat(60)}\n`);
-    })
-    .catch((err) => {
-      console.error('[ERROR FATAL]', err);
-      process.exit(1);
-    });
+    .then(() => console.log('\nProceso completado. Ejecuta: node generate_docx.js outputs/consolidado_final.json'))
+    .catch((err) => { console.error('[ERROR FATAL]', err); process.exit(1); });
 }
 
 module.exports = { orchestrate };

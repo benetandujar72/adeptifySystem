@@ -526,4 +526,66 @@ if (require.main === module) {
   });
 }
 
-module.exports = { generateDocx };
+/**
+ * generateDocxBuffer — builds the Word document from a document data object
+ * and returns the raw Buffer (no file I/O). Used by the Express API endpoint.
+ *
+ * @param {object} docData - The ag12 document object (or consolidado_final content)
+ * @param {object} [datosCliente] - Optional client data for cover page
+ * @returns {Promise<Buffer>}
+ */
+async function generateDocxBuffer(docData, datosCliente) {
+  const doc_data = docData.documento || docData;
+  const clientData = datosCliente || docData.datos_cliente || doc_data.datos_cliente || {};
+  const clientName = clientData?.cliente?.nombre || doc_data.metadata?.cliente || 'Client';
+
+  const cover = buildCoverSection({ ...doc_data, datos_cliente: clientData });
+  const mainChildren = [
+    ...renderSection1(doc_data.s1_resumen_ejecutivo),
+    ...renderSection2(doc_data.s2_contexto_diagnostico),
+    ...renderSection3(doc_data.s3_solucion),
+    ...renderSection4(doc_data.s4_metodologia),
+    ...renderSection5(doc_data.s5_cronograma),
+    ...renderSection6(doc_data.s6_devops),
+    ...renderSection7(doc_data.s7_seguridad),
+    ...renderSection8(doc_data.s8_economia),
+    ...renderSection9(doc_data.s9_riesgos),
+    ...renderSection10(doc_data.s10_change_management),
+    ...renderSection11(doc_data.s11_condiciones),
+    ...renderSection12(doc_data.s12_casos_exito),
+    ...renderSection13(doc_data.s13_proximos_pasos),
+  ];
+
+  const document = new Document({
+    title: `Proposta Adeptify — ${clientName}`,
+    description: 'Proposta de Transformació Digital generada per Adeptify Multi-Agent System',
+    styles: {
+      default: {
+        document: {
+          run: { font: T.body.font, size: T.body.size, color: T.body.color },
+          paragraph: { spacing: { after: T.body.spacing_after } },
+        },
+      },
+    },
+    sections: [
+      {
+        properties: {
+          page: { size: { width: P.width, height: P.height }, margin: { top: P.margin_top, bottom: P.margin_bottom, left: P.margin_left, right: P.margin_right }, pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } },
+        },
+        children: cover,
+      },
+      {
+        properties: {
+          page: { size: { width: P.width, height: P.height }, margin: { top: P.margin_top + 400, bottom: P.margin_bottom + 400, left: P.margin_left, right: P.margin_right } },
+        },
+        headers: { default: createHeader(clientName) },
+        footers: { default: createFooter() },
+        children: mainChildren,
+      },
+    ],
+  });
+
+  return Packer.toBuffer(document);
+}
+
+module.exports = { generateDocx, generateDocxBuffer };
