@@ -50,19 +50,83 @@ const getSupabaseAdmin = () => {
   return cachedSupabase;
 };
 
-// --- GEMINI RESILIENT CALLER ---
-async function callGemini(prompt, modelId = "gemini-1.5-flash") {
+// --- CLAUDE CALLER (mismo modelo que agentes multi-agent) ---
+async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
+  const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim();
+
+  // Si no hay clave Anthropic, usar Gemini como fallback
+  if (!anthropicKey) {
+    console.warn("[callClaude] No ANTHROPIC_API_KEY — using Gemini fallback");
+    return callGeminiFallback(prompt);
+  }
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': anthropicKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: modelId,
+      max_tokens: 8192,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    console.error(`[Claude API Error] ${response.status}:`, errBody);
+    throw new Error(`Claude API error ${response.status}: ${errBody.substring(0, 200)}`);
+  }
+
+  const data = await response.json();
+  if (!data.content || data.content.length === 0) {
+    throw new Error("Claude returned no content");
+  }
+
+  const rawText = data.content.find(c => c.type === 'text')?.text || '';
+  if (!rawText.trim()) throw new Error("Claude returned empty text");
+
+  let cleanText = rawText.trim();
+  if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
+  else if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
+  if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
+  cleanText = cleanText.trim();
+
+  // Extraer el JSON si hay texto alrededor
+  if (!cleanText.startsWith("{") && !cleanText.startsWith("[")) {
+    const firstBrace = cleanText.indexOf('{');
+    const firstBracket = cleanText.indexOf('[');
+    let start = -1;
+    if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
+    else if (firstBrace !== -1) start = firstBrace;
+    else if (firstBracket !== -1) start = firstBracket;
+    if (start !== -1) {
+      const end = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+      if (end !== -1) cleanText = cleanText.substring(start, end + 1);
+    }
+  }
+
+  try {
+    return JSON.parse(cleanText);
+  } catch (err) {
+    console.error("[Claude JSON Parse Error] raw:", rawText.substring(0, 500));
+    throw new Error("Claude returned invalid JSON structure.");
+  }
+}
+
+// --- GEMINI FALLBACK (solo si no hay Anthropic API key) ---
+async function callGeminiFallback(prompt, modelId = "gemini-1.5-flash") {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+  if (!apiKey) throw new Error("Missing both ANTHROPIC_API_KEY and GEMINI_API_KEY");
 
-  // Try the requested model, fall back to gemini-1.5-flash if it fails
-  const modelsToTry = modelId === "gemini-1.5-flash" ? ["gemini-1.5-flash"] : [modelId, "gemini-1.5-flash"];
-
+  const modelsToTry = [modelId, "gemini-1.5-flash"];
   let lastError = null;
+
   for (const model of modelsToTry) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,82 +138,39 @@ async function callGemini(prompt, modelId = "gemini-1.5-flash") {
       });
 
       const data = await response.json();
-      if (data.error) {
-        console.error(`[Gemini API Error] model=${model}`, data.error);
-        lastError = new Error(data.error.message);
-        continue; // try next model
-      }
-
-      if (!data.candidates || data.candidates.length === 0) {
-        console.error(`[Gemini] No candidates returned by ${model}. Full response:`, JSON.stringify(data).substring(0, 500));
-        lastError = new Error(`Gemini model ${model} returned no candidates`);
-        continue;
-      }
+      if (data.error) { lastError = new Error(data.error.message); continue; }
+      if (!data.candidates?.length) { lastError = new Error(`${model} returned no candidates`); continue; }
 
       const candidate = data.candidates[0];
-      if (!candidate.content || !candidate.content.parts) {
-        console.error(`[Gemini] Candidate has no content/parts. finishReason=${candidate.finishReason}`);
-        lastError = new Error(`Gemini finished with reason: ${candidate.finishReason || 'UNKNOWN'}`);
-        continue;
-      }
+      if (!candidate.content?.parts) { lastError = new Error(`finishReason: ${candidate.finishReason}`); continue; }
 
-      // Find the first part that has text
       const textPart = candidate.content.parts.find(p => typeof p.text === 'string' && p.text.trim().length > 0);
-      if (!textPart) {
-        console.error(`[Gemini] No text part found in response parts:`, JSON.stringify(candidate.content.parts).substring(0, 300));
-        lastError = new Error("Gemini returned response with no text content");
-        continue;
-      }
+      if (!textPart) { lastError = new Error("Gemini: no text part in response"); continue; }
 
       let cleanText = textPart.text.trim();
-
-      if (cleanText.startsWith("```json")) {
-        cleanText = cleanText.substring(7);
-      } else if (cleanText.startsWith("```")) {
-        cleanText = cleanText.substring(3);
-      }
-
-      if (cleanText.endsWith("```")) {
-        cleanText = cleanText.substring(0, cleanText.length - 3);
-      }
-
+      if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
+      else if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
+      if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
       cleanText = cleanText.trim();
 
-      // Extract JSON object if surrounded by other text
       if (!cleanText.startsWith("{") && !cleanText.startsWith("[")) {
-        const firstBrace = cleanText.indexOf('{');
-        const firstBracket = cleanText.indexOf('[');
-        let start = -1;
-        if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
-        else if (firstBrace !== -1) start = firstBrace;
-        else if (firstBracket !== -1) start = firstBracket;
-
-        if (start !== -1) {
-          const lastBrace = cleanText.lastIndexOf('}');
-          const lastBracket = cleanText.lastIndexOf(']');
-          const end = Math.max(lastBrace, lastBracket);
-          if (end !== -1) cleanText = cleanText.substring(start, end + 1);
-        }
+        const start = Math.min(...[cleanText.indexOf('{'), cleanText.indexOf('[')].filter(i => i !== -1));
+        const end = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+        if (start !== -1 && end !== -1) cleanText = cleanText.substring(start, end + 1);
       }
 
-      try {
-        return JSON.parse(cleanText);
-      } catch (err) {
-        console.error(`[JSON Parse Error] model=${model} raw:`, textPart.text.substring(0, 500));
-        lastError = new Error("Gemini returned invalid JSON structure.");
-        continue;
-      }
+      try { return JSON.parse(cleanText); }
+      catch { lastError = new Error("Gemini returned invalid JSON"); continue; }
     } catch (fetchErr) {
-      console.error(`[Gemini Fetch Error] model=${model}:`, fetchErr.message);
       lastError = fetchErr;
     }
   }
-
-  throw lastError || new Error("All Gemini model attempts failed");
+  throw lastError || new Error("All Gemini fallback attempts failed");
 }
 
 
 // --- CLASSE GENERADORA DE DOCX (MIGRADA AL SERVEI) ---
+
 const { WordProposalGenerator } = require('./services/wordGenerator.js');
 
 // --- ENDPOINTS ---
@@ -327,9 +348,8 @@ Usa a fondo la herramienta "googleSearch" para investigar la URL proporcionada y
 TEXTO OBTENIDO DEL SCRAPER INICIAL: ${text}
 `;
 
-    // Utiliza un modelo estándar moderno, flash 2.5 soporte tool calling
-    console.info(`[automation] Calling Gemini for URL analysis...`);
-    const result = await callGemini(prompt, "gemini-2.5-flash");
+    console.info(`[automation] Calling Claude for URL analysis...`);
+    const result = await callClaude(prompt);
     console.info(`[automation] Strategic Data generated successfully.`);
     res.json(result);
   } catch (e) {
@@ -340,14 +360,14 @@ TEXTO OBTENIDO DEL SCRAPER INICIAL: ${text}
 
 app.post('/api/automation/digital-twin', async (req, res) => {
   try {
-    const result = await callGemini("Actua com a motor de Digital Twin educatiu. Genera prediccions d'estrès operatiu (JSON: stress_level, critical_department, predictions[]).");
+    const result = await callClaude("Actua com a motor de Digital Twin educatiu. Genera prediccions d'estrès operatiu (JSON: stress_level, critical_department, predictions[]).");
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/automation/migrate-data', async (req, res) => {
   try {
-    const result = await callGemini(`Estructura les dades: ${req.body.rawData} en JSON (mapped_staff[], migration_summary).`);
+    const result = await callClaude(`Estructura les dades: ${req.body.rawData} en JSON (mapped_staff[], migration_summary).`);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -367,7 +387,7 @@ Retorna EXACTAMENT aquest JSON sense markdown:
   ]
 }`;
   try {
-    const result = await callGemini(prompt, "gemini-2.5-flash");
+    const result = await callClaude(prompt);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
