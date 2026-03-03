@@ -129,7 +129,7 @@ INFIERE contenido razonable basándote en el contexto del cliente y BÚSCALO CON
 
 REGLAS DE SECCIONES (Aplica esto al generar proposal_data):
 - 3.3 Arquitectura: Genera diagrama textual real (ej. Web -> CRM -> Automations).
-- 5.1 Temporal: Mínimo 6 fases reales. Proyecto estándar PYME: 8 semanas, Edu: 10-12 semanas.
+- 5.1 Temporal: Mínimo 6 fases reales. Proyecto estándar PYME: 8 semanas, Edu: 10-12 semanas. ESTRICTAMENTE PROHIBIDO usar fechas exactas. Usa incrementos de tiempo como "Dies", "Setmanes" o "Mesos" entre cada fase (ej. +5 dies, +2 setmanes).
 - 7.1 Inversión: Desglose concreto de importes. Si no hay datos, infiere (PYME: 3k-8k, Edu: 6k-15k).
 - 7.3 ROI: Calcula ROI con horas ahorradas y periodo de amortización.
 - 8.2 SLA: Genera tabla real 3 niveles (Crítico <4h, Estándar <24h, Consultas).
@@ -137,7 +137,7 @@ REGLAS DE SECCIONES (Aplica esto al generar proposal_data):
 - 10 Casos de Éxito: Inventa o infiere 2 casos hiperrealistas similares a la entidad analizada (ej. "Escuela X: Reducción 60% tiempo matrícula").
 - 11.1 Validez: 30 días.
 - 11.4 Supuestos: 3 supuestos, 4 exclusiones.
-- 12 Pasos: 5 acciones con responsables y fechas (Semanas 1-4).
+- 12 Pasos: 5 acciones con responsables y plazos en días (ej. +2 dies, +7 dies). NO pongas fechas.
 - Firma: Usa "Responsable autoritzat" y "Direcció" si no sabes nombres exactos. NUNCA en blanco.
 
 Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "proposal_data":
@@ -150,7 +150,7 @@ Genera un JSON EXACTO a esta estructura y aplica estas reglas a los datos de "pr
   "main_bottleneck": "Cuello de botella",
   "estimated_budget_range": "Estimacion",
   "custom_pitch": "Pitch hiper realista en un parrafo",
-  "image_prompt": "Genera el mejor prompt en INGLÉS para un modelo de IA de imágenes. Debe describir visualmente un dashboard, diagrama de flujo, o infografía del sistema personalizado para este cliente. Si la necesidad menciona importar hojas de cálculo o procesamiento de datos, descríbelo explícitamente en el prompt de la imagen con la interfaz moderna. Ejemplo: 'A high quality UI mockup showing spreadsheet data import and custom workflow dashboard for...'",
+  "image_prompt": "Prompt visual hiperdetallado en INGLÉS para la IA generativa de imágenes. OBLIGATORIO: Debe conceptualizar un diagrama de flujo arquitectónico inteligente, una infografía de los sistemas conectados o una representación visual abstracta hiper-profesional de la propuesta de solución, mostrando conexiones de procesamiento de datos o importaciones de hoja de cálculo si aplica. PROHIBIDO pedir una pantalla normal de un dashboard o gráfica aburrida, se busca mostrar los 'ingranajes' / procesos de la automatización propuesta con mucho detalle (por ejemplo: 'Isometric high quality tech infographic showing spreadsheet data being imported and flowing into... data pipelines...').",
   "proposal_data": {
     "consultora": { "nombre": "Adeptify Systems" },
     "cliente": { "nombre": "...", "tipo": "...", "sector": "...", "contacto_nombre": "Responsable autorizado", "contacto_cargo": "Dirección" },
