@@ -15,7 +15,7 @@ async function run(inputData) {
   console.log(`[${AGENT_ID}] Iniciando análisis...`);
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
+    max_tokens: 16000,
     temperature: TEMPERATURE,
     system: SYSTEM_PROMPT,
     messages: [
@@ -63,7 +63,7 @@ async function retryWithStricterPrompt(inputData, previousOutput) {
   console.log(`[${AGENT_ID}] Reintentando con prompt estricto...`);
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
+    max_tokens: 16000,
     temperature: 0.1,
     system: SYSTEM_PROMPT,
     messages: [

@@ -71,7 +71,8 @@ const AutomatedLeadPanel: React.FC = () => {
   const [reportClientName, setReportClientName] = useState('');
   const [reportFase, setReportFase] = useState(0);
   const [reportError, setReportError] = useState<string | null>(null);
-  const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0, cost_eur: 0 });
+  const [tokenUsage, setTokenUsage] = useState({ input: 0, output: 0, cost_eur: 0, budget_pct: 0 });
+  const BUDGET_EUR = 5.00; // must match orchestrator BUDGET_STOP_EUR
   const progressRef = useRef<HTMLDivElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -153,7 +154,7 @@ const AutomatedLeadPanel: React.FC = () => {
     setReportProgress([]);
     setReportFase(0);
     setReportError(null);
-    setTokenUsage({ input: 0, output: 0, cost_eur: 0 });
+    setTokenUsage({ input: 0, output: 0, cost_eur: 0, budget_pct: 0 });
     setStatusMsg('');
     eventSourceRef.current?.close();
 
@@ -203,7 +204,7 @@ const AutomatedLeadPanel: React.FC = () => {
         if (data.agent === 'TOKENS') {
           try {
             const t = JSON.parse(data.message);
-            setTokenUsage({ input: t.total_input, output: t.total_output, cost_eur: t.cost_eur });
+            setTokenUsage({ input: t.total_input, output: t.total_output, cost_eur: t.cost_eur, budget_pct: t.budget_pct || 0 });
           } catch { /* ignore */ }
           return;
         }
@@ -471,18 +472,35 @@ const AutomatedLeadPanel: React.FC = () => {
 
               {/* Token usage live counter */}
               {(isGeneratingReport || tokenUsage.input > 0) && (
-                <div className="mb-4 grid grid-cols-3 gap-3">
-                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
-                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens entrada</div>
-                    <div className="text-sm font-black text-indigo-300 font-mono">{tokenUsage.input.toLocaleString()}</div>
+                <div className="mb-4 space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+                      <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens entrada</div>
+                      <div className="text-sm font-black text-indigo-300 font-mono">{tokenUsage.input.toLocaleString()}</div>
+                    </div>
+                    <div className="bg-slate-800/60 rounded-xl p-3 text-center">
+                      <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens sortida</div>
+                      <div className="text-sm font-black text-purple-300 font-mono">{tokenUsage.output.toLocaleString()}</div>
+                    </div>
+                    <div className={`rounded-xl p-3 text-center ${tokenUsage.budget_pct >= 80 ? 'bg-red-900/60 border border-red-700/50' : tokenUsage.budget_pct >= 50 ? 'bg-amber-900/40' : 'bg-slate-800/60'}`}>
+                      <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Cost · Límit {BUDGET_EUR}€</div>
+                      <div className={`text-sm font-black font-mono ${tokenUsage.budget_pct >= 80 ? 'text-red-400' : tokenUsage.budget_pct >= 50 ? 'text-amber-300' : 'text-amber-300'}`}>
+                        {tokenUsage.cost_eur.toFixed(3)} €
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
-                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Tokens sortida</div>
-                    <div className="text-sm font-black text-purple-300 font-mono">{tokenUsage.output.toLocaleString()}</div>
-                  </div>
-                  <div className="bg-slate-800/60 rounded-xl p-3 text-center">
-                    <div className="text-[8px] font-black uppercase text-slate-400 mb-1">Cost estimat</div>
-                    <div className="text-sm font-black text-amber-300 font-mono">{tokenUsage.cost_eur.toFixed(3)} €</div>
+                  {/* Budget progress bar */}
+                  <div>
+                    <div className="flex justify-between text-[8px] font-black uppercase text-slate-500 mb-1">
+                      <span>Pressupost consumit</span>
+                      <span className={tokenUsage.budget_pct >= 80 ? 'text-red-400' : ''}>{tokenUsage.budget_pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${tokenUsage.budget_pct >= 80 ? 'bg-red-500' : tokenUsage.budget_pct >= 50 ? 'bg-amber-400' : 'bg-emerald-500'}`}
+                        style={{ width: `${Math.min(100, tokenUsage.budget_pct)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

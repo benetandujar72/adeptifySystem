@@ -23,32 +23,172 @@ const AGENT_MAP = {
   'AG-09': ag09, 'AG-10': ag10, 'AG-12': ag12, 'AG-13': ag13, 'AG-14': ag14,
 };
 
-// Pricing claude-sonnet-4-6 (USD per million tokens)
-const PRICE_INPUT_PER_M  = 3.00;
+// ── Budget control ────────────────────────────────────────────────────────────
+const PRICE_INPUT_PER_M  = 3.00;   // USD per million tokens (claude-sonnet-4-6)
 const PRICE_OUTPUT_PER_M = 15.00;
+const USD_TO_EUR         = 0.92;
+const BUDGET_WARN_EUR    = 1.50;   // warn user
+const BUDGET_STOP_EUR    = 5.00;   // hard stop (abort remaining agents)
+
+// ── AG-12 compact input ───────────────────────────────────────────────────────
+// AG-12 receives ALL previous outputs — we trim to avoid exceeding context limits
+// and hitting the 8192-token output ceiling (which causes "Unterminated JSON").
+function buildAG12Input(consolidado) {
+  const d = consolidado;
+
+  const first = (arr, n = 3) => Array.isArray(arr) ? arr.slice(0, n) : [];
+  const short  = (s, max = 600) => typeof s === 'string' && s.length > max ? s.slice(0, max) + '…' : (s || '');
+
+  return {
+    datos_cliente: d.datos_cliente,
+
+    // AG-01: summary + top 5 needs (not all 15)
+    ag01_necesidades: {
+      resumen_ejecutivo_necesidades: short(d.ag01_necesidades?.resumen_ejecutivo_necesidades, 800),
+      necesidades: first(d.ag01_necesidades?.necesidades, 5).map(n => ({
+        id: n.id, categoria: n.categoria, descripcion: short(n.descripcion, 200),
+        impacto: n.impacto, prioridad_calculada: n.prioridad_calculada, kpi_asociado: short(n.kpi_asociado, 120),
+      })),
+    },
+
+    // AG-02: context + 2 cases
+    ag02_mercado: {
+      contexto_sectorial: short(d.ag02_mercado?.analisis_entorno?.contexto_sectorial, 800),
+      tendencias_clave: first(d.ag02_mercado?.analisis_entorno?.tendencias_clave, 4),
+      oportunidades: first(d.ag02_mercado?.analisis_entorno?.oportunidades, 3),
+      amenazas: first(d.ag02_mercado?.analisis_entorno?.amenazas, 3),
+      casos_exito: first(d.ag02_mercado?.casos_exito, 2).map(c => ({
+        titulo: c.titulo, sector: c.sector, reto: short(c.reto, 200),
+        solucion_implementada: short(c.solucion_implementada, 200),
+        resultados_cuantitativos: c.resultados_cuantitativos,
+      })),
+    },
+
+    // AG-03: diagnosis summary only
+    ag03_auditoria: {
+      nivel_madurez_digital: d.ag03_auditoria?.diagnostico_procesos?.nivel_madurez_digital,
+      cuello_botella_principal: short(d.ag03_auditoria?.diagnostico_procesos?.cuello_botella_principal, 400),
+      procesos_manuales: first(d.ag03_auditoria?.diagnostico_procesos?.procesos_manuales, 4),
+      sistemas: first(d.ag03_auditoria?.inventario_sistemas, 4).map(s => ({
+        sistema: s.sistema, tipo: s.tipo, integrabilidad: s.integrabilidad, funcion_actual: short(s.funcion_actual, 120),
+      })),
+      oportunidades_integracion: first(d.ag03_auditoria?.oportunidades_integracion, 3),
+    },
+
+    // AG-04: vision + components (critical — keep most)
+    ag04_arquitectura: {
+      vision_general: short(d.ag04_arquitectura?.vision_general, 800),
+      diferenciadores: first(d.ag04_arquitectura?.diferenciadores, 4).map(df => ({
+        diferenciador: df.diferenciador, valor_cliente: short(df.valor_cliente, 200),
+      })),
+      componentes_solucion: d.ag04_arquitectura?.componentes_solucion,
+      arquitectura: {
+        capas: d.ag04_arquitectura?.arquitectura?.capas,
+        flujo_datos_principal: d.ag04_arquitectura?.arquitectura?.flujo_datos_principal,
+      },
+    },
+
+    // AG-05: just dashboard + notification types (UX detail not needed in doc)
+    ag05_ux: {
+      dashboard_principal: d.ag05_ux?.dashboard_principal,
+      puntos_contacto: first(d.ag05_ux?.puntos_contacto, 2).map(p => ({
+        nombre: p.nombre, usuario_objetivo: p.usuario_objetivo, canal: p.canal,
+      })),
+    },
+
+    // AG-06: diagram text + 3 main integrations
+    ag06_integraciones: {
+      diagrama_flujo_integraciones: short(d.ag06_integraciones?.diagrama_flujo_integraciones, 500),
+      middleware_central: d.ag06_integraciones?.middleware_central,
+      mapa_integraciones: first(d.ag06_integraciones?.mapa_integraciones, 4).map(i => ({
+        id: i.id, nombre: i.nombre, origen: i.origen, destino: i.destino, frecuencia: i.frecuencia,
+      })),
+    },
+
+    // AG-07: full (methodology, schedule, risks, next steps are core doc content)
+    ag07_proyecto: {
+      metodologia: d.ag07_proyecto?.metodologia,
+      cronograma: {
+        duracion_total: d.ag07_proyecto?.cronograma?.duracion_total,
+        fases: first(d.ag07_proyecto?.cronograma?.fases, 6).map(f => ({
+          nombre: f.nombre, duracion: f.duracion, entregables: f.entregables,
+        })),
+        hitos_clave: first(d.ag07_proyecto?.cronograma?.hitos_clave, 5),
+      },
+      riesgos: first(d.ag07_proyecto?.riesgos, 5).map(r => ({
+        id: r.id, riesgo: short(r.riesgo, 150), probabilidad: r.probabilidad,
+        impacto: r.impacto, mitigacion: short(r.mitigacion, 200),
+      })),
+      proximos_pasos: first(d.ag07_proyecto?.proximos_pasos, 5),
+    },
+
+    // AG-08: deployment strategy summary
+    ag08_devops: {
+      enfoque: d.ag08_devops?.estrategia_despliegue?.enfoque,
+      entornos: d.ag08_devops?.estrategia_despliegue?.entornos,
+      garantia_tecnica: d.ag08_devops?.garantia_tecnica,
+      backup_recovery: {
+        RTO: d.ag08_devops?.backup_recovery?.RTO,
+        RPO: d.ag08_devops?.backup_recovery?.RPO,
+      },
+    },
+
+    // AG-09: RGPD + confidentiality clause (verbatim — needed in document)
+    ag09_seguridad: {
+      cumplimiento_rgpd: d.ag09_seguridad?.cumplimiento_rgpd,
+      confidencialidad: d.ag09_seguridad?.confidencialidad,
+      medidas_tecnicas: first(d.ag09_seguridad?.evaluacion_seguridad?.medidas_tecnicas, 4),
+    },
+
+    // AG-10: full economic proposal (critical — numbers must be exact)
+    ag10_financiero: d.ag10_financiero,
+
+    // AG-13: training plan (3 sessions max)
+    ag13_change: {
+      plan_formacion: first(d.ag13_change?.plan_change_management?.plan_formacion, 3).map(s => ({
+        sesion: s.sesion, audiencia: s.audiencia, duracion: s.duracion, formato: s.formato,
+      })),
+      soporte_post_formacion: d.ag13_change?.plan_change_management?.soporte_post_formacion,
+    },
+  };
+}
 
 /**
  * @param {object} datosCliente
- * @param {function} [onProgress] - callback(agentId, message, fase, tokenInfo?)
+ * @param {function} [onProgress] - callback(agentId, message, fase)
  */
 async function orchestrate(datosCliente, onProgress) {
   const tokens = { input: 0, output: 0 };
+  let budgetExceeded = false;
 
   const onTokens = (usage, agentId) => {
-    if (!usage) return;
+    if (!usage || budgetExceeded) return;
     tokens.input  += usage.input_tokens  || 0;
     tokens.output += usage.output_tokens || 0;
     const costUSD = (tokens.input / 1e6 * PRICE_INPUT_PER_M) + (tokens.output / 1e6 * PRICE_OUTPUT_PER_M);
-    const costEUR = costUSD * 0.92;
+    const costEUR = costUSD * USD_TO_EUR;
+
     if (typeof onProgress === 'function') {
       onProgress('TOKENS', JSON.stringify({
         agent: agentId,
-        delta_input:  usage.input_tokens  || 0,
+        delta_input: usage.input_tokens  || 0,
         delta_output: usage.output_tokens || 0,
         total_input:  tokens.input,
         total_output: tokens.output,
         cost_eur:     Math.round(costEUR * 1000) / 1000,
+        budget_eur:   BUDGET_STOP_EUR,
+        budget_pct:   Math.min(100, Math.round((costEUR / BUDGET_STOP_EUR) * 100)),
       }), -1);
+    }
+
+    if (costEUR >= BUDGET_STOP_EUR) {
+      budgetExceeded = true;
+      throw new Error(`Pressupost superat: ${costEUR.toFixed(2)} EUR > limit ${BUDGET_STOP_EUR} EUR. Atura operació per evitar despeses addicionals.`);
+    }
+    if (costEUR >= BUDGET_WARN_EUR) {
+      if (typeof onProgress === 'function') {
+        onProgress('BUDGET', `Avís: cost actual ${costEUR.toFixed(2)} EUR / limit ${BUDGET_STOP_EUR} EUR`, 0);
+      }
     }
   };
 
@@ -57,12 +197,11 @@ async function orchestrate(datosCliente, onProgress) {
     if (typeof onProgress === 'function') onProgress(agentId, message, fase);
   };
 
-  // Helper: inject token callback into inputData
   const inp = (extra) => ({ ...datosCliente, ...extra, _onTokens: onTokens });
 
   const resultados = {};
 
-  // FASE 1: Analisi en paralel
+  // FASE 1
   emit('AG-01', 'Analitzant requeriments del client...', 1);
   emit('AG-02', 'Investigant mercat i competencia...', 1);
   emit('AG-03', 'Auditant sistemes existents...', 1);
@@ -75,7 +214,7 @@ async function orchestrate(datosCliente, onProgress) {
   resultados.ag02 = res02; emit('AG-02', 'Analisi de mercat completada', 1);
   resultados.ag03 = res03; emit('AG-03', 'Auditoria de sistemes completada', 1);
 
-  // FASE 2: Disseny
+  // FASE 2
   emit('AG-04', 'Dissenyant arquitectura de la solucio...', 2);
   resultados.ag04 = await ag04.run(inp({ necesidades: resultados.ag01, sistemas: resultados.ag03 }));
   emit('AG-04', 'Arquitectura completada', 2);
@@ -89,7 +228,7 @@ async function orchestrate(datosCliente, onProgress) {
   resultados.ag05 = res05; emit('AG-05', 'UX/UI completat', 2);
   resultados.ag06 = res06; emit('AG-06', 'Integracions completades', 2);
 
-  // FASE 3: Planificacio
+  // FASE 3
   emit('AG-07', 'Planificant projecte i cronograma...', 3);
   resultados.ag07 = await ag07.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 }));
   emit('AG-07', 'Pla de projecte completat', 3);
@@ -106,7 +245,7 @@ async function orchestrate(datosCliente, onProgress) {
   resultados.ag09 = res09; emit('AG-09', 'Seguretat i RGPD completats', 3);
   resultados.ag10 = res10; emit('AG-10', 'Proposta economica completada', 3);
 
-  // FASE 4: Documentacio
+  // FASE 4
   resultados.ag11 = ag11.getStyleRules();
   emit('AG-11', 'Estil visual Adeptify aplicat', 4);
 
@@ -116,17 +255,20 @@ async function orchestrate(datosCliente, onProgress) {
 
   const consolidado = buildConsolidado(datosCliente, resultados);
 
-  emit('AG-12', 'Redactant document final integrat (pot trigar 1-2 min)...', 4);
-  resultados.ag12 = await ag12.run({ ...consolidado, _onTokens: onTokens });
+  // AG-12 gets a COMPACT version to avoid JSON truncation
+  const ag12Input = buildAG12Input(consolidado);
+  const ag12InputSize = JSON.stringify(ag12Input).length;
+  emit('AG-12', `Redactant document final (input compacte: ${Math.round(ag12InputSize / 1024)}KB)...`, 4);
+  resultados.ag12 = await ag12.run({ ...ag12Input, _onTokens: onTokens });
   emit('AG-12', 'Document redactat', 4);
 
   emit('AG-14', 'Validant qualitat del document...', 4);
-  resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado, _onTokens: onTokens });
+  resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado: ag12Input, _onTokens: onTokens });
   emit('AG-14', `Validacio: ${resultados.ag14.resultado_validacion} (score: ${resultados.ag14.puntuacion_calidad})`, 4);
 
   // Cicle de correccio (max 2 iteracions)
   let intentos = 0;
-  while (resultados.ag14.resultado_validacion === 'RECHAZADO' && intentos < 2) {
+  while (resultados.ag14.resultado_validacion === 'RECHAZADO' && intentos < 2 && !budgetExceeded) {
     intentos++;
     emit('AG-14', `Cicle de correccio #${intentos}...`, 4);
     const acciones = resultados.ag14.acciones_correctivas || [];
@@ -135,29 +277,27 @@ async function orchestrate(datosCliente, onProgress) {
     for (const agId of agentesAfectados) {
       const agKey = agId.replace('-', '').toLowerCase();
       const agModule = AGENT_MAP[agId];
-      if (!agModule) { console.warn(`Agent ${agId} no trobat.`); continue; }
+      if (!agModule) continue;
       emit(agId, `Re-executant per correccions...`, 4);
-      const correccions = acciones.filter((a) => a.agente_responsable === agId);
-      resultados[agKey] = await agModule.run({ ...consolidado, correccions, _onTokens: onTokens });
+      resultados[agKey] = await agModule.run({ ...ag12Input, _onTokens: onTokens });
     }
 
-    consolidado.correcciones_aplicadas = acciones;
-    resultados.ag12 = await ag12.run({ ...buildConsolidado(datosCliente, resultados), _onTokens: onTokens });
-    resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado, _onTokens: onTokens });
+    resultados.ag12 = await ag12.run({ ...buildAG12Input(buildConsolidado(datosCliente, resultados)), _onTokens: onTokens });
+    resultados.ag14 = await ag14.run({ documento_integrado: resultados.ag12, consolidado: ag12Input, _onTokens: onTokens });
     emit('AG-14', `Re-validacio #${intentos}: ${resultados.ag14.resultado_validacion} (${resultados.ag14.puntuacion_calidad})`, 4);
   }
 
   if (resultados.ag14.resultado_validacion === 'APROBADO') {
     emit('ORQUESTADOR', 'Document APROVAT', 4);
   } else {
-    emit('ORQUESTADOR', 'Document generat amb advertencies (2 cicles esgotats)', 4);
+    emit('ORQUESTADOR', 'Document generat amb advertencies', 4);
   }
 
   const outputDir = path.join(__dirname, 'outputs');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(
     path.join(outputDir, 'consolidado_final.json'),
-    JSON.stringify({ ...buildConsolidado(datosCliente, resultados), documento: resultados.ag12 }, null, 2),
+    JSON.stringify({ ...consolidado, documento: resultados.ag12 }, null, 2),
     'utf-8'
   );
 
@@ -192,4 +332,4 @@ if (require.main === module) {
     .catch((err) => { console.error('[ERROR FATAL]', err); process.exit(1); });
 }
 
-module.exports = { orchestrate };
+module.exports = { orchestrate, BUDGET_STOP_EUR, BUDGET_WARN_EUR };
