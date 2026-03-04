@@ -402,7 +402,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                   <h3 className="font-black text-slate-900 mt-6 mb-3">5. Destinataris i Transferències Internacionals</h3>
                   <p className="text-slate-600">Les dades no es cediran a tercers, excepte per obligació legal o als proveïdors de serveis necessaris per a la prestació del servei (hosting, plataformes cloud), que actuen com a encarregats del tractament amb les garanties adequades (SCCs 2021 si aplicable).</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">6. Drets dels Interessats (ARCOLIPO)</h3>
-                  <p className="text-slate-600">Podeu exercir els drets d'<strong>Accés, Rectificació, Cancel·lació/Supressió, Oposició, Limitació, Portabilitat i dret a No ser objecte de decisions automatitzades</strong> enviant una sol·licitud a <a href="mailto:privacitat@adeptify.es" className="text-blue-600 hover:underline">privacitat@adeptify.es</a> amb còpia del vostre document d'identitat. Termini de resposta: 1 mes (Art. 12 RGPD).</p>
+                  <p className="text-slate-600">Podeu exercir els drets d'<strong>Accés, Rectificació, Cancel·lació/Supressió, Oposició, Limitació, Portabilitat i dret a No ser objecte de decisions automatitzades</strong> enviant una sol·licitud a <a href="mailto:hola@adeptify.es" className="text-blue-600 hover:underline">hola@adeptify.es</a> amb còpia del vostre document d'identitat. Termini de resposta: 1 mes (Art. 12 RGPD).</p>
                   <p className="text-slate-600 mt-3">Si considereu que el tractament vulnera la normativa, teniu dret a presentar una reclamació davant l'<strong>Agència Espanyola de Protecció de Dades (AEPD)</strong> a <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.aepd.es</a>.</p>
                 </>
               )}
@@ -429,7 +429,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                     </div>
                   </div>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">Gestió i Revocació del Consentiment</h3>
-                  <p className="text-slate-600">Podeu gestionar les cookies des del banner de consentiment que apareix en la primera visita. Per revocar el consentiment en qualsevol moment, podeu eliminar les cookies des de la configuració del vostre navegador o contactar-nos a <a href="mailto:privacitat@adeptify.es" className="text-blue-600 hover:underline">privacitat@adeptify.es</a>.</p>
+                  <p className="text-slate-600">Podeu gestionar les cookies des del banner de consentiment que apareix en la primera visita. Per revocar el consentiment en qualsevol moment, podeu eliminar les cookies des de la configuració del vostre navegador o contactar-nos a <a href="mailto:hola@adeptify.es" className="text-blue-600 hover:underline">hola@adeptify.es</a>.</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">Com desactivar les cookies al navegador</h3>
                   <ul className="list-disc pl-6 text-slate-600 space-y-1 text-sm">
                     <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Chrome</a></li>
