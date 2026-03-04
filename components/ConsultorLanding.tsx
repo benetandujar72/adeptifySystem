@@ -386,7 +386,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                 <>
                   <p className="text-xs text-slate-400 font-medium mb-6">Última actualització: {new Date().toLocaleDateString('ca-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">1. Responsable del Tractament</h3>
-                  <p className="text-slate-600">Adeptify Systems SL (en endavant, <strong>Adeptify</strong>), amb domicili social a Barcelona, Espanya. Podeu contactar-nos a: <a href="mailto:info@adeptify.es" className="text-blue-600 hover:underline">info@adeptify.es</a></p>
+                  <p className="text-slate-600">Adeptify Systems SL (en endavant, <strong>Adeptify</strong>), amb domicili social a Barcelona, Espanya. Podeu contactar-nos a: <a href="mailto:hola@adeptify.es" className="text-blue-600 hover:underline">hola@adeptify.es</a></p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">2. Finalitat i Base Legal del Tractament</h3>
                   <p className="text-slate-600">Tractem les vostres dades per a les finalitats següents:</p>
                   <ul className="list-disc pl-6 text-slate-600 space-y-2 mt-3">
@@ -443,7 +443,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
                 <>
                   <p className="text-xs text-slate-400 font-medium mb-6">Conforme a la Llei 34/2002 (LSSI-CE), el Codi Civil espanyol i la normativa de protecció del consumidor.</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">1. Identificació del Titular</h3>
-                  <p className="text-slate-600"><strong>Raó Social:</strong> Adeptify Systems SL<br /><strong>CIF:</strong> En tràmit<br /><strong>Domicili Social:</strong> Barcelona, Espanya<br /><strong>Correu electrònic:</strong> <a href="mailto:info@adeptify.es" className="text-blue-600 hover:underline">info@adeptify.es</a><br /><strong>Web:</strong> consultor.adeptify.es</p>
+                  <p className="text-slate-600"><strong>Raó Social:</strong> Adeptify Systems SL<br /><strong>CIF:</strong> En tràmit<br /><strong>Domicili Social:</strong> Barcelona, Espanya<br /><strong>Correu electrònic:</strong> <a href="mailto:hola@adeptify.es" className="text-blue-600 hover:underline">hola@adeptify.es</a><br /><strong>Web:</strong> consultor.adeptify.es</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">2. Objecte i Àmbit d'Aplicació</h3>
                   <p className="text-slate-600">El present avís legal regula l'ús del lloc web <strong>consultor.adeptify.es</strong> i dels serveis d'assessoria tecnològica i generació de propostes amb intel·ligència artificial prestats per Adeptify.</p>
                   <h3 className="font-black text-slate-900 mt-6 mb-3">3. Propietat Intel·lectual</h3>
