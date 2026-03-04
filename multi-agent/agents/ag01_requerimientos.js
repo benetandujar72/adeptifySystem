@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const { parseJsonRobust } = require('../utils/jsonRepair');
 
-const client = new Anthropic();
 const SYSTEM_PROMPT = fs.readFileSync(
   path.join(__dirname, '../prompts/system_ag01.txt'),
   'utf-8'
@@ -14,24 +13,12 @@ const AGENT_ID = 'AG-01';
 
 async function run(inputData) {
   console.log(`[${AGENT_ID}] Iniciando análisis...`);
-  const message = await client.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 16384,
-    temperature: TEMPERATURE,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: 'user',
-        content: `Analiza los siguientes datos y genera tu output en formato JSON estricto.\n\nDATOS:\n${JSON.stringify(inputData, null, 2)}`,
-      },
-    ],
-  });
-
-  if (typeof inputData._onTokens === 'function') inputData._onTokens(message.usage, AGENT_ID);
-  const text = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('\n');
+  
+  const promptText = `Analiza los siguientes datos y genera tu output en formato JSON estricto.\n\nDATOS:\n${JSON.stringify(inputData, null, 2)}`;
+  
+  // Usamos el wrapper unificado de LLM
+  const { callLLM } = require('../utils/llm');
+  const text = await callLLM(SYSTEM_PROMPT, promptText, AGENT_ID, TEMPERATURE, inputData._onTokens);
 
   return parseJsonRobust(text, AGENT_ID, inputData, SYSTEM_PROMPT);
 }

@@ -13,27 +13,15 @@ const TEMPERATURE = 0.1;
 const AGENT_ID = 'AG-15';
 
 async function run(inputData) {
-    console.log(`[${AGENT_ID}] Iniciando análisis de compliance legal...`);
-    const message = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 16384,
-        temperature: TEMPERATURE,
-        system: SYSTEM_PROMPT,
-        messages: [
-            {
-                role: 'user',
-                content: `Analiza el siguiente proyecto y genera el marco legal y de compliance COMPLETO y EXHAUSTIVO en formato JSON estricto.\n\nDADES DEL PROJECTE:\n${JSON.stringify(inputData, null, 2)}`,
-            },
-        ],
-    });
+  console.log(`[${AGENT_ID}] Iniciando análisis...`);
+  
+  const promptText = `Analiza los siguientes datos y genera tu output en formato JSON estricto.\n\nDATOS:\n${JSON.stringify(inputData, null, 2)}`;
+  
+  // Usamos el wrapper unificado de LLM
+  const { callLLM } = require('../utils/llm');
+  const text = await callLLM(SYSTEM_PROMPT, promptText, AGENT_ID, TEMPERATURE, inputData._onTokens);
 
-    if (typeof inputData._onTokens === 'function') inputData._onTokens(message.usage, AGENT_ID);
-    const text = message.content
-        .filter((block) => block.type === 'text')
-        .map((block) => block.text)
-        .join('\n');
-
-    return parseJsonRobust(text, AGENT_ID, inputData, SYSTEM_PROMPT);
+  return parseJsonRobust(text, AGENT_ID, inputData, SYSTEM_PROMPT);
 }
 
 module.exports = { run };

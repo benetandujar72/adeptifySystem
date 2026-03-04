@@ -1,6 +1,5 @@
 'use strict';
-const Anthropic = require('@anthropic-ai/sdk');
-const client = new Anthropic();
+const { callLLM } = require('./llm');
 
 /**
  * Detecta si un texto JSON está truncado comprobando:
@@ -123,23 +122,11 @@ async function repairTruncatedJson(truncatedText, agentId, inputData, systemProm
     // Limitar el texto truncado a 10000 chars para no exceder context
     const snippet = truncatedText.substring(0, 10000);
 
-    const repairMsg = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192,
-        temperature: 0,
-        system: 'Ets un assistent expert en reparació de JSON. El teu únic treball és completar el JSON truncat. Respon ÚNICAMENT amb el fragment que falta (el que cal afegir al final) per tancar el JSON correctament. Sense cap explicació ni text addicional.',
-        messages: [
-            {
-                role: 'user',
-                content: `El siguiente JSON está incompleto (truncado). Devuelve ÚNICAMENTE el fragmento de texto que falta al final para que el JSON sea válido y completo. No repitas nada del JSON ya existente.\n\nJSON TRUNCADO:\n${snippet}`
-            }
-        ]
-    });
+    const repairSystem = 'Ets un assistent expert en reparació de JSON. El teu únic treball és completar el JSON truncat. Respon ÚNICAMENT amb el fragment que falta (el que cal afegir al final) per tancar el JSON correctament. Sense cap explicació ni text addicional.';
+    const promptText = `El siguiente JSON está incompleto (truncado). Devuelve ÚNICAMENTE el fragmento de texto que falta al final para que el JSON sea válido y completo. No repitas nada del JSON ya existente.\n\nJSON TRUNCADO:\n${snippet}`;
 
-    const continuation = repairMsg.content
-        .filter(b => b.type === 'text')
-        .map(b => b.text)
-        .join('');
+    // Pasamos un updateTokens vacío para jsonRepair, o ignoramos
+    const continuation = await callLLM(repairSystem, promptText, agentId + ':REPAIR', 0, null, 8192);
 
     const combined = truncatedText + continuation;
 
@@ -162,19 +149,10 @@ async function repairTruncatedJson(truncatedText, agentId, inputData, systemProm
  */
 async function retryStrictPrompt(agentId, inputData, systemPrompt) {
     console.log(`[${agentId}] Reintentant amb prompt estricte...`);
-    const message = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192,
-        temperature: 0,
-        system: systemPrompt || 'Responde ÚNICAMENTE con JSON válido y completo, sin markdown ni texto adicional.',
-        messages: [
-            {
-                role: 'user',
-                content: `Genera un JSON válido y COMPLETO (con todas las llaves cerradas). Sin markdown. Sin texto adicional.\n\nDatos:\n${JSON.stringify(inputData, null, 2).substring(0, 3000)}`
-            }
-        ]
-    });
-    const text = message.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    const finalSystemPrompt = systemPrompt || 'Responde ÚNICAMENTE con JSON válido y completo, sin markdown ni texto adicional.';
+    const promptText = `Genera un JSON válido y COMPLETO (con todas las llaves cerradas). Sin markdown. Sin texto adicional.\n\nDatos:\n${JSON.stringify(inputData, null, 2).substring(0, 3000)}`;
+
+    const text = await callLLM(finalSystemPrompt, promptText, agentId + ':STRICT', 0, null, 8192);
     const cleaned = text.replace(/```json\s*|```/g, '').trim();
     return JSON.parse(cleaned);
 }
