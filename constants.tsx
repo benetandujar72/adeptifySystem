@@ -15,26 +15,34 @@ export const getQuestionsFlow = (lang: Language): Question[] => {
       type: 'select',
       isMultiSelect: true,
       options: [
-        { label: pick(
-          "Passar hores redactant informes, memòries i actes de reunions",
-          "Pasar horas redactando informes, memorias y actas de reuniones",
-          "Orduak ematea txostenak, memoriak eta bileren aktak idazten"
-        ), value: "paperassa" },
-        { label: pick(
-          "Haver de perseguir les famílies perquè responguin o llegeixin els avisos",
-          "Tener que perseguir a las familias para que respondan o lean los avisos",
-          "Familiei atzetik ibili behar izatea erantzun edo oharrak irakur ditzaten"
-        ), value: "comunicacio" },
-        { label: pick(
-          "El caos de decidir coses a les reunions i que després ningú sàpiga qui ha de fer què",
-          "El caos de decidir cosas en las reuniones y que después nadie sepa quién hace qué",
-          "Bileretan erabakitakoaren kaosa, eta gero inork ez jakitea nork egin behar duen zer"
-        ), value: "seguiment" },
-        { label: pick(
-          "Gestionar el dia a dia (menjador, absències, incidències) amb mil papers",
-          "Gestionar el día a día (comedor, ausencias, incidencias) con mil papeles",
-          "Egunerokoa (jantokia, absentziak, gorabeherak) mila paperrekin kudeatzea"
-        ), value: "burocracia" }
+        {
+          label: pick(
+            "Passar hores redactant informes, memòries i actes de reunions",
+            "Pasar horas redactando informes, memorias y actas de reuniones",
+            "Orduak ematea txostenak, memoriak eta bileren aktak idazten"
+          ), value: "paperassa"
+        },
+        {
+          label: pick(
+            "Haver de perseguir les famílies perquè responguin o llegeixin els avisos",
+            "Tener que perseguir a las familias para que respondan o lean los avisos",
+            "Familiei atzetik ibili behar izatea erantzun edo oharrak irakur ditzaten"
+          ), value: "comunicacio"
+        },
+        {
+          label: pick(
+            "El caos de decidir coses a les reunions i que després ningú sàpiga qui ha de fer què",
+            "El caos de decidir cosas en las reuniones y que después nadie sepa quién hace qué",
+            "Bileretan erabakitakoaren kaosa, eta gero inork ez jakitea nork egin behar duen zer"
+          ), value: "seguiment"
+        },
+        {
+          label: pick(
+            "Gestionar el dia a dia (menjador, absències, incidències) amb mil papers",
+            "Gestionar el día a día (comedor, ausencias, incidencias) con mil papeles",
+            "Egunerokoa (jantokia, absentziak, gorabeherak) mila paperrekin kudeatzea"
+          ), value: "burocracia"
+        }
       ]
     },
     {
@@ -46,21 +54,27 @@ export const getQuestionsFlow = (lang: Language): Question[] => {
       ),
       type: 'select',
       options: [
-        { label: pick(
-          "En una atenció més personalitzada als alumnes que més ho necessiten",
-          "En una atención más personalizada a los alumnos que más lo necesitan",
-          "Laguntza gehien behar duten ikasleei arreta pertsonalizatuagoa ematean"
-        ), value: "alumnes" },
-        { label: pick(
-          "En preparar projectes educatius més creatius i motivadors",
-          "En preparar proyectos educativos más creativos y motivadores",
-          "Hezkuntza-proiektu sortzaileago eta motibatzaileagoak prestatzean"
-        ), value: "creativitat" },
-        { label: pick(
-          "En reduir l'estrès i millorar l'ambient a la sala de professors",
-          "En reducir el estrés y mejorar el ambiente en la sala de profesores",
-          "Estresa murriztu eta irakasle-gelan giroa hobetzean"
-        ), value: "bienestar" }
+        {
+          label: pick(
+            "En una atenció més personalitzada als alumnes que més ho necessiten",
+            "En una atención más personalizada a los alumnos que más lo necesitan",
+            "Laguntza gehien behar duten ikasleei arreta pertsonalizatuagoa ematean"
+          ), value: "alumnes"
+        },
+        {
+          label: pick(
+            "En preparar projectes educatius més creatius i motivadors",
+            "En preparar proyectos educativos más creativos y motivadores",
+            "Hezkuntza-proiektu sortzaileago eta motibatzaileagoak prestatzean"
+          ), value: "creativitat"
+        },
+        {
+          label: pick(
+            "En reduir l'estrès i millorar l'ambient a la sala de professors",
+            "En reducir el estrés y mejorar el ambiente en la sala de profesores",
+            "Estresa murriztu eta irakasle-gelan giroa hobetzean"
+          ), value: "bienestar"
+        }
       ]
     },
     {
@@ -72,21 +86,27 @@ export const getQuestionsFlow = (lang: Language): Question[] => {
       ),
       type: 'select',
       options: [
-        { label: pick(
-          "Confiem en la memòria i la bona voluntat de cadascú",
-          "Confiamos en la memoria y la buena voluntad de cada uno",
-          "Norberaren memorian eta borondate onean fidatzen gara"
-        ), value: "memoria" },
-        { label: pick(
-          "Ho anotem en llibretes o actes que sovint queden en un calaix",
-          "Lo anotamos en libretas o actas que a menudo quedan en un cajón",
-          "Koadernoetan edo akta batzuetan idazten dugu, eta askotan tiraderan geratzen dira"
-        ), value: "actes" },
-        { label: pick(
-          "Fem servir un sistema que ens avisa automàticament",
-          "Usamos un sistema que nos avisa automáticamente",
-          "Automatikoki ohartarazten gaituen sistema bat erabiltzen dugu"
-        ), value: "automatitzacio" }
+        {
+          label: pick(
+            "Confiem en la memòria i la bona voluntat de cadascú",
+            "Confiamos en la memoria y la buena voluntad de cada uno",
+            "Norberaren memorian eta borondate onean fidatzen gara"
+          ), value: "memoria"
+        },
+        {
+          label: pick(
+            "Ho anotem en llibretes o actes que sovint queden en un calaix",
+            "Lo anotamos en libretas o actas que a menudo quedan en un cajón",
+            "Koadernoetan edo akta batzuetan idazten dugu, eta askotan tiraderan geratzen dira"
+          ), value: "actes"
+        },
+        {
+          label: pick(
+            "Fem servir un sistema que ens avisa automàticament",
+            "Usamos un sistema que nos avisa automáticamente",
+            "Automatikoki ohartarazten gaituen sistema bat erabiltzen dugu"
+          ), value: "automatitzacio"
+        }
       ]
     },
     {
@@ -125,6 +145,6 @@ export const ADEPTIFY_INFO = {
   nif: "B46605585",
   address: "C/ Independencia 3, 08290 Cerdanyola del Vallès, Barcelona",
   phone: "+34 690831770",
-  email: "bandujar@edutac.es",
+  email: "hola@adeptify.es",
   taxRate: 0.21
 };
