@@ -200,56 +200,90 @@ const AutomatedLeadPanel: React.FC = () => {
       if (message) {
         setStatusMsg(message);
       }
-      const es = new EventSource(`/api/automation/full-report/stream/${jobId}`);
-      eventSourceRef.current = es;
+      // Usar fetch + ReadableStream en lugar de EventSource para evitar QUIC_PACKET_WRITE_ERROR en Cloud Run
+      const abortCtrl = new AbortController();
 
-      es.addEventListener('progress', (e: MessageEvent) => {
-        const data = JSON.parse(e.data) as AgentEvent & { message: string };
-        // TOKENS event: update token counter, don't add to log
-        if (data.agent === 'TOKENS') {
-          try {
-            const t = JSON.parse(data.message);
-            setTokenUsage({ input: t.total_input, output: t.total_output, cost_eur: t.cost_eur, budget_pct: t.budget_pct || 0 });
-          } catch { /* ignore */ }
-          return;
-        }
-        setReportProgress(prev => [...prev, data]);
-        if (data.fase && data.fase > 0) setReportFase(data.fase);
+      const sseResp = await fetch(`/api/automation/full-report/stream/${jobId}`, {
+        signal: abortCtrl.signal,
       });
 
-      es.addEventListener('complete', (e: MessageEvent) => {
-        const data = JSON.parse(e.data);
-        if (data.docxBase64) setReportDocxBase64(data.docxBase64);
-        if (data.rawJsonBase64) setReportRawJsonBase64(data.rawJsonBase64);
-        setReportClientName(data.clientName || lead.name);
-        const msg = data.docxBase64
-          ? 'Informe complet generat. Descarrega el document Word.'
-          : 'Agents completats. El DOCX ha fallat — descarrega el JSON per revisar.';
-        setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
-        setStatusMsg(msg);
-        setIsGeneratingReport(false);
-        es.close();
-      });
+      if (!sseResp.ok || !sseResp.body) {
+        throw new Error('No s\'ha pogut connectar amb el stream SSE');
+      }
 
-      es.addEventListener('error', (e: MessageEvent) => {
-        const data = e.data ? JSON.parse(e.data) : { message: 'Error desconegut al servidor' };
-        const errMsg = data.message || 'Error desconegut';
-        setReportError(errMsg);
-        setReportProgress(prev => [...prev, { agent: 'ERROR', message: `ERROR: ${errMsg}`, fase: 0 }]);
-        setIsGeneratingReport(false);
-        es.close();
-      });
+      // Parsear SSE manualment del ReadableStream
+      const reader = sseResp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      // onerror fires on connection issues — distinguish real errors from reconnects
-      es.onerror = () => {
-        if (es.readyState === EventSource.CONNECTING) return; // auto-reconnect, wait
-        if (es.readyState === EventSource.CLOSED) return;
-        const msg = 'Connexió SSE perduda (timeout o xarxa). Comprova els logs del servidor.';
-        setReportError(msg);
-        setReportProgress(prev => [...prev, { agent: 'ERROR', message: msg, fase: 0 }]);
-        setIsGeneratingReport(false);
-        es.close();
+      const dispatchSSE = (eventType: string, rawData: string) => {
+        if (!rawData) return;
+        try {
+          const data = JSON.parse(rawData);
+          if (eventType === 'progress') {
+            if (data.agent === 'TOKENS') {
+              try {
+                const t = JSON.parse(data.message);
+                setTokenUsage({ input: t.total_input, output: t.total_output, cost_eur: t.cost_eur, budget_pct: t.budget_pct || 0 });
+              } catch { /* ignore */ }
+              return;
+            }
+            setReportProgress(prev => [...prev, data]);
+            if (data.fase && data.fase > 0) setReportFase(data.fase);
+          } else if (eventType === 'complete') {
+            if (data.docxBase64) setReportDocxBase64(data.docxBase64);
+            if (data.rawJsonBase64) setReportRawJsonBase64(data.rawJsonBase64);
+            setReportClientName(data.clientName || lead.name);
+            const msg = data.docxBase64
+              ? 'Informe complet generat. Descarrega el document Word.'
+              : 'Agents completats. El DOCX ha fallat — descarrega el JSON per revisar.';
+            setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
+            setStatusMsg(msg);
+            setIsGeneratingReport(false);
+            abortCtrl.abort();
+          } else if (eventType === 'error') {
+            const errMsg = data.message || 'Error desconegut';
+            setReportError(errMsg);
+            setReportProgress(prev => [...prev, { agent: 'ERROR', message: `ERROR: ${errMsg}`, fase: 0 }]);
+            setIsGeneratingReport(false);
+            abortCtrl.abort();
+          }
+        } catch { /* ignore parse errors */ }
       };
+
+      const readSSE = async () => {
+        let currentEvent = 'message';
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+            for (const line of lines) {
+              if (line.startsWith('event:')) {
+                currentEvent = line.slice(6).trim();
+              } else if (line.startsWith('data:')) {
+                dispatchSSE(currentEvent, line.slice(5).trim());
+                currentEvent = 'message';
+              } else if (line === '') {
+                // separador de blocs, reset
+                currentEvent = 'message';
+              }
+              // Les línies que comencen per ':' són heartbeats/comentaris, s'ignoren
+            }
+          }
+        } catch (err: any) {
+          if (err?.name === 'AbortError') return; // tancament normal
+          const msg = 'Connexió SSE perduda. Comprova els logs del servidor.';
+          setReportError(msg);
+          setReportProgress(prev => [...prev, { agent: 'ERROR', message: msg, fase: 0 }]);
+          setIsGeneratingReport(false);
+        }
+      };
+
+      readSSE();
+
     } catch (err: any) {
       const msg = err.message || 'Error desconegut';
       setReportError(msg);
@@ -592,12 +626,12 @@ const AutomatedLeadPanel: React.FC = () => {
                 onClick={reportError ? handleGenerateFullReport : handleGenerateFullReport}
                 disabled={isGeneratingReport || !!reportDocxBase64}
                 className={`w-full py-6 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all flex items-center justify-center gap-3 ${reportDocxBase64
-                    ? 'bg-green-600/20 text-green-300 cursor-default border border-green-700/30'
-                    : reportError
-                      ? 'bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-900/40 cursor-pointer'
-                      : isGeneratingReport
-                        ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
+                  ? 'bg-green-600/20 text-green-300 cursor-default border border-green-700/30'
+                  : reportError
+                    ? 'bg-red-600 hover:bg-red-500 text-white shadow-xl shadow-red-900/40 cursor-pointer'
+                    : isGeneratingReport
+                      ? 'bg-indigo-800/60 text-indigo-300 cursor-wait'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-900/40 hover:shadow-indigo-900/60'
                   }`}
               >
                 {reportDocxBase64 ? (
