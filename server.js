@@ -439,10 +439,13 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
 
 app.post('/api/automation/generate-docx', async (req, res) => {
   try {
-    const generator = new WordProposalGenerator();
-    const buffer = await generator.generate(req.body.leadData, req.body.lang || 'ca');
+    const { generateDocxBuffer } = require('./multi-agent/generate_docx');
+    const buffer = await generateDocxBuffer(req.body.leadData, req.body.lang || 'ca');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document').send(buffer);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error("[Generate DOCX error]", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── Multi-Agent Full Report ──────────────────────────────────────────────────
@@ -508,7 +511,8 @@ async function runFullReportJob(jobId, datosCliente) {
     }
 
     // Don't send 'doc' in complete event — it's large and can overload SSE
-    push('complete', { docxBase64, rawJsonBase64, clientName });
+    // Només enviem success, els fixters s'agafaran d'un altre endpoint
+    push('complete', { clientName, success: true });
   } catch (e) {
     console.error('[MultiAgent] Error:', e.message);
     if (reportJobs.get(jobId)) {
@@ -518,6 +522,31 @@ async function runFullReportJob(jobId, datosCliente) {
     push('error', { message: e.message });
   }
 }
+
+// Nou endpoint per descarregar informes de la memòria a través de l'API web
+app.get('/api/automation/full-report/download/:jobId/:type', (req, res) => {
+  const job = reportJobs.get(req.params.jobId);
+  if (!job || !job.result) return res.status(404).send('Not Found o Caducat');
+
+  const { type } = req.params;
+  const safeName = (job.result.clientName || 'Informe').replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').replace(/\s+/g, '_');
+
+  if (type === 'docx' && job.result.docxBase64) {
+    const buffer = Buffer.from(job.result.docxBase64, 'base64');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="Proposta_${safeName}.docx"`);
+    return res.end(buffer);
+  }
+
+  if (type === 'json' && job.result.rawJsonBase64) {
+    const buffer = Buffer.from(job.result.rawJsonBase64, 'base64');
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="Adeptify_${safeName}.json"`);
+    return res.end(buffer);
+  }
+
+  res.status(404).send('Document tipus no disponible o fallit');
+});
 
 // 1) Start a new multi-agent job
 app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), async (req, res) => {

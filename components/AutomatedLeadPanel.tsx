@@ -148,6 +148,8 @@ const AutomatedLeadPanel: React.FC = () => {
     }
   };
 
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
   const handleGenerateFullReport = async () => {
     if (!analysis) return;
     setIsGeneratingReport(true);
@@ -158,6 +160,7 @@ const AutomatedLeadPanel: React.FC = () => {
     setReportRawJsonBase64(null);
     setTokenUsage({ input: 0, output: 0, cost_eur: 0, budget_pct: 0 });
     setStatusMsg('');
+    setActiveJobId(null);
     eventSourceRef.current?.close();
 
     try {
@@ -200,6 +203,7 @@ const AutomatedLeadPanel: React.FC = () => {
       if (message) {
         setStatusMsg(message);
       }
+      setActiveJobId(jobId);
       // Usar fetch + ReadableStream en lugar de EventSource para evitar QUIC_PACKET_WRITE_ERROR en Cloud Run
       const abortCtrl = new AbortController();
 
@@ -231,10 +235,12 @@ const AutomatedLeadPanel: React.FC = () => {
             setReportProgress(prev => [...prev, data]);
             if (data.fase && data.fase > 0) setReportFase(data.fase);
           } else if (eventType === 'complete') {
-            if (data.docxBase64) setReportDocxBase64(data.docxBase64);
-            if (data.rawJsonBase64) setReportRawJsonBase64(data.rawJsonBase64);
+            if (data.success) {
+              setReportDocxBase64('ready'); // Use as a flag to show buttons
+              setReportRawJsonBase64('ready');
+            }
             setReportClientName(data.clientName || lead.name);
-            const msg = data.docxBase64
+            const msg = data.success
               ? 'Informe complet generat. Descarrega el document Word.'
               : 'Agents completats. El DOCX ha fallat — descarrega el JSON per revisar.';
             setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
@@ -293,27 +299,13 @@ const AutomatedLeadPanel: React.FC = () => {
   };
 
   const downloadFullReport = () => {
-    if (!reportDocxBase64) return;
-    const bytes = Uint8Array.from(atob(reportDocxBase64), c => c.charCodeAt(0));
-    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Proposta_Adeptify_${(reportClientName || lead.name).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.docx`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!activeJobId) return;
+    window.location.href = `/api/automation/full-report/download/${activeJobId}/docx`;
   };
 
   const downloadRawJson = () => {
-    if (!reportRawJsonBase64) return;
-    const json = atob(reportRawJsonBase64);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Document_AG12_${(reportClientName || lead.name).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (!activeJobId) return;
+    window.location.href = `/api/automation/full-report/download/${activeJobId}/json`;
   };
 
   const buildMappedDocxData = () => analysis ? { ...analysis.proposal_data, image_prompt: analysis.image_prompt, custom_pitch: analysis.custom_pitch, company_name: analysis.company_name, estimated_budget_range: analysis.estimated_budget_range, recommended_solution: analysis.recommended_solution } : {};
