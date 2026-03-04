@@ -15,7 +15,7 @@ const {
   WidthType, ShadingType, AlignmentType, HeadingLevel,
   PageBreak, Header, Footer, PageNumber, NumberFormat,
   TableOfContents, StyleLevel, BorderStyle,
-  convertInchesToTwip, LevelFormat,
+  convertInchesToTwip, LevelFormat, ImageRun,
 } = require('docx');
 
 const { getStyleRules } = require('./agents/ag11_estilo');
@@ -115,12 +115,12 @@ function makeTable(rows, colWidths) {
   return new Table({
     width: { size: TB.width_total, type: WidthType.DXA },
     borders: {
-      top:    { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
+      top: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
       bottom: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
-      left:   { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
-      right:  { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
-      insideH:{ style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
-      insideV:{ style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
+      left: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
+      right: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
+      insideH: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
+      insideV: { style: BorderStyle.SINGLE, size: TB.border_size, color: TB.border_color },
     },
     rows: normalized.map((row, rowIdx) => {
       const isHeader = rowIdx === 0;
@@ -193,11 +193,35 @@ function createFooter() {
 
 // ─── Portada (sin header/footer) ──────────────────────────────────────────────
 
-function buildCoverSection(doc_data) {
+async function buildCoverSection(doc_data) {
   const meta = doc_data.metadata || {};
   const cliente = doc_data.datos_cliente?.cliente || {};
+
+  let imageParagraph = null;
+  try {
+    const imageUrl = `https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&h=300&auto=format&fit=crop`;
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    imageParagraph = new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new ImageRun({
+          data: buffer,
+          transformation: { width: 500, height: 250 }
+        })
+      ],
+      spacing: { after: 400 }
+    });
+  } catch (err) {
+    console.warn("[DOCX] No s'ha pogut carregar la imatge visual:", err.message);
+    imageParagraph = new Paragraph({ children: [], spacing: { after: 1200 } });
+  }
+
   return [
-    new Paragraph({ children: [], spacing: { after: 2400 } }),
+    new Paragraph({ children: [], spacing: { after: 1200 } }),
+    imageParagraph,
     new Paragraph({
       alignment: AlignmentType.CENTER,
       children: [
@@ -411,7 +435,7 @@ function renderSection10(s10) {
   if (s10.plan_formacion && s10.plan_formacion.length) {
     items.push(heading2('Pla de Formació'));
     const formRows = [['Sessió', 'Audiència', 'Durada', 'Format'],
-      ...s10.plan_formacion.map(f => [safeText(f.sesion), safeText(f.audiencia), safeText(f.duracion), safeText(f.formato)])];
+    ...s10.plan_formacion.map(f => [safeText(f.sesion), safeText(f.audiencia), safeText(f.duracion), safeText(f.formato)])];
     items.push(makeTable(formRows, [2600, 2200, 1200, 3026]), spacer());
   }
   return items;
@@ -554,13 +578,13 @@ async function generateDocxBuffer(docData, datosCliente) {
   const clientName = clientData?.cliente?.nombre || doc_data.metadata?.cliente || 'Client';
 
   // Log which sections are present to diagnose empty-doc issues
-  const sectionKeys = ['s1_resumen_ejecutivo','s2_contexto_diagnostico','s3_solucion',
-    's4_metodologia','s5_cronograma','s6_devops','s7_seguridad','s8_economia',
-    's9_riesgos','s10_change_management','s11_condiciones','s12_casos_exito','s13_proximos_pasos'];
+  const sectionKeys = ['s1_resumen_ejecutivo', 's2_contexto_diagnostico', 's3_solucion',
+    's4_metodologia', 's5_cronograma', 's6_devops', 's7_seguridad', 's8_economia',
+    's9_riesgos', 's10_change_management', 's11_condiciones', 's12_casos_exito', 's13_proximos_pasos'];
   const present = sectionKeys.filter(k => doc_data[k] && typeof doc_data[k] === 'object');
   console.log(`[DOCX] Client: ${clientName} | Sections found: ${present.length}/13 (${present.join(', ')})`);
 
-  const cover = buildCoverSection({ ...doc_data, datos_cliente: clientData });
+  const cover = await buildCoverSection({ ...doc_data, datos_cliente: clientData });
 
   // Wrap each section render in try-catch to avoid one bad section killing the whole document
   const tryRender = (fn, data, sectionName) => {
