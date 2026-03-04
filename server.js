@@ -618,9 +618,17 @@ app.get('/env.js', (_req, res) => {
 });
 
 const distDir = path.join(__dirname, 'dist');
-app.use(express.static(distDir));
+// Assets con hash (JS/CSS) → caché larga; index.html → siempre fresco
+app.use(express.static(distDir, {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+  }
+}));
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: "API Not Found" });
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.sendFile(path.join(distDir, 'index.html'));
 });
 
