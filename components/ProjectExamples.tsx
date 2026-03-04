@@ -8,6 +8,7 @@ const ProjectExamples: React.FC = () => {
     const [projects, setProjects] = useState<ProjectExample[]>([]);
     const [loading, setLoading] = useState(true);
     const [hoveredId, setHoveredId] = useState<string | null>(null);
+    const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -15,13 +16,23 @@ const ProjectExamples: React.FC = () => {
                 setLoading(false);
                 return;
             }
+
             const { data, error } = await supabase
                 .from('project_examples')
                 .select('*')
                 .order('created_at', { ascending: true });
 
             if (!error && data) {
-                const mappedProjects: ProjectExample[] = data.map((item: any) => ({
+                // Desduplicar per id — evita mostrar el mateix projecte múltiples vegades
+                const seen = new Set<string>();
+                const unique = data.filter((item: any) => {
+                    if (seen.has(String(item.id))) return false;
+                    seen.add(String(item.id));
+                    return true;
+                });
+
+                // Limitar a un màxim de 9 projectes
+                const mappedProjects: ProjectExample[] = unique.slice(0, 9).map((item: any) => ({
                     ...item,
                     metrics: {
                         hours: item.hours,
@@ -46,6 +57,13 @@ const ProjectExamples: React.FC = () => {
         return (project[key] || project[fallback]) as string;
     };
 
+    const handleImageError = (id: string) => {
+        setBrokenImages(prev => new Set(prev).add(id));
+    };
+
+    const showImage = (project: ProjectExample) =>
+        project.image_url && !brokenImages.has(String(project.id));
+
     if (loading) {
         return (
             <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20 animate-pulse">
@@ -58,6 +76,8 @@ const ProjectExamples: React.FC = () => {
             </section>
         );
     }
+
+    if (projects.length === 0) return null;
 
     return (
         <section className="w-full max-w-6xl mx-auto mb-16 md:mb-20">
@@ -76,21 +96,26 @@ const ProjectExamples: React.FC = () => {
                     <div
                         key={project.id}
                         className="group h-[500px] [perspective:1500px]"
-                        onMouseEnter={() => setHoveredId(project.id)}
+                        onMouseEnter={() => setHoveredId(String(project.id))}
                         onMouseLeave={() => setHoveredId(null)}
                     >
-                        <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${hoveredId === project.id ? '[transform:rotateY(180deg)]' : ''}`}>
+                        <div className={`relative w-full h-full transition-all duration-700 [transform-style:preserve-3d] ${hoveredId === String(project.id) ? '[transform:rotateY(180deg)]' : ''}`}>
 
                             {/* FRONT SIDE */}
                             <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-[0_10px_40px_rgba(0,0,0,0.03)] overflow-hidden flex flex-col">
-                                {project.image_url ? (
-                                    <div className="h-48 overflow-hidden rounded-t-[2.4rem]">
-                                        <img src={project.image_url} alt={getLocalizedField(project, 'title')} className="w-full h-full object-cover" />
+                                {showImage(project) ? (
+                                    <div className="h-48 overflow-hidden rounded-t-[2.4rem] bg-slate-50 flex items-center justify-center">
+                                        <img
+                                            src={project.image_url!}
+                                            alt={getLocalizedField(project, 'title')}
+                                            className="w-full h-full object-cover"
+                                            onError={() => handleImageError(String(project.id))}
+                                        />
                                     </div>
                                 ) : (
-                                    <div className="h-48 bg-slate-50 flex items-center justify-center rounded-t-[2.4rem]">
-                                        <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-500">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <div className="h-48 bg-gradient-to-br from-indigo-50 to-slate-50 flex items-center justify-center rounded-t-[2.4rem]">
+                                        <div className="p-5 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                             </svg>
                                         </div>
