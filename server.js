@@ -51,7 +51,7 @@ const getSupabaseAdmin = () => {
 };
 
 // --- CLAUDE CALLER (mismo modelo que agentes multi-agent) ---
-async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
+async function callClaude(prompt, modelId = "claude-3-5-sonnet-20241022") {
   const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim();
 
   // Si no hay clave Anthropic, usar Gemini como fallback
@@ -77,6 +77,11 @@ async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
   if (!response.ok) {
     const errBody = await response.text();
     console.error(`[Claude API Error] ${response.status}:`, errBody);
+    // Si error 400/404 (model incorrecte) o 401 (clau invàlida), fallback a Gemini
+    if (response.status === 400 || response.status === 404 || response.status === 401) {
+      console.warn(`[Claude] Fallback a Gemini per error ${response.status}`);
+      return callGeminiFallback(prompt);
+    }
     throw new Error(`Claude API error ${response.status}: ${errBody.substring(0, 200)}`);
   }
 
