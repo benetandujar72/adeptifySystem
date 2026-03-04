@@ -117,11 +117,18 @@ async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
 }
 
 // --- GEMINI FALLBACK (solo si no hay Anthropic API key) ---
-async function callGeminiFallback(prompt, modelId = "gemini-1.5-flash") {
+async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) throw new Error("Missing both ANTHROPIC_API_KEY and GEMINI_API_KEY");
 
-  const modelsToTry = [modelId, "gemini-1.5-flash"];
+  // Models en ordre de preferència — si el primer falla proba el seguent
+  const modelsToTry = [
+    modelId,
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash"
+  ].filter((v, i, a) => a.indexOf(v) === i); // deduplica
   let lastError = null;
 
   for (const model of modelsToTry) {
