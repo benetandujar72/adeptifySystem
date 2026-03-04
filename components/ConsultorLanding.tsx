@@ -348,7 +348,7 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
             <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Adeptify Systems SL</span>
           </div>
           <p className="text-[10px] text-slate-400 font-medium text-center">
-            © {new Date().getFullYear()} Adeptify Systems SL — Barcelona, España. Tots els drets reservats.
+            © 2024 Adeptify Systems SL — C. Independencia, 3 bajos, 08290 Cerdanyola del Vallès, Barcelona. Tots els drets reservats.
           </p>
           <div className="flex items-center gap-6">
             {(['privacy', 'cookies', 'legal'] as const).map((modal) => {
