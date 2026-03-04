@@ -111,10 +111,11 @@ async function generateContentViaProxy(model: string, request: GenerateContentRe
 
 // Required preferred order (falls back if a model isn't available for the API key/project).
 const MODEL_FALLBACK_ORDER = [
-  'gemini-3.1',
-  'gemini-2.0-flash',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash',
+  'gemini-3.1-pro-preview',         // Gemini 3.1 Pro — màxima capacitat
+  'gemini-3.1-flash-lite-preview',  // Gemini 3.1 Flash Lite — ràpid i eficient
+  'gemini-3-flash-preview',         // Gemini 3 Flash — preview estable
+  'gemini-2.0-flash',               // Fallback: Gemini 2.0 Flash (GA)
+  'gemini-1.5-pro',                 // Fallback final: Gemini 1.5 Pro (estable)
 ];
 
 const shouldTryNextModel = (err: unknown): boolean => {
@@ -197,7 +198,7 @@ export interface DynamicQuestion {
 }
 
 export async function getNextConsultantQuestion(
-  history: { question: string; answer: string[] }[], 
+  history: { question: string; answer: string[] }[],
   diagnosis: DiagnosisState,
   lang: Language = 'ca'
 ): Promise<DynamicQuestion> {
@@ -205,7 +206,7 @@ export async function getNextConsultantQuestion(
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const audience = detectAudience(diagnosis, history);
   const intakeMode = (diagnosis as any)?.intakeMode === 'clear_need' ? 'clear_need' : 'discovery';
-  
+
   const prompt = intakeMode === 'clear_need'
     ? (lang === 'ca'
       ? `ETS UN ANALISTA SÈNIOR DE REQUISITS DE PROGRAMARI I EXPERT EN GESTIÓ I ADMINISTRACIÓ EDUCATIVA.
@@ -295,9 +296,9 @@ Responde en este formato JSON (y solo JSON):
   "isComplete": boolean,
   "confidence": 0-100
 }`)
-      : lang === 'ca'
-    ? (audience === 'family'
-      ? `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA I ORGANITZACIÓ PER A FAMÍLIES.
+    : lang === 'ca'
+      ? (audience === 'family'
+        ? `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA I ORGANITZACIÓ PER A FAMÍLIES.
 OBJECTIU: entendre què està generant tensió, desordre o manca de temps a casa per proposar una solució de "vida fàcil".
 
 REGLES CRÍTIQUES:
@@ -317,7 +318,7 @@ Respon en aquest format JSON (i només JSON):
   "isComplete": boolean,
   "confidence": 0-100
 }`
-      : `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A ESCOLES.
+        : `ACTUA COM UN CONSULTOR SÈNIOR D'EFICIÈNCIA PER A ESCOLES.
 OBJECTIU: entendre on perd temps el claustre per proposar una solució de "vida fàcil".
 
 REGLES CRÍTIQUES:
@@ -338,7 +339,7 @@ Respon en aquest format JSON (i només JSON):
   "confidence": 0-100
 }`)
       : audience === 'family'
-      ? `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA Y ORGANIZACIÓN PARA FAMILIAS.
+        ? `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA Y ORGANIZACIÓN PARA FAMILIAS.
 OBJETIVO: entender qué genera tensión, desorden o falta de tiempo en casa para proponer una solución de "vida fácil".
 
 REGLAS CRÍTICAS:
@@ -358,7 +359,7 @@ Responde en este formato JSON (y solo JSON):
   "isComplete": boolean,
   "confidence": 0-100
 }`
-      : `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA PARA COLEGIOS.
+        : `ACTÚA COMO UN CONSULTOR SÉNIOR DE EFICIENCIA PARA COLEGIOS.
 OBJETIVO: entender dónde pierde tiempo el claustro para proponer una solución de "vida fácil".
 
 REGLAS CRÍTICAS:
@@ -385,7 +386,7 @@ Responde en este formato JSON (y solo JSON):
       config: { responseMimeType: "application/json", temperature: 0.4 },
       purpose: 'dynamic_question',
     });
-    
+
     const data = JSON.parse(response.text || '{}');
     return {
       question: data.question || (lang === 'ca' ? "Com podem ajudar?" : lang === 'eu' ? "Nola lagun dezakegu?" : "¿Cómo podemos ayudar?"),
@@ -396,7 +397,7 @@ Responde en este formato JSON (y solo JSON):
       modelUsed
     };
   } catch (e) {
-      console.error('Gemini error (getNextConsultantQuestion):', e);
+    console.error('Gemini error (getNextConsultantQuestion):', e);
     return {
       question: lang === 'ca'
         ? "Hi ha un petit problema. Continuem?"
@@ -415,7 +416,7 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
   const historyStr = formatHistoryForPrompt(diagnosis.consultationHistory || [], lang);
   const langName = lang === 'ca' ? 'CATALÀ' : lang === 'eu' ? 'EUSKARA' : 'CASTELLÀ';
   const intakeMode = (diagnosis as any)?.intakeMode === 'clear_need' ? 'clear_need' : 'discovery';
-  
+
   // Dynamic Pricing Context
   const econ = (diagnosis as any)?.economicProfile || { economic_tier: 'medium', institution_type: 'unknown' };
   const pricingContext = `
@@ -436,7 +437,7 @@ export async function generateEducationalProposal(diagnosis: DiagnosisState, lan
   const programmingSummaryNoteEs = intakeMode === 'clear_need'
     ? `\n- En "solution" incluye también una sección "Resumen para programación" (título exactamente así), con 6–10 puntos muy concretos para el equipo de programación: roles, pantallas, flujos, datos, notificaciones, integraciones, permisos y criterios de aceptación.`
     : '';
-  
+
   const prompt = lang === 'ca'
     ? `ETS UN CONSULTOR ESTRATÈGIC SÈNIOR PER A CENTRES EDUCATIUS.
 Objectiu: generar un INFORME FINAL I PRESSUPOST molt minuciós, exhaustiu, elegant i professional.
@@ -648,10 +649,10 @@ Recomendaciones:
         generatedAt: data?.meta?.generatedAt || new Date().toISOString(),
         aiUsage: response.usageMetadata
           ? {
-              promptTokens: response.usageMetadata.promptTokenCount,
-              outputTokens: response.usageMetadata.candidatesTokenCount,
-              totalTokens: response.usageMetadata.totalTokenCount,
-            }
+            promptTokens: response.usageMetadata.promptTokenCount,
+            outputTokens: response.usageMetadata.candidatesTokenCount,
+            totalTokens: response.usageMetadata.totalTokenCount,
+          }
           : undefined,
       },
     } as ProposalData;
@@ -992,13 +993,13 @@ Devuelve EXACTAMENTE este JSON:
     quickWins: Array.isArray(data.quickWins) ? data.quickWins : [],
     sections: Array.isArray(data.sections)
       ? data.sections.map((s: any) => ({
-          category: String(s?.category ?? ''),
-          summary: String(s?.summary ?? ''),
-          evidence: Array.isArray(s?.evidence) ? s.evidence.map((x: any) => String(x)) : [],
-          recommendations: Array.isArray(s?.recommendations) ? s.recommendations.map((x: any) => String(x)) : [],
-          suggestedKpis: Array.isArray(s?.suggestedKpis) ? s.suggestedKpis.map((x: any) => String(x)) : [],
-          quickWins: Array.isArray(s?.quickWins) ? s.quickWins.map((x: any) => String(x)) : [],
-        })).filter((s: any) => s.category || s.summary)
+        category: String(s?.category ?? ''),
+        summary: String(s?.summary ?? ''),
+        evidence: Array.isArray(s?.evidence) ? s.evidence.map((x: any) => String(x)) : [],
+        recommendations: Array.isArray(s?.recommendations) ? s.recommendations.map((x: any) => String(x)) : [],
+        suggestedKpis: Array.isArray(s?.suggestedKpis) ? s.suggestedKpis.map((x: any) => String(x)) : [],
+        quickWins: Array.isArray(s?.quickWins) ? s.quickWins.map((x: any) => String(x)) : [],
+      })).filter((s: any) => s.category || s.summary)
       : [],
     performanceMetrics: Array.isArray(data.performanceMetrics)
       ? data.performanceMetrics.map((x: any) => String(x))

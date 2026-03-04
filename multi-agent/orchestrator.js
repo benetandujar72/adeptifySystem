@@ -16,6 +16,7 @@ const ag11 = require('./agents/ag11_estilo');
 const ag12 = require('./agents/ag12_redactor');
 const ag13 = require('./agents/ag13_change');
 const ag14 = require('./agents/ag14_validador');
+const ag15 = require('./agents/ag15_compliance');
 
 const AGENT_MAP = {
   'AG-01': ag01, 'AG-02': ag02, 'AG-03': ag03, 'AG-04': ag04,
@@ -243,14 +244,17 @@ async function orchestrate(datosCliente, onProgress) {
   emit('AG-08', 'Definint estrategia DevOps...', 3);
   emit('AG-09', 'Avaluant seguretat i compliment RGPD...', 3);
   emit('AG-10', 'Calculant proposta economica i ROI...', 3);
-  const [res08, res09, res10] = await Promise.all([
+  emit('AG-15', 'Generant marc legal i compliance exhaustiu (RGPD, cookies, EU AI Act)...', 3);
+  const [res08, res09, res10, res15] = await Promise.all([
     ag08.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 })),
     ag09.run(inp({ arquitectura: resultados.ag04, integraciones: resultados.ag06 })),
     ag10.run(inp({ arquitectura: resultados.ag04, cronograma: resultados.ag07 })),
+    ag15.run(inp({ datos_cliente: datosCliente, arquitectura: resultados.ag04, integraciones: resultados.ag06, auditoria: resultados.ag03 })),
   ]);
   resultados.ag08 = res08; emit('AG-08', 'DevOps completat', 3);
   resultados.ag09 = res09; emit('AG-09', 'Seguretat i RGPD completats', 3);
   resultados.ag10 = res10; emit('AG-10', 'Proposta economica completada', 3);
+  resultados.ag15 = res15; emit('AG-15', 'Compliance legal i normativa completats', 3);
 
   // FASE 4
   resultados.ag11 = ag11.getStyleRules();
@@ -326,6 +330,7 @@ function buildConsolidado(datosCliente, resultados) {
     ag10_financiero: resultados.ag10,
     ag11_estilo: resultados.ag11,
     ag13_change: resultados.ag13,
+    ag15_compliance: resultados.ag15,
   };
 }
 
