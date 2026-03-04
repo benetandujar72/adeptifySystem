@@ -598,6 +598,39 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
   });
 });
 
+// ─── GEMINI API PROXY ───────────────────────────────────────────────────────
+// En desarrollo, vite.config.ts proxea /api-proxy → googleapis.com.
+// En producción (Cloud Run), este endpoint hace lo mismo inyectando GEMINI_API_KEY.
+app.post('/api-proxy/*', async (req, res) => {
+  const geminiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (!geminiKey) {
+    return res.status(503).json({ error: { message: 'GEMINI_API_KEY not configured on server. Set it as a Cloud Run secret.' } });
+  }
+
+  // Construir la URL de la API de Google (quitar el prefijo /api-proxy)
+  const apiPath = req.path.replace(/^\/api-proxy/, '');
+  const queryString = Object.keys(req.query).length
+    ? '?' + new URLSearchParams(req.query).toString()
+    : '';
+  const targetUrl = `https://generativelanguage.googleapis.com${apiPath}${queryString}`;
+
+  try {
+    const upstream = await fetch(targetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': geminiKey,
+      },
+      body: JSON.stringify(req.body),
+    });
+
+    const data = await upstream.json().catch(() => ({}));
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    console.error('[api-proxy] Error calling Gemini API:', err?.message || err);
+    res.status(502).json({ error: { message: `Proxy error: ${err?.message || 'unknown'}` } });
+  }
+});
 
 // Health check (Cloud Run / load balancers)
 app.get('/healthz', (_req, res) => res.status(200).json({ ok: true }));
