@@ -124,7 +124,7 @@ async function repairTruncatedJson(truncatedText, agentId, inputData, systemProm
     const snippet = truncatedText.substring(0, 10000);
 
     const repairMsg = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 8192,
         temperature: 0,
         system: 'Ets un assistent expert en reparació de JSON. El teu únic treball és completar el JSON truncat. Respon ÚNICAMENT amb el fragment que falta (el que cal afegir al final) per tancar el JSON correctament. Sense cap explicació ni text addicional.',
@@ -163,7 +163,7 @@ async function repairTruncatedJson(truncatedText, agentId, inputData, systemProm
 async function retryStrictPrompt(agentId, inputData, systemPrompt) {
     console.log(`[${agentId}] Reintentant amb prompt estricte...`);
     const message = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 8192,
         temperature: 0,
         system: systemPrompt || 'Responde ÚNICAMENTE con JSON válido y completo, sin markdown ni texto adicional.',

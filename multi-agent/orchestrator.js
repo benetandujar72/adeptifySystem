@@ -25,7 +25,7 @@ const AGENT_MAP = {
 };
 
 // ── Budget control ────────────────────────────────────────────────────────────
-const PRICE_INPUT_PER_M = 3.00;   // USD per million tokens (claude-sonnet-4-6)
+const PRICE_INPUT_PER_M = 3.00;   // USD per million tokens (claude-3-5-sonnet-20241022)
 const PRICE_OUTPUT_PER_M = 15.00;
 const USD_TO_EUR = 0.92;
 const BUDGET_WARN_EUR = 1.50;   // warn user

@@ -15,7 +15,7 @@ const AGENT_ID = 'AG-15';
 async function run(inputData) {
     console.log(`[${AGENT_ID}] Iniciando análisis de compliance legal...`);
     const message = await client.messages.create({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 16384,
         temperature: TEMPERATURE,
         system: SYSTEM_PROMPT,
