@@ -129,10 +129,7 @@ const AutomatedLeadPanel: React.FC = () => {
 
       if (data.company_name) {
         const contactEmail = data.contact_email || `contacto@${new URL(scrapeUrl).hostname.replace('www.', '')}`;
-        const { data: dbLead } = await supabase!
-          .from('leads')
-          .upsert({ tenant_slug: 'default', email: contactEmail, company_name: data.company_name, source: scrapeUrl, ai_needs_analysis: data, status: 'new' }, { onConflict: 'tenant_slug,email' })
-          .select().single();
+        const dbLead = data.dbLead;
 
         setLead({ id: dbLead?.id, name: data.company_name, email: contactEmail, companyDescription: data.recommended_solution || '' });
         setAnalysis(data);

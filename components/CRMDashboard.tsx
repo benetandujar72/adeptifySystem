@@ -15,27 +15,16 @@ const CRMDashboard: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      // 1. Fetch leads
-      const { data: leadsData, error: leadsError } = await supabase
-        .from('leads')
-        .select('*')
-        .order('updated_at', { ascending: false });
+      const resp = await fetch('/api/crm/leads');
+      if (!resp.ok) throw new Error("Error fetching leads from backend");
 
-      if (leadsError) throw leadsError;
+      const { leads: leadsData, interactions: interactionsData } = await resp.json();
 
-      // 2. Fetch interactions for all leads
-      const { data: interactionsData, error: interError } = await supabase
-        .from('lead_interactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (interError) throw interError;
-
-      // 3. Map interactions into leads
-      const enrichedLeads = (leadsData || []).map(lead => {
+      // Map interactions into leads
+      const enrichedLeads = (leadsData || []).map((lead: any) => {
         const leadInteractions = (interactionsData || [])
-          .filter(i => i.lead_id === lead.id)
-          .map(i => ({
+          .filter((i: any) => i.lead_id === lead.id)
+          .map((i: any) => ({
             type: i.interaction_type,
             time: i.created_at,
             note: i.content_summary || i.interaction_type,
@@ -44,7 +33,7 @@ const CRMDashboard: React.FC = () => {
           }));
 
         // Calculate open count from metadata
-        const openCount = leadInteractions.filter(i => i.opened).length;
+        const openCount = leadInteractions.filter((i: any) => i.opened).length;
         const lastContact = leadInteractions.length > 0 ? leadInteractions[0].time : lead.updated_at;
 
         return {

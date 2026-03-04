@@ -363,9 +363,53 @@ TEXTO OBTENIDO DEL SCRAPER INICIAL: ${text}
     console.info(`[automation] Calling Claude for URL analysis...`);
     const result = await callClaude(prompt);
     console.info(`[automation] Strategic Data generated successfully.`);
-    res.json(result);
+
+    let dbLead = null;
+    try {
+      const supabase = getSupabaseAdmin();
+      if (supabase && result.company_name) {
+        const contactEmail = result.contact_email || `contacto@${new URL(url).hostname.replace('www.', '')}`;
+        const { data } = await supabase.from('leads').upsert({
+          tenant_slug: req.body.tenantSlug || 'default',
+          email: contactEmail,
+          company_name: result.company_name,
+          source: url,
+          ai_needs_analysis: result,
+          status: 'new'
+        }, { onConflict: 'tenant_slug,email' }).select().single();
+        dbLead = data;
+      }
+    } catch (dbErr) {
+      console.error("[Capture DB Error]", dbErr);
+    }
+
+    res.json({ ...result, dbLead });
   } catch (e) {
     console.error("[Capture Error Trace]", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/crm/leads', async (req, res) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase admin client not initialized");
+
+    const { data: leadsData, error: leadsError } = await supabase
+      .from('leads')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (leadsError) throw leadsError;
+
+    const { data: interactionsData, error: interError } = await supabase
+      .from('lead_interactions')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (interError) throw interError;
+
+    res.json({ leads: leadsData || [], interactions: interactionsData || [] });
+  } catch (e) {
+    console.error("[CRM Leads Error]", e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -374,14 +418,20 @@ app.post('/api/automation/digital-twin', async (req, res) => {
   try {
     const result = await callClaude("Actua com a motor de Digital Twin educatiu. Genera prediccions d'estrès operatiu (JSON: stress_level, critical_department, predictions[]).");
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error("[DigitalTwin Error Trace]", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/automation/migrate-data', async (req, res) => {
   try {
     const result = await callClaude(`Estructura les dades: ${req.body.rawData} en JSON (mapped_staff[], migration_summary).`);
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error("[MigrateData Error Trace]", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/automation/network-prospecting', async (req, res) => {
@@ -401,7 +451,10 @@ Retorna EXACTAMENT aquest JSON sense markdown:
   try {
     const result = await callClaude(prompt);
     res.json(result);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error("[NetworkProspecting Error Trace]", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/leads/send-proposal', async (req, res) => {
