@@ -199,11 +199,11 @@ const AppContent: React.FC = () => {
                 <button key={l} onClick={() => setLanguage(l as any)} className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === l ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{l.toUpperCase()}</button>
               ))}
             </div>
-            <button onClick={() => window.location.href = '/'} className="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-indigo-600 transition-all text-[9px] font-black uppercase tracking-widest">{t.consultorHeaderCta}</button>
+            <button onClick={() => window.location.href = '/app'} className="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg hover:bg-indigo-600 transition-all text-[9px] font-black uppercase tracking-widest">{t.consultorHeaderCta}</button>
           </div>
         </header>
         <main className="w-full px-6 md:px-12 mt-32 mb-20 max-w-[1600px]">
-          {path === '/consultor/benet' ? <BenetProfilePage onBack={() => window.location.href = '/consultor'} /> : <ConsultorLanding onOpenApp={() => window.location.href = '/'} onOpenDocs={() => window.location.href = '/'} />}
+          {path === '/consultor/benet' ? <BenetProfilePage onBack={() => window.location.href = '/consultor'} /> : <ConsultorLanding onOpenApp={() => window.location.href = '/app'} onOpenDocs={() => window.location.href = '/app'} />}
         </main>
       </div>
     );

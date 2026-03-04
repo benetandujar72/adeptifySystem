@@ -560,6 +560,8 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
 
   let cursor = 0;
   let heartbeatCount = 0;
+  let jobNotFoundRetries = 0;
+  const JOB_NOT_FOUND_MAX_RETRIES = 30; // 30 × 500ms = 15s de marge per Cloud Run multi-instancia
 
   // Heartbeat cada 20s para prevenir QUIC_NETWORK_IDLE_TIMEOUT en Cloud Run
   const heartbeat = setInterval(() => {
@@ -571,12 +573,19 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
   const interval = setInterval(() => {
     const job = reportJobs.get(jobId);
     if (!job) {
-      res.write(`event: error\ndata: ${JSON.stringify({ message: 'Job no trobat' })}\n\n`);
-      clearInterval(interval);
-      clearInterval(heartbeat);
-      res.end();
+      jobNotFoundRetries++;
+      if (jobNotFoundRetries >= JOB_NOT_FOUND_MAX_RETRIES) {
+        res.write(`event: error\ndata: ${JSON.stringify({ message: 'Job no trobat' })}\n\n`);
+        clearInterval(interval);
+        clearInterval(heartbeat);
+        res.end();
+      }
+      // Seguim esperant — pot ser que el job estigui a una altra instància de Cloud Run
       return;
     }
+
+    // Job trobat — reiniciem el comptador de retries
+    jobNotFoundRetries = 0;
 
     // Drain new events
     while (cursor < job.events.length) {
@@ -590,7 +599,7 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
       clearInterval(heartbeat);
       res.end();
     }
-  }, 300);
+  }, 500);
 
   req.on('close', () => {
     clearInterval(interval);

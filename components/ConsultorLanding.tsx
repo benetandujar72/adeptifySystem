@@ -12,6 +12,7 @@ type Props = {
 const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'services' | 'cases' | 'methodology'>('services');
+  const [activeModal, setActiveModal] = useState<'privacy' | 'cookies' | 'legal' | null>(null);
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactMessage, setContactMessage] = useState('');
@@ -337,6 +338,128 @@ const ConsultorLanding: React.FC<Props> = ({ onOpenApp, onOpenDocs }) => {
           </div>
         </div>
       </section>
+      {/* FOOTER LEGAL */}
+      <footer className="w-full border-t border-slate-100 pt-12 pb-8 mt-8">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
+              <div className="w-2.5 h-2.5 bg-indigo-500 rounded-sm" />
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">Adeptify Systems SL</span>
+          </div>
+          <p className="text-[10px] text-slate-400 font-medium text-center">
+            © {new Date().getFullYear()} Adeptify Systems SL — Barcelona, España. Tots els drets reservats.
+          </p>
+          <div className="flex items-center gap-6">
+            {(['privacy', 'cookies', 'legal'] as const).map((modal) => {
+              const labels = { privacy: 'Política de Privacitat', cookies: 'Política de Cookies', legal: 'Avís Legal' };
+              return (
+                <button
+                  key={modal}
+                  onClick={() => setActiveModal(modal)}
+                  className="text-[10px] font-semibold text-slate-400 hover:text-blue-600 transition-colors underline-offset-2 hover:underline"
+                >
+                  {labels[modal]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </footer>
+
+      {/* MODALS LEGALS */}
+      {activeModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setActiveModal(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white border-b border-slate-100 px-8 py-6 flex items-center justify-between rounded-t-3xl">
+              <h2 className="text-xl font-black text-slate-900">
+                {activeModal === 'privacy' && 'Política de Privacitat'}
+                {activeModal === 'cookies' && 'Política de Cookies'}
+                {activeModal === 'legal' && 'Avís Legal i Condicions d\'Ús'}
+              </h2>
+              <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="px-8 py-8 prose prose-slate max-w-none text-sm leading-relaxed">
+              {activeModal === 'privacy' && (
+                <>
+                  <p className="text-xs text-slate-400 font-medium mb-6">Última actualització: {new Date().toLocaleDateString('ca-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">1. Responsable del Tractament</h3>
+                  <p className="text-slate-600">Adeptify Systems SL (en endavant, <strong>Adeptify</strong>), amb domicili social a Barcelona, Espanya. Podeu contactar-nos a: <a href="mailto:info@adeptify.es" className="text-blue-600 hover:underline">info@adeptify.es</a></p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">2. Finalitat i Base Legal del Tractament</h3>
+                  <p className="text-slate-600">Tractem les vostres dades per a les finalitats següents:</p>
+                  <ul className="list-disc pl-6 text-slate-600 space-y-2 mt-3">
+                    <li><strong>Gestió de sol·licituds de contacte</strong> — Base legal: Art. 6.1.b RGPD (execució de mesures precontractuals) i Art. 6.1.a (consentiment).</li>
+                    <li><strong>Prestació del servei Adeptify Consultor</strong> — Base legal: Art. 6.1.b RGPD (execució del contracte).</li>
+                    <li><strong>Enviament de comunicacions comercials</strong> (amb consentiment previ) — Base legal: Art. 6.1.a RGPD. Podeu revocar el consentiment en qualsevol moment.</li>
+                    <li><strong>Compliment d'obligacions legals</strong> — Base legal: Art. 6.1.c RGPD.</li>
+                  </ul>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">3. Categories de Dades</h3>
+                  <p className="text-slate-600">Dades identificatives (nom, cognoms), dades de contacte (correu electrònic, telèfon), dades professionals (empresa, càrrec, sector) i dades de navegació (IP, cookies tècniques). <strong>No tractem dades especialment protegides.</strong></p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">4. Termini de Conservació</h3>
+                  <p className="text-slate-600">Les dades es conserven durant la vigència de la relació contractual i, posteriorment, durant els terminis legalment exigits (màxim 10 anys per a obligacions fiscals i laborals, 5 anys per a obligacions contractuals).</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">5. Destinataris i Transferències Internacionals</h3>
+                  <p className="text-slate-600">Les dades no es cediran a tercers, excepte per obligació legal o als proveïdors de serveis necessaris per a la prestació del servei (hosting, plataformes cloud), que actuen com a encarregats del tractament amb les garanties adequades (SCCs 2021 si aplicable).</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">6. Drets dels Interessats (ARCOLIPO)</h3>
+                  <p className="text-slate-600">Podeu exercir els drets d'<strong>Accés, Rectificació, Cancel·lació/Supressió, Oposició, Limitació, Portabilitat i dret a No ser objecte de decisions automatitzades</strong> enviant una sol·licitud a <a href="mailto:privacitat@adeptify.es" className="text-blue-600 hover:underline">privacitat@adeptify.es</a> amb còpia del vostre document d'identitat. Termini de resposta: 1 mes (Art. 12 RGPD).</p>
+                  <p className="text-slate-600 mt-3">Si considereu que el tractament vulnera la normativa, teniu dret a presentar una reclamació davant l'<strong>Agència Espanyola de Protecció de Dades (AEPD)</strong> a <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.aepd.es</a>.</p>
+                </>
+              )}
+              {activeModal === 'cookies' && (
+                <>
+                  <p className="text-xs text-slate-400 font-medium mb-6">Conforme a la Llei 34/2002 (LSSI-CE, Art. 22.2), el RGPD (UE 2016/679) i la Guia AEPD de Cookies 2023.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">Què són les cookies?</h3>
+                  <p className="text-slate-600">Les cookies són fitxers que s'emmagatzemen al vostre dispositiu quan visiteu un lloc web. Permeten que el lloc recordi les vostres preferències i millori l'experiència d'ús.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">Tipus de cookies que utilitzem</h3>
+                  <div className="space-y-4 mt-3">
+                    <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
+                      <p className="font-black text-green-800 text-sm mb-1">✅ Cookies Tècniques / Estrictament Necessàries</p>
+                      <p className="text-green-700 text-sm"><strong>Consentiment: No requerit.</strong> Essencials per al funcionament del lloc (sessió, seguretat CSRF, autenticació). Sense elles el servei no funciona.</p>
+                      <p className="text-green-600 text-xs mt-2">Exemples: <code>session_id</code>, <code>csrf_token</code>, <code>sb-auth-token</code></p>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-100 rounded-2xl p-5">
+                      <p className="font-black text-yellow-800 text-sm mb-1">📊 Cookies Analítiques</p>
+                      <p className="text-yellow-700 text-sm"><strong>Consentiment: Requerit.</strong> Permeten mesurar i analitzar l'ús del lloc per millorar-ne el rendiment. Les dades són agregades i anònimes.</p>
+                      <p className="text-yellow-600 text-xs mt-2">Exemples: <code>_ga</code> (Google Analytics), <code>_plausible</code></p>
+                    </div>
+                    <div className="bg-red-50 border border-red-100 rounded-2xl p-5">
+                      <p className="font-black text-red-800 text-sm mb-1">🎯 Cookies de Màrqueting / Publicitat</p>
+                      <p className="text-red-700 text-sm"><strong>Consentiment: Requerit.</strong> Actualmente no s'utilitzen cookies de tercers amb finalitats publicitàries al nostre lloc.</p>
+                    </div>
+                  </div>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">Gestió i Revocació del Consentiment</h3>
+                  <p className="text-slate-600">Podeu gestionar les cookies des del banner de consentiment que apareix en la primera visita. Per revocar el consentiment en qualsevol moment, podeu eliminar les cookies des de la configuració del vostre navegador o contactar-nos a <a href="mailto:privacitat@adeptify.es" className="text-blue-600 hover:underline">privacitat@adeptify.es</a>.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">Com desactivar les cookies al navegador</h3>
+                  <ul className="list-disc pl-6 text-slate-600 space-y-1 text-sm">
+                    <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Chrome</a></li>
+                    <li><a href="https://support.mozilla.org/ca/kb/gestio-de-les-galetes" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Mozilla Firefox</a></li>
+                    <li><a href="https://support.apple.com/ca-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Safari</a></li>
+                    <li><a href="https://support.microsoft.com/ca-es/windows/eliminar-i-administrar-les-galetes" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Microsoft Edge</a></li>
+                  </ul>
+                </>
+              )}
+              {activeModal === 'legal' && (
+                <>
+                  <p className="text-xs text-slate-400 font-medium mb-6">Conforme a la Llei 34/2002 (LSSI-CE), el Codi Civil espanyol i la normativa de protecció del consumidor.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">1. Identificació del Titular</h3>
+                  <p className="text-slate-600"><strong>Raó Social:</strong> Adeptify Systems SL<br /><strong>CIF:</strong> En tràmit<br /><strong>Domicili Social:</strong> Barcelona, Espanya<br /><strong>Correu electrònic:</strong> <a href="mailto:info@adeptify.es" className="text-blue-600 hover:underline">info@adeptify.es</a><br /><strong>Web:</strong> consultor.adeptify.es</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">2. Objecte i Àmbit d'Aplicació</h3>
+                  <p className="text-slate-600">El present avís legal regula l'ús del lloc web <strong>consultor.adeptify.es</strong> i dels serveis d'assessoria tecnològica i generació de propostes amb intel·ligència artificial prestats per Adeptify.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">3. Propietat Intel·lectual</h3>
+                  <p className="text-slate-600">Tots els continguts d'aquest lloc web (textos, imatges, logotips, disseny, codi font, informes generats per IA) són propietat d'Adeptify Systems SL o disposen de la llicència corresponent. Queda prohibida la reproducció, distribució o comunicació pública sense autorització expressa per escrit.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">4. Exclusió de Garanties i Responsabilitat</h3>
+                  <p className="text-slate-600">Els informes i propostes generats per la plataforma tenen caràcter orientatiu i no constitueixen assessoria legal, fiscal o financera. Adeptify no es responsabilitza de les decisions preses pels usuaris basant-se únicament en els continguts generats per intel·ligència artificial.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">5. Llei Aplicable i Jurisdicció</h3>
+                  <p className="text-slate-600">Les presents condicions es regeixen pel dret espanyol. Per a la resolució de qualsevol conflicte, les parts se sotmeten als jutjats i tribunals de <strong>Barcelona</strong>, amb renúncia expressa a qualsevol altre fur que pugui correspondre'ls.</p>
+                  <h3 className="font-black text-slate-900 mt-6 mb-3">6. Intel·ligència Artificial i EU AI Act</h3>
+                  <p className="text-slate-600">La plataforma utilitza sistemes d'IA (Anthropic Claude, Google Gemini) per generar contingut. Conforme al Reglament (UE) 2024/1689 (EU AI Act), els sistemes emprats es classifiquen com a <strong>risc limitat</strong>. Els usuaris sempre tindran la capacitat de revisar i corregir els outputs generats per la IA. No es prenen decisions automatitzades amb efectes jurídics rellevants sense intervenció humana (Art. 22 RGPD).</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
