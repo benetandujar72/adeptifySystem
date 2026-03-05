@@ -51,7 +51,7 @@ const getSupabaseAdmin = () => {
 };
 
 // --- CLAUDE CALLER (mismo modelo que agentes multi-agent) ---
-async function callClaude(prompt, modelId = "claude-3-5-sonnet-20241022") {
+async function callClaude(prompt, modelId = "claude-sonnet-4-5-20250514") {
   const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim();
 
   // Si no hay clave Anthropic, usar Gemini como fallback
@@ -134,9 +134,8 @@ async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
   const modelsToTry = [
     modelId,
     "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-pro",
-    "gemini-1.5-flash"
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
   ].filter((v, i, a) => a.indexOf(v) === i); // deduplica
   let lastError = null;
 
@@ -148,8 +147,7 @@ async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          // Evitamos tools por defecto para maximizar compatibilidad y velocidad
-          generationConfig: { temperature: 0.3 }
+          generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
         }),
         signal: AbortSignal.timeout(20000)
       });

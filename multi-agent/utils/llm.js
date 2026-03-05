@@ -24,7 +24,7 @@ async function callLLM(systemPrompt, messages, agentId, temperature, updateToken
         try {
             const client = new Anthropic({ apiKey: anthropicKey, timeout: 60000 });
             const message = await client.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
+                model: 'claude-sonnet-4-5-20250514',
                 max_tokens: maxTokens,
                 temperature: temperature,
                 system: systemPrompt,
@@ -51,9 +51,8 @@ async function callLLM(systemPrompt, messages, agentId, temperature, updateToken
 
     const modelsToTry = [
         "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-pro",
-        "gemini-1.5-flash"
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
     ];
 
     // Convertir messages al formato de Gemini
