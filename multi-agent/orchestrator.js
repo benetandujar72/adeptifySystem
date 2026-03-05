@@ -322,7 +322,8 @@ async function orchestrate(datosCliente, onProgress) {
     'utf-8'
   );
 
-  return resultados.ag12;
+  // Include AG-11 visuals so generateDocxBuffer can embed images in the DOCX
+  return { ...resultados.ag12, ag11_estilo: resultados.ag11 };
 }
 
 function buildConsolidado(datosCliente, resultados) {

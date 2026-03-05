@@ -22,7 +22,7 @@ async function callLLM(systemPrompt, messages, agentId, temperature, updateToken
     const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim();
     if (anthropicKey) {
         try {
-            const client = new Anthropic({ apiKey: anthropicKey });
+            const client = new Anthropic({ apiKey: anthropicKey, timeout: 60000 });
             const message = await client.messages.create({
                 model: 'claude-3-5-sonnet-20241022',
                 max_tokens: maxTokens,

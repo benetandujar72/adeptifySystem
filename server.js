@@ -536,8 +536,12 @@ async function runFullReportJob(jobId, datosCliente) {
     const rawJsonBase64 = Buffer.from(JSON.stringify(doc, null, 2), 'utf-8').toString('base64');
 
     let docxBase64 = null;
+    const DOCX_TIMEOUT = 30000; // 30 seconds max for DOCX generation
     try {
-      const buffer = await generateDocxBuffer(doc, datosCliente);
+      const buffer = await Promise.race([
+        generateDocxBuffer(doc, datosCliente),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DOCX generation timeout (30s)')), DOCX_TIMEOUT))
+      ]);
       docxBase64 = buffer.toString('base64');
       console.log(`[MultiAgent] DOCX OK — ${Math.round(buffer.length / 1024)} KB`);
     } catch (docxErr) {

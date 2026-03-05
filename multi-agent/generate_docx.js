@@ -243,7 +243,7 @@ async function buildCoverSection(doc_data, visuales = {}) {
   if (!imageParagraph) {
     try {
       const imageUrl = `https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&h=300&auto=format&fit=crop`;
-      const response = await fetch(imageUrl);
+      const response = await fetch(imageUrl, { signal: AbortSignal.timeout(10000) });
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       imageParagraph = new Paragraph({
