@@ -613,6 +613,19 @@ async function generateDocx(consolidadoPath) {
 
   const visuales = doc_data.ag11_estilo?.visuales || raw.ag11_estilo?.visuales || {};
 
+  // Fallback: embed the real Adeptify logo if AG-11 didn't produce one
+  if (!visuales.logo_base64) {
+    try {
+      const logoPath = path.join(__dirname, 'assets', 'logo_adeptify.png');
+      if (fs.existsSync(logoPath)) {
+        visuales.logo_base64 = fs.readFileSync(logoPath).toString('base64');
+        console.log('[DOCX] Using bundled Adeptify logo (fallback)');
+      }
+    } catch (e) {
+      console.warn('[DOCX] Could not load bundled logo:', e.message);
+    }
+  }
+
   const cover = await buildCoverSection({ ...doc_data, datos_cliente: datosCliente }, visuales);
 
   const mainChildren = [
@@ -717,6 +730,19 @@ async function generateDocxBuffer(docData, datosCliente) {
   console.log(`[DOCX] Client: ${clientName} | Sections found: ${present.length}/13 (${present.join(', ')})`);
 
   const visuales = doc_data.ag11_estilo?.visuales || docData.ag11_estilo?.visuales || {};
+
+  // Fallback: embed the real Adeptify logo if AG-11 didn't produce one
+  if (!visuales.logo_base64) {
+    try {
+      const logoPath = path.join(__dirname, 'assets', 'logo_adeptify.png');
+      if (fs.existsSync(logoPath)) {
+        visuales.logo_base64 = fs.readFileSync(logoPath).toString('base64');
+        console.log('[DOCX] Using bundled Adeptify logo (fallback)');
+      }
+    } catch (e) {
+      console.warn('[DOCX] Could not load bundled logo:', e.message);
+    }
+  }
 
   const cover = await buildCoverSection({ ...doc_data, datos_cliente: clientData }, visuales);
 
