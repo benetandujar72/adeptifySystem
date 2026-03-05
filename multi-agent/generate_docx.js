@@ -158,16 +158,37 @@ function makeTable(rows, colWidths) {
 
 // ─── Header y Footer ──────────────────────────────────────────────────────────
 
-function createHeader(clientName) {
+function createHeader(clientName, logoBase64) {
+  const children = [];
+
+  // Logo a la izquierda + texto a la derecha
+  if (logoBase64) {
+    try {
+      children.push(
+        new ImageRun({
+          type: 'png',
+          data: Buffer.from(logoBase64, 'base64'),
+          transformation: { width: 90, height: 30 },
+          altText: { title: 'Adeptify Logo', description: 'Logo de Adeptify Systems', name: 'adeptify-logo' },
+        })
+      );
+      children.push(new TextRun({ text: '   ', font: T.header_footer.font, size: T.header_footer.size }));
+    } catch (e) {
+      console.warn('[DOCX] No se pudo insertar logo en header:', e.message);
+    }
+  }
+
+  children.push(
+    new TextRun({ text: 'Adeptify Systems  |  ', font: T.header_footer.font, size: T.header_footer.size, bold: true, color: C.meteorite_dark }),
+    new TextRun({ text: clientName || 'Proposta Digital', font: T.header_footer.font, size: T.header_footer.size, color: C.texto_secundario }),
+  );
+
   return new Header({
     children: [
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         border: { bottom: { style: BorderStyle.SINGLE, size: 2, color: C.primary_purple } },
-        children: [
-          new TextRun({ text: 'Adeptify Systems  |  ', font: T.header_footer.font, size: T.header_footer.size, bold: true, color: C.meteorite_dark }),
-          new TextRun({ text: clientName || 'Proposta Digital', font: T.header_footer.font, size: T.header_footer.size, color: C.texto_secundario }),
-        ],
+        children,
       }),
     ],
   });
@@ -193,34 +214,73 @@ function createFooter() {
 
 // ─── Portada (sin header/footer) ──────────────────────────────────────────────
 
-async function buildCoverSection(doc_data) {
+async function buildCoverSection(doc_data, visuales = {}) {
   const meta = doc_data.metadata || {};
   const cliente = doc_data.datos_cliente?.cliente || {};
 
+  // Usar portada generada por PIL o fallback a Unsplash
   let imageParagraph = null;
-  try {
-    const imageUrl = `https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&h=300&auto=format&fit=crop`;
-    const response = await fetch(imageUrl);
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+  if (visuales.portada_base64) {
+    try {
+      imageParagraph = new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: Buffer.from(visuales.portada_base64, 'base64'),
+            transformation: { width: 550, height: 280 },
+            altText: { title: 'Portada', description: 'Portada del informe Adeptify', name: 'portada' },
+          }),
+        ],
+        spacing: { after: 400 },
+      });
+    } catch (err) {
+      console.warn('[DOCX] Error insertant portada generada:', err.message);
+    }
+  }
 
-    imageParagraph = new Paragraph({
-      alignment: AlignmentType.CENTER,
-      children: [
-        new ImageRun({
-          data: buffer,
-          transformation: { width: 500, height: 250 }
-        })
-      ],
-      spacing: { after: 400 }
-    });
-  } catch (err) {
-    console.warn("[DOCX] No s'ha pogut carregar la imatge visual:", err.message);
-    imageParagraph = new Paragraph({ children: [], spacing: { after: 1200 } });
+  // Fallback: Unsplash (solo si no hay portada generada)
+  if (!imageParagraph) {
+    try {
+      const imageUrl = `https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&h=300&auto=format&fit=crop`;
+      const response = await fetch(imageUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      imageParagraph = new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ type: 'jpg', data: buffer, transformation: { width: 500, height: 250 }, altText: { title: 'Cover', description: 'Imagen de portada', name: 'cover-unsplash' } })],
+        spacing: { after: 400 },
+      });
+    } catch (err) {
+      console.warn("[DOCX] No s'ha pogut carregar la imatge visual:", err.message);
+      imageParagraph = new Paragraph({ children: [], spacing: { after: 1200 } });
+    }
+  }
+
+  // Logo en la portada (antes del título)
+  let logoParagraph = null;
+  if (visuales.logo_base64) {
+    try {
+      logoParagraph = new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          new ImageRun({
+            type: 'png',
+            data: Buffer.from(visuales.logo_base64, 'base64'),
+            transformation: { width: 180, height: 60 },
+            altText: { title: 'Logo Adeptify', description: 'Logo de Adeptify Systems', name: 'logo-portada' },
+          }),
+        ],
+        spacing: { after: 300 },
+      });
+    } catch (err) {
+      console.warn('[DOCX] Error insertant logo en portada:', err.message);
+    }
   }
 
   return [
-    new Paragraph({ children: [], spacing: { after: 1200 } }),
+    new Paragraph({ children: [], spacing: { after: 800 } }),
+    logoParagraph || new Paragraph({ children: [], spacing: { after: 200 } }),
     imageParagraph,
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -338,7 +398,7 @@ function renderSection3(s3, visuals = {}) {
     try {
       items.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new ImageRun({ data: Buffer.from(visuals.mockup_base64, 'base64'), transformation: { width: 550, height: 350 } })],
+        children: [new ImageRun({ type: 'png', data: Buffer.from(visuals.mockup_base64, 'base64'), transformation: { width: 550, height: 350 }, altText: { title: 'Mockup', description: 'Mockup de la interfaz propuesta', name: 'mockup' } })],
         spacing: { after: 200 }
       }), spacer());
     } catch (e) {
@@ -367,7 +427,7 @@ function renderSection3(s3, visuals = {}) {
     try {
       items.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new ImageRun({ data: Buffer.from(visuals.diagrama_base64, 'base64'), transformation: { width: 550, height: 350 } })],
+        children: [new ImageRun({ type: 'png', data: Buffer.from(visuals.diagrama_base64, 'base64'), transformation: { width: 550, height: 350 }, altText: { title: 'Arquitectura', description: 'Diagrama de arquitectura de la solución', name: 'arquitectura' } })],
         spacing: { after: 200 }
       }), spacer());
     } catch (e) {
@@ -375,10 +435,39 @@ function renderSection3(s3, visuals = {}) {
     }
   }
 
+  // Workflow infographic
+  if (visuals.workflow_base64) {
+    items.push(heading2('3.3.1 Flux de Treball de la Solució'));
+    try {
+      items.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ type: 'png', data: Buffer.from(visuals.workflow_base64, 'base64'), transformation: { width: 550, height: 300 }, altText: { title: 'Workflow', description: 'Flujo de trabajo de la automatización', name: 'workflow' } })],
+        spacing: { after: 200 },
+      }), spacer());
+    } catch (e) {
+      console.warn('[DOCX] Failed to embed workflow infographic:', e.message);
+    }
+  }
+
   if (s3.integraciones_clave && s3.integraciones_clave.length) {
     const integRows = [['Des de', 'Cap a', 'Descripció'], ...s3.integraciones_clave.map(i => [safeText(i.de), safeText(i.a), safeText(i.descripcion)])];
     items.push(heading2('3.4 Integracions Clau'), makeTable(integRows, [2200, 2200, 4626]), spacer());
   }
+
+  // Integration map visual
+  if (visuals.integraciones_base64) {
+    items.push(heading3('Mapa d\'Integracions'));
+    try {
+      items.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ type: 'png', data: Buffer.from(visuals.integraciones_base64, 'base64'), transformation: { width: 550, height: 350 }, altText: { title: 'Integraciones', description: 'Mapa de integraciones del sistema', name: 'integraciones' } })],
+        spacing: { after: 200 },
+      }), spacer());
+    } catch (e) {
+      console.warn('[DOCX] Failed to embed integration map:', e.message);
+    }
+  }
+
   if (s3.diferenciadores && s3.diferenciadores.length) {
     items.push(heading2('3.5 Diferenciadors'));
     for (const d of s3.diferenciadores) items.push(bullet(safeText(d)));
@@ -405,7 +494,7 @@ function renderSection5(s5, visuals = {}) {
     try {
       items.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        children: [new ImageRun({ data: Buffer.from(visuals.cronograma_base64, 'base64'), transformation: { width: 550, height: 250 } })],
+        children: [new ImageRun({ type: 'png', data: Buffer.from(visuals.cronograma_base64, 'base64'), transformation: { width: 550, height: 250 }, altText: { title: 'Cronograma', description: 'Cronograma visual del proyecto', name: 'cronograma' } })],
         spacing: { after: 200 }
       }), spacer());
     } catch (e) {
@@ -522,9 +611,9 @@ async function generateDocx(consolidadoPath) {
   const datosCliente = raw.datos_cliente || doc_data.datos_cliente || {};
   const clientName = datosCliente?.cliente?.nombre || doc_data.metadata?.cliente || 'Client';
 
-  const cover = buildCoverSection({ ...doc_data, datos_cliente: datosCliente });
-
   const visuales = doc_data.ag11_estilo?.visuales || raw.ag11_estilo?.visuales || {};
+
+  const cover = await buildCoverSection({ ...doc_data, datos_cliente: datosCliente }, visuales);
 
   const mainChildren = [
     ...renderSection1(doc_data.s1_resumen_ejecutivo),
@@ -554,7 +643,6 @@ async function generateDocx(consolidadoPath) {
       },
     },
     sections: [
-      // ── Portada (sin header/footer) ─────────────────────────────────────────
       {
         properties: {
           page: {
@@ -565,7 +653,6 @@ async function generateDocx(consolidadoPath) {
         },
         children: cover,
       },
-      // ── Contenido principal (con header/footer) ─────────────────────────────
       {
         properties: {
           page: {
@@ -573,7 +660,7 @@ async function generateDocx(consolidadoPath) {
             margin: { top: P.margin_top + 400, bottom: P.margin_bottom + 400, left: P.margin_left, right: P.margin_right },
           },
         },
-        headers: { default: createHeader(clientName) },
+        headers: { default: createHeader(clientName, visuales.logo_base64) },
         footers: { default: createFooter() },
         children: mainChildren,
       },
@@ -629,7 +716,9 @@ async function generateDocxBuffer(docData, datosCliente) {
   const present = sectionKeys.filter(k => doc_data[k] && typeof doc_data[k] === 'object');
   console.log(`[DOCX] Client: ${clientName} | Sections found: ${present.length}/13 (${present.join(', ')})`);
 
-  const cover = await buildCoverSection({ ...doc_data, datos_cliente: clientData });
+  const visuales = doc_data.ag11_estilo?.visuales || docData.ag11_estilo?.visuales || {};
+
+  const cover = await buildCoverSection({ ...doc_data, datos_cliente: clientData }, visuales);
 
   // Wrap each section render in try-catch to avoid one bad section killing the whole document
   const tryRender = (fn, data, sectionName) => {
@@ -639,8 +728,6 @@ async function generateDocxBuffer(docData, datosCliente) {
       return [heading2(`${sectionName} (error de renderització)`), body('Contingut no disponible.'), spacer()];
     }
   };
-
-  const visuales = doc_data.ag11_estilo?.visuales || docData.ag11_estilo?.visuales || {};
 
   const mainChildren = [
     ...tryRender((d) => renderSection1(d), doc_data.s1_resumen_ejecutivo, 'S1'),
@@ -685,7 +772,7 @@ async function generateDocxBuffer(docData, datosCliente) {
         properties: {
           page: { size: { width: P.width, height: P.height }, margin: { top: P.margin_top + 400, bottom: P.margin_bottom + 400, left: P.margin_left, right: P.margin_right } },
         },
-        headers: { default: createHeader(clientName) },
+        headers: { default: createHeader(clientName, visuales.logo_base64) },
         footers: { default: createFooter() },
         children: mainChildren,
       },
