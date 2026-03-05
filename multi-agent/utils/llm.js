@@ -24,7 +24,7 @@ async function callLLM(systemPrompt, messages, agentId, temperature, updateToken
         try {
             const client = new Anthropic({ apiKey: anthropicKey, timeout: 60000 });
             const message = await client.messages.create({
-                model: 'claude-sonnet-4-5-20250514',
+                model: 'claude-sonnet-4-6',
                 max_tokens: maxTokens,
                 temperature: temperature,
                 system: systemPrompt,

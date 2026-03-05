@@ -332,7 +332,13 @@ def generate_mockup_dashboard(features=None, client_name="", width=800, height=5
 
 def generate_architecture_diagram(components=None, flow="", width=800, height=500):
     """Diagrama de arquitectura técnica."""
-    if not components:
+    # Normalize: if dict, convert values to list of dicts
+    if isinstance(components, dict):
+        components = [
+            {"nombre": k, "tecnologia": str(v) if isinstance(v, str) else (v.get("tecnologia", "") if isinstance(v, dict) else str(v))}
+            for k, v in components.items()
+        ]
+    if not components or not isinstance(components, list):
         components = [
             {"nombre": "Frontend", "tecnologia": "React"},
             {"nombre": "API Gateway", "tecnologia": "Node.js"},

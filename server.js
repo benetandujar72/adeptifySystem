@@ -51,7 +51,7 @@ const getSupabaseAdmin = () => {
 };
 
 // --- CLAUDE CALLER (mismo modelo que agentes multi-agent) ---
-async function callClaude(prompt, modelId = "claude-sonnet-4-5-20250514") {
+async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
   const anthropicKey = (process.env.ANTHROPIC_API_KEY || '').trim();
 
   // Si no hay clave Anthropic, usar Gemini como fallback
@@ -547,10 +547,10 @@ async function runFullReportJob(jobId, datosCliente) {
       push('progress', { agent: 'DOCX', message: `Advertència DOCX: ${docxErr.message} — el JSON es pot descarregar igualment`, fase: 5 });
     }
 
-    job.status = 'done';
+    // Store result immediately so download endpoints work
     job.result = { doc, docxBase64, rawJsonBase64, clientName };
 
-    // Send email with the generated report
+    // Send email with the generated report (non-blocking for SSE)
     try {
       const host = process.env.SMTP_HOST;
       const emailTo = datosCliente?.cliente?.email || process.env.CONTACT_TO;
@@ -579,9 +579,11 @@ async function runFullReportJob(jobId, datosCliente) {
       push('progress', { agent: 'ORQUESTADOR', message: `No s'ha pogut enviar per email: ${emailErr.message}`, fase: 5 });
     }
 
-    // Don't send 'doc' in complete event — it's large and can overload SSE
-    // Només enviem success, els fixters s'agafaran d'un altre endpoint
+    // IMPORTANT: Push 'complete' and set status='done' AFTER email,
+    // otherwise the SSE drainer sees status='done' and closes the connection
+    // before the frontend receives the 'complete' event.
     push('complete', { clientName, success: true });
+    job.status = 'done';
   } catch (e) {
     console.error('[MultiAgent] Error:', e.message);
     if (reportJobs.get(jobId)) {
