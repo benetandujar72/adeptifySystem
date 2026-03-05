@@ -16,6 +16,13 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install Python and Pillow dependencies for AG-11 image generation
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-pillow \
+    ttf-dejavu
+
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 

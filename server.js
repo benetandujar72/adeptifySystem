@@ -60,64 +60,68 @@ async function callClaude(prompt, modelId = "claude-3-5-sonnet-20241022") {
     return callGeminiFallback(prompt);
   }
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': anthropicKey,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: modelId,
-      max_tokens: 8192,
-      messages: [{ role: 'user', content: prompt }]
-    })
-  });
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: modelId,
+        max_tokens: 8192,
+        messages: [{ role: 'user', content: prompt }]
+      }),
+      signal: AbortSignal.timeout(25000)
+    });
 
-  if (!response.ok) {
-    const errBody = await response.text();
-    console.error(`[Claude API Error] ${response.status}:`, errBody);
-    // Si error 400/404 (model incorrecte) o 401 (clau invàlida), fallback a Gemini
-    if (response.status === 400 || response.status === 404 || response.status === 401) {
-      console.warn(`[Claude] Fallback a Gemini per error ${response.status}`);
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error(`[Claude API Error] ${response.status}:`, errBody);
+      if (response.status === 400 || response.status === 404 || response.status === 401) {
+        console.warn(`[Claude] Fallback a Gemini per error ${response.status}`);
+        return callGeminiFallback(prompt);
+      }
+      throw new Error(`Claude API error ${response.status}: ${errBody.substring(0, 200)}`);
+    }
+
+    const data = await response.json();
+    const rawText = data.content?.find(c => c.type === 'text')?.text || '';
+    if (!rawText.trim()) throw new Error("Claude returned empty text");
+
+    return extractJSON(rawText);
+  } catch (err) {
+    if (err.name === 'TimeoutError') {
+      console.warn("[Claude] Timeout reached, falling back to Gemini.");
       return callGeminiFallback(prompt);
     }
-    throw new Error(`Claude API error ${response.status}: ${errBody.substring(0, 200)}`);
+    throw err;
   }
+}
 
-  const data = await response.json();
-  if (!data.content || data.content.length === 0) {
-    throw new Error("Claude returned no content");
-  }
+/**
+ * Helper robusto para extraer JSON de una cadena de texto.
+ */
+function extractJSON(text) {
+  let cleanText = text.trim();
+  const firstBrace = cleanText.indexOf('{');
+  const firstBracket = cleanText.indexOf('[');
+  let start = -1;
+  if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
+  else if (firstBrace !== -1) start = firstBrace;
+  else if (firstBracket !== -1) start = firstBracket;
 
-  const rawText = data.content.find(c => c.type === 'text')?.text || '';
-  if (!rawText.trim()) throw new Error("Claude returned empty text");
-
-  let cleanText = rawText.trim();
-  if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
-  else if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
-  if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
-  cleanText = cleanText.trim();
-
-  // Extraer el JSON si hay texto alrededor
-  if (!cleanText.startsWith("{") && !cleanText.startsWith("[")) {
-    const firstBrace = cleanText.indexOf('{');
-    const firstBracket = cleanText.indexOf('[');
-    let start = -1;
-    if (firstBrace !== -1 && firstBracket !== -1) start = Math.min(firstBrace, firstBracket);
-    else if (firstBrace !== -1) start = firstBrace;
-    else if (firstBracket !== -1) start = firstBracket;
-    if (start !== -1) {
-      const end = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
-      if (end !== -1) cleanText = cleanText.substring(start, end + 1);
-    }
+  if (start !== -1) {
+    const end = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
+    if (end !== -1) cleanText = cleanText.substring(start, end + 1);
   }
 
   try {
     return JSON.parse(cleanText);
   } catch (err) {
-    console.error("[Claude JSON Parse Error] raw:", rawText.substring(0, 500));
-    throw new Error("Claude returned invalid JSON structure.");
+    console.error("[JSON Parse Error] Raw text:", text.substring(0, 1000));
+    throw new Error("Invalid JSON structure returned by LLM.");
   }
 }
 
@@ -144,13 +148,18 @@ async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }],
+          // Evitamos tools por defecto para maximizar compatibilidad y velocidad
           generationConfig: { temperature: 0.3 }
-        })
+        }),
+        signal: AbortSignal.timeout(20000)
       });
 
       const data = await response.json();
-      if (data.error) { lastError = new Error(data.error.message); continue; }
+      if (data.error) {
+        console.warn(`[Gemini Error] ${model}:`, data.error.message);
+        lastError = new Error(data.error.message);
+        continue;
+      }
       if (!data.candidates?.length) { lastError = new Error(`${model} returned no candidates`); continue; }
 
       const candidate = data.candidates[0];
@@ -159,21 +168,9 @@ async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
       const textPart = candidate.content.parts.find(p => typeof p.text === 'string' && p.text.trim().length > 0);
       if (!textPart) { lastError = new Error("Gemini: no text part in response"); continue; }
 
-      let cleanText = textPart.text.trim();
-      if (cleanText.startsWith("```json")) cleanText = cleanText.substring(7);
-      else if (cleanText.startsWith("```")) cleanText = cleanText.substring(3);
-      if (cleanText.endsWith("```")) cleanText = cleanText.substring(0, cleanText.length - 3);
-      cleanText = cleanText.trim();
-
-      if (!cleanText.startsWith("{") && !cleanText.startsWith("[")) {
-        const start = Math.min(...[cleanText.indexOf('{'), cleanText.indexOf('[')].filter(i => i !== -1));
-        const end = Math.max(cleanText.lastIndexOf('}'), cleanText.lastIndexOf(']'));
-        if (start !== -1 && end !== -1) cleanText = cleanText.substring(start, end + 1);
-      }
-
-      try { return JSON.parse(cleanText); }
-      catch { lastError = new Error("Gemini returned invalid JSON"); continue; }
+      return extractJSON(textPart.text);
     } catch (fetchErr) {
+      console.error(`[Gemini Fetch Error] ${model}:`, fetchErr.message);
       lastError = fetchErr;
     }
   }
@@ -416,11 +413,22 @@ app.get('/api/crm/leads', async (req, res) => {
 
 app.post('/api/automation/digital-twin', async (req, res) => {
   try {
-    const result = await callClaude("Actua com a motor de Digital Twin educatiu. Genera prediccions d'estrès operatiu (JSON: stress_level, critical_department, predictions[]).");
+    const prompt = `Actua com a motor de Digital Twin educatiu. 
+    Analitza aquestes dades: ${JSON.stringify(req.body.context || {})}
+    Genera prediccions d'estrès operatiu.
+    Retorna EXACTAMENT aquest JSON:
+    {
+      "stress_level": 0-100,
+      "critical_department": "Nombre",
+      "predictions": [
+        { "risk_title": "...", "description": "...", "suggested_action": "..." }
+      ]
+    }`;
+    const result = await callClaude(prompt);
     res.json(result);
   } catch (e) {
     console.error("[DigitalTwin Error Trace]", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message || "Error intern en generar Digital Twin" });
   }
 });
 
@@ -439,13 +447,19 @@ app.post('/api/automation/network-prospecting', async (req, res) => {
   const prompt = `Ets un estrateg d'expansió per a consultores educatives.
 Centre de referència: "${referenceCenterName || 'centre educatiu'}" a "${location || 'Catalunya'}".
 Identifica 5 centres educatius similars de la mateixa zona.
-Retorna EXACTAMENT aquest JSON sense markdown:
+Retorna EXACTAMENT aquest JSON:
 {
   "expansion_nodes": [
-    { "name": "...", "location": "Municipi, Comarca", "type": "concertat|privat|públic",
-      "estimated_students": 500, "digital_maturity": "baix|mig|alt",
-      "opportunity_score": 8, "pitch": "Per què és un bon candidat.",
-      "contact_approach": "Com contactar-los." }
+    { 
+      "target_name": "Nombre del centro", 
+      "location": "Municipi, Comarca", 
+      "type": "concertat|privat|públic",
+      "estimated_students": 500, 
+      "digital_maturity": "baix|mig|alt",
+      "opportunity_score": 8, 
+      "reason_for_similarity": "Per què s'assembla al de referència.",
+      "custom_referral_pitch": "Com contactar-los amb èxit." 
+    }
   ]
 }`;
   try {
@@ -453,7 +467,7 @@ Retorna EXACTAMENT aquest JSON sense markdown:
     res.json(result);
   } catch (e) {
     console.error("[NetworkProspecting Error Trace]", e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: e.message || "Error intern en prospecció de xarxa" });
   }
 });
 
