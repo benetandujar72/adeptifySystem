@@ -257,8 +257,9 @@ async function orchestrate(datosCliente, onProgress) {
   resultados.ag15 = res15; emit('AG-15', 'Compliance legal i normativa completats', 3);
 
   // FASE 4
-  resultados.ag11 = ag11.getStyleRules();
-  emit('AG-11', 'Estil visual Adeptify aplicat', 4);
+  emit('AG-11', 'Generant dissenys UX/UI i diagrames de solucio...', 4);
+  resultados.ag11 = await ag11.run(inp({ arquitectura: resultados.ag04, ux: resultados.ag05, cronograma: resultados.ag07 }));
+  emit('AG-11', 'Mockups i estil visual aplicat', 4);
 
   emit('AG-13', 'Elaborant pla de gestio del canvi...', 4);
   resultados.ag13 = await ag13.run(inp({ arquitectura: resultados.ag04, ux: resultados.ag05, cronograma: resultados.ag07 }));

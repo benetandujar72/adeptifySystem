@@ -324,13 +324,27 @@ function renderSection2(s2) {
   return items;
 }
 
-function renderSection3(s3) {
+function renderSection3(s3, visuals = {}) {
   if (!s3) return [];
   const items = [
     heading1('3. Solució Proposada'),
     heading2('3.1 Visió General'),
     body(s3.vision_general), spacer(),
   ];
+
+  // Afegir mockups de la interfície aquí (si n'hi ha)
+  if (visuals.mockup_base64) {
+    items.push(heading3('3.1.1 Proposta Visual d\'Interfície (Mockup)'));
+    try {
+      items.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ data: Buffer.from(visuals.mockup_base64, 'base64'), transformation: { width: 550, height: 350 } })],
+        spacing: { after: 200 }
+      }), spacer());
+    } catch (e) {
+      console.warn("[DOCX] Failed to embed mockup base64:", e.message);
+    }
+  }
   if (s3.componentes && s3.componentes.length) {
     items.push(heading2('3.2 Components de la Solució'));
     for (const c of s3.componentes) {
@@ -346,6 +360,21 @@ function renderSection3(s3) {
   if (s3.arquitectura_textual) {
     items.push(heading2('3.3 Arquitectura Tècnica'), body(s3.arquitectura_textual), spacer());
   }
+
+  // Afegir diagrama de sistemes aquí
+  if (visuals.diagrama_base64) {
+    items.push(heading3('Esquema d\'Arquitectura'));
+    try {
+      items.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ data: Buffer.from(visuals.diagrama_base64, 'base64'), transformation: { width: 550, height: 350 } })],
+        spacing: { after: 200 }
+      }), spacer());
+    } catch (e) {
+      console.warn("[DOCX] Failed to embed diagram base64:", e.message);
+    }
+  }
+
   if (s3.integraciones_clave && s3.integraciones_clave.length) {
     const integRows = [['Des de', 'Cap a', 'Descripció'], ...s3.integraciones_clave.map(i => [safeText(i.de), safeText(i.a), safeText(i.descripcion)])];
     items.push(heading2('3.4 Integracions Clau'), makeTable(integRows, [2200, 2200, 4626]), spacer());
@@ -367,9 +396,23 @@ function renderSection4(s4) {
   return items;
 }
 
-function renderSection5(s5) {
+function renderSection5(s5, visuals = {}) {
   if (!s5) return [];
   const items = [heading1('5. Cronograma'), body(`Durada total: ${safeText(s5.duracion_total)}`), spacer()];
+
+  // Afegir cronograma visual a gantt aquí
+  if (visuals.cronograma_base64) {
+    try {
+      items.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [new ImageRun({ data: Buffer.from(visuals.cronograma_base64, 'base64'), transformation: { width: 550, height: 250 } })],
+        spacing: { after: 200 }
+      }), spacer());
+    } catch (e) {
+      console.warn("[DOCX] Failed to embed cronograma base64:", e.message);
+    }
+  }
+
   if (s5.tabla_cronograma && s5.tabla_cronograma.length > 1) {
     items.push(makeTable(s5.tabla_cronograma, [3000, 1200, 4826]), spacer());
   }
@@ -481,12 +524,14 @@ async function generateDocx(consolidadoPath) {
 
   const cover = buildCoverSection({ ...doc_data, datos_cliente: datosCliente });
 
+  const visuales = doc_data.ag11_estilo?.visuales || raw.ag11_estilo?.visuales || {};
+
   const mainChildren = [
     ...renderSection1(doc_data.s1_resumen_ejecutivo),
     ...renderSection2(doc_data.s2_contexto_diagnostico),
-    ...renderSection3(doc_data.s3_solucion),
+    ...renderSection3(doc_data.s3_solucion, visuales),
     ...renderSection4(doc_data.s4_metodologia),
-    ...renderSection5(doc_data.s5_cronograma),
+    ...renderSection5(doc_data.s5_cronograma, visuales),
     ...renderSection6(doc_data.s6_devops),
     ...renderSection7(doc_data.s7_seguridad),
     ...renderSection8(doc_data.s8_economia),
@@ -595,13 +640,15 @@ async function generateDocxBuffer(docData, datosCliente) {
     }
   };
 
+  const visuales = doc_data.ag11_estilo?.visuales || docData.ag11_estilo?.visuales || {};
+
   const mainChildren = [
-    ...tryRender(renderSection1, doc_data.s1_resumen_ejecutivo, 'S1'),
-    ...tryRender(renderSection2, doc_data.s2_contexto_diagnostico, 'S2'),
-    ...tryRender(renderSection3, doc_data.s3_solucion, 'S3'),
-    ...tryRender(renderSection4, doc_data.s4_metodologia, 'S4'),
-    ...tryRender(renderSection5, doc_data.s5_cronograma, 'S5'),
-    ...tryRender(renderSection6, doc_data.s6_devops, 'S6'),
+    ...tryRender((d) => renderSection1(d), doc_data.s1_resumen_ejecutivo, 'S1'),
+    ...tryRender((d) => renderSection2(d), doc_data.s2_contexto_diagnostico, 'S2'),
+    ...tryRender((d) => renderSection3(d, visuales), doc_data.s3_solucion, 'S3'),
+    ...tryRender((d) => renderSection4(d), doc_data.s4_metodologia, 'S4'),
+    ...tryRender((d) => renderSection5(d, visuales), doc_data.s5_cronograma, 'S5'),
+    ...tryRender((d) => renderSection6(d), doc_data.s6_devops, 'S6'),
     ...tryRender(renderSection7, doc_data.s7_seguridad, 'S7'),
     ...tryRender(renderSection8, doc_data.s8_economia, 'S8'),
     ...tryRender(renderSection9, doc_data.s9_riesgos, 'S9'),
