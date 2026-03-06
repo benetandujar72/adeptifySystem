@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../LanguageContext';
 import { supabase } from '../services/supabaseClient';
-import { jsPDF } from 'jspdf';
 
 interface LeadData {
   id?: string;
@@ -234,8 +233,8 @@ const AutomatedLeadPanel: React.FC = () => {
             }
             setReportClientName(data.clientName || lead.name);
             const msg = data.success
-              ? 'Informe complet generat. Descarrega el document Word.'
-              : 'Agents completats. El DOCX ha fallat — descarrega el JSON per revisar.';
+              ? 'Informe complet generat (DOCX + PDF). Descarrega o envia per email.'
+              : 'Agents completats. La generació de documents ha fallat — descarrega el JSON per revisar.';
             setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
             setStatusMsg(msg);
             setIsGeneratingReport(false);
@@ -327,74 +326,41 @@ const AutomatedLeadPanel: React.FC = () => {
     window.location.href = `/api/automation/full-report/download/${activeJobId}/json`;
   };
 
-  const buildMappedDocxData = () => analysis ? { ...analysis.proposal_data, image_prompt: analysis.image_prompt, custom_pitch: analysis.custom_pitch, company_name: analysis.company_name, estimated_budget_range: analysis.estimated_budget_range, recommended_solution: analysis.recommended_solution } : {};
-
-  const generateAndSendProposal = async () => {
-    if (!analysis) return;
-    setIsSending(true);
-    setStatusMsg('Generant proposta oficial...');
-    try {
-      const doc = new jsPDF();
-      const primary = [79, 70, 229]; const slate = [30, 41, 59];
-      doc.setFillColor(primary[0], primary[1], primary[2]); doc.rect(0, 0, 210, 60, 'F');
-      doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(28);
-      doc.text("ADEPTIFY SYSTEMS", 20, 35); doc.setFontSize(12);
-      doc.text(t.report_subtitle || "CONSULTORIA ESTRATÈGICA EN INTEL·LIGÈNCIA ARTIFICIAL", 20, 45);
-      doc.setTextColor(slate[0], slate[1], slate[2]); doc.setFontSize(14);
-      doc.text(t.report_title || "INFORME D'AUDITORIA I PROPOSTA DE TRANSFORMACIÓ", 20, 80);
-      doc.setFontSize(11); doc.setFont("helvetica", "normal");
-      doc.text(`${t.report_prepared || "PREPARAT PER A:"} ${lead.name.toUpperCase()}`, 20, 90);
-      doc.text(`${t.report_date || "DATA:"} ${new Date().toLocaleDateString()}`, 20, 97);
-      doc.setDrawColor(226, 232, 240); doc.line(20, 105, 190, 105);
-      doc.setFont("helvetica", "bold"); doc.text(t.report_section1 || "1. RESUM EXECUTIU", 20, 115);
-      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-      doc.text(doc.splitTextToSize(analysis.custom_pitch, 170), 20, 125);
-      let y = 160; doc.setFont("helvetica", "bold");
-      doc.text(t.report_section2 || "2. SOLUCIONS ESTRATÈGIQUES SUGGERIDES", 20, y);
-      doc.setFont("helvetica", "normal");
-      (analysis.recommended_services || []).forEach(s => { y += 8; doc.text(`✓ ${s}`, 25, y); });
-      doc.addPage(); y = 30; doc.setFont("helvetica", "bold"); doc.setFontSize(14);
-      doc.text(t.report_section3 || "3. ELS NOSTRES SERVEIS PER A CENTRES EDUCATIUS", 20, y);
-      y += 15;
-      PORTFOLIO.forEach(p => {
-        doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.text(p.name, 20, y);
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(doc.splitTextToSize(p.action, 160), 25, y + 7); y += 25;
-      });
-      y = 180; doc.setFillColor(primary[0], primary[1], primary[2]); doc.rect(20, y, 170, 60, 'F');
-      doc.setTextColor(255, 255, 255); doc.setFontSize(14); doc.setFont("helvetica", "bold");
-      doc.text(t.report_cta1 || "VOLS VEURE COM HO FEM?", 30, y + 15);
-      doc.setFontSize(10); doc.setFont("helvetica", "normal");
-      doc.text(t.report_cta2 || "Agenda una sessió de consultoria estratègica personalitzada.", 30, y + 25);
-      doc.text("EMAIL: bandujar@edutac.es", 30, y + 40); doc.text("WEB: www.adeptify.es", 30, y + 48);
-      doc.setFontSize(8); doc.setTextColor(148, 163, 184);
-      doc.text(t.report_footer || "adeptify.es • Document Confidencial", 105, 285, { align: "center" });
-
-      const pdfBase64 = doc.output('datauristring').split(',')[1];
-      const recipient = isTestMode ? testEmail : lead.email;
-
-      let docxBase64 = null;
-      try {
-        const dr = await fetch('/api/automation/generate-docx', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadData: buildMappedDocxData(), lang: language || 'ca' }) });
-        if (dr.ok) { const buf = await dr.arrayBuffer(); let bin = ''; const b = new Uint8Array(buf); for (let i = 0; i < b.byteLength; i++) bin += String.fromCharCode(b[i]); docxBase64 = window.btoa(bin); }
-      } catch { /* non-fatal */ }
-
-      const resp = await fetch('/api/leads/send-proposal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId: lead.id, email: recipient, subject: `${isTestMode ? '[TEST] ' : ''}Informe Estratègic Adeptify: ${lead.name}`, body: `Hola,\n\nAdjuntem la proposta de transformació digital preparada per Adeptify.es.\n\nSalutacions.`, pdfBase64, docxBase64, proposalData: analysis }) });
-      if (resp.ok) setStatusMsg(`Èxit: Proposta enviada a ${recipient}`);
-      else throw new Error("Falla en l'enviament");
-    } catch (err: any) { setStatusMsg(`Error: ${err.message}`); }
-    finally { setIsSending(false); }
+  const downloadPdf = () => {
+    if (!activeJobId) return;
+    window.location.href = `/api/automation/full-report/download/${activeJobId}/pdf`;
   };
 
-  const downloadDocx = async () => {
-    if (!analysis) return;
-    setIsSending(true); setStatusMsg('Generant Informe DOCX de 12 seccions...');
+  const sendReportByEmail = async () => {
+    if (!activeJobId || !lead.email) return;
+    setIsSending(true);
+    setStatusMsg("Enviant l'informe per email...");
     try {
-      const resp = await fetch('/api/automation/generate-docx', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadData: buildMappedDocxData(), lang: language || 'ca' }) });
-      if (!resp.ok) throw new Error("Falla al generar el DOCX");
-      const blob = await resp.blob(); const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `Auditoria_Adeptify_${lead.name.replace(/\s+/g, '_')}.docx`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-      setStatusMsg('Informe DOCX descarregat amb èxit!');
+      // Fetch DOCX and PDF as base64 from the already-generated report
+      let docxBase64 = null;
+      let pdfBase64 = null;
+      try {
+        const dResp = await fetch(`/api/automation/full-report/download/${activeJobId}/docx`);
+        if (dResp.ok) { const buf = await dResp.arrayBuffer(); const b = new Uint8Array(buf); let bin = ''; for (let i = 0; i < b.byteLength; i++) bin += String.fromCharCode(b[i]); docxBase64 = window.btoa(bin); }
+      } catch { /* non-fatal */ }
+      try {
+        const pResp = await fetch(`/api/automation/full-report/download/${activeJobId}/pdf`);
+        if (pResp.ok) { const buf = await pResp.arrayBuffer(); const b = new Uint8Array(buf); let bin = ''; for (let i = 0; i < b.byteLength; i++) bin += String.fromCharCode(b[i]); pdfBase64 = window.btoa(bin); }
+      } catch { /* non-fatal */ }
+
+      const recipient = isTestMode ? testEmail : lead.email;
+      const resp = await fetch('/api/leads/send-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: lead.id, email: recipient,
+          subject: `${isTestMode ? '[TEST] ' : ''}Informe Estratègic Adeptify: ${lead.name}`,
+          body: `Hola,\n\nAdjuntem la proposta de transformació digital preparada per Adeptify.es.\n\nSalutacions.`,
+          pdfBase64, docxBase64, proposalData: analysis,
+        }),
+      });
+      if (resp.ok) setStatusMsg(`Èxit: Informe enviat a ${recipient}`);
+      else throw new Error("Falla en l'enviament");
     } catch (err: any) { setStatusMsg(`Error: ${err.message}`); }
     finally { setIsSending(false); }
   };
@@ -507,14 +473,26 @@ const AutomatedLeadPanel: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col md:flex-row gap-4">
-                <button onClick={generateAndSendProposal} disabled={isSending || (!lead.email && !isTestMode)} className="flex-1 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-4">
-                  {isSending ? 'Processant...' : (isTestMode ? 'ENVIAR PROVA (PDF)' : 'ENVIAR PROPOSTA (PDF)')}
-                </button>
-                <button onClick={downloadDocx} disabled={isSending} className="flex-1 py-6 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-500 transition-all flex items-center justify-center gap-4 shadow-xl shadow-indigo-900/20">
-                  {isSending ? 'GENERANT...' : 'DOCX RÀPID (12 SEC.)'}
-                </button>
-              </div>
+              {/* Download & send buttons — visible only after multi-agent report completes */}
+              {reportDocxBase64 && (
+                <div className="flex flex-col md:flex-row gap-3">
+                  <button onClick={downloadFullReport} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-indigo-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-900/20">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    DOCX
+                  </button>
+                  <button onClick={downloadPdf} className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-red-500 transition-all flex items-center justify-center gap-2 shadow-xl shadow-red-900/20">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    PDF
+                  </button>
+                  <button onClick={sendReportByEmail} disabled={isSending || (!lead.email && !isTestMode)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    {isSending ? 'ENVIANT...' : 'ENVIAR PER EMAIL'}
+                  </button>
+                </div>
+              )}
+              {!reportDocxBase64 && !isGeneratingReport && (
+                <p className="text-center text-[9px] text-slate-400 mt-2 tracking-wide">Genera l'informe complet amb el sistema multi-agent per descarregar i enviar</p>
+              )}
             </div>
 
             {/* ─── Multi-Agent Full Report ─── */}
@@ -526,13 +504,19 @@ const AutomatedLeadPanel: React.FC = () => {
                     <span className="text-[9px] font-black uppercase tracking-[0.3em] text-indigo-300">Sistema Multi-Agent Claude</span>
                   </div>
                   <h3 className="text-2xl font-black">Informe Complet — 14 Agents IA</h3>
-                  <p className="text-slate-400 text-xs mt-1">13 seccions · Portada · Índex automàtic · ROI · Cronograma · RGPD · Change Management</p>
+                  <p className="text-slate-400 text-xs mt-1">13 seccions · DOCX + PDF · Portada · ROI · Cronograma · RGPD · Change Management</p>
                 </div>
                 <div className="flex flex-col gap-2 ml-4 shrink-0">
                   {reportDocxBase64 && (
                     <button onClick={downloadFullReport} className="bg-green-500 hover:bg-green-400 text-white px-5 py-2.5 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all shadow-lg flex items-center gap-2">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                       .docx
+                    </button>
+                  )}
+                  {reportDocxBase64 && (
+                    <button onClick={downloadPdf} className="bg-red-500 hover:bg-red-400 text-white px-5 py-2.5 rounded-2xl font-black uppercase text-[9px] tracking-widest transition-all shadow-lg flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                      .pdf
                     </button>
                   )}
                   {reportRawJsonBase64 && (
@@ -646,7 +630,7 @@ const AutomatedLeadPanel: React.FC = () => {
                   }`}
               >
                 {reportDocxBase64 ? (
-                  <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Informe Generat — Descarrega el Botó Verd</>
+                  <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Informe Generat — DOCX + PDF disponibles</>
                 ) : reportError ? (
                   <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg> ERROR — Clica per Reintentar</>
                 ) : isGeneratingReport ? (
@@ -656,7 +640,7 @@ const AutomatedLeadPanel: React.FC = () => {
                 )}
               </button>
               {!isGeneratingReport && !reportDocxBase64 && !reportError && (
-                <p className="text-center text-[9px] text-slate-500 mt-3 tracking-wide">Temps estimat: 8-12 min · Claude Sonnet 4.6 · 13 seccions · Portada + Índex</p>
+                <p className="text-center text-[9px] text-slate-500 mt-3 tracking-wide">Temps estimat: 8-12 min · 14 Agents IA · 13 seccions · DOCX + PDF + Email automàtic</p>
               )}
             </div>
           </div>

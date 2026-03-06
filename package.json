@@ -19,6 +19,7 @@
     "leaflet-draw": "^1.0.4",
     "leaflet.markercluster": "^1.5.3",
     "nodemailer": "^6.9.16",
+    "pdfkit": "^0.17.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",

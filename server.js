@@ -11,6 +11,7 @@ const docx = require('docx');
 // Multi-agent system
 const { orchestrate } = require('./multi-agent/orchestrator');
 const { generateDocxBuffer } = require('./multi-agent/generate_docx');
+const { generatePdfBuffer, generateBrochurePdfBuffer } = require('./multi-agent/generate_pdf');
 
 // In-memory job store for SSE progress streaming
 const reportJobs = new Map(); // jobId -> { status, events[], result, error }
@@ -546,7 +547,8 @@ app.post('/api/leads/send-proposal', async (req, res) => {
     let attachments = [];
     if (docxBase64) {
       attachments.push({ filename: 'Proposta_Adeptify.docx', content: docxBase64, encoding: 'base64' });
-    } else if (pdfBase64) {
+    }
+    if (pdfBase64) {
       attachments.push({ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' });
     }
 
@@ -577,12 +579,24 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
 
+  // Generate Adeptify brochure PDF to attach to each email
+  let brochureAttachment = null;
+  try {
+    const brochureBuf = await generateBrochurePdfBuffer();
+    brochureAttachment = { filename: 'Adeptify_Serveis.pdf', content: brochureBuf.toString('base64'), encoding: 'base64' };
+    console.log(`[BulkEmail] Brochure PDF generated: ${Math.round(brochureBuf.length / 1024)} KB`);
+  } catch (e) {
+    console.warn('[BulkEmail] Brochure PDF generation failed:', e.message);
+  }
+
   let sent = 0;
   const errors = [];
   for (const r of recipients.slice(0, 200)) {
     try {
       const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}</div>`;
-      await transporter.sendMail({ from: process.env.SMTP_USER, to: r.email, subject, html });
+      const mailOpts = { from: process.env.SMTP_USER, to: r.email, subject, html };
+      if (brochureAttachment) mailOpts.attachments = [brochureAttachment];
+      await transporter.sendMail(mailOpts);
       sent++;
     } catch (e) {
       errors.push(`${r.email}: ${e.message}`);
@@ -624,11 +638,12 @@ async function runFullReportJob(jobId, datosCliente) {
     const rawJsonBase64 = Buffer.from(JSON.stringify(doc, null, 2), 'utf-8').toString('base64');
 
     let docxBase64 = null;
-    const DOCX_TIMEOUT = 30000; // 30 seconds max for DOCX generation
+    let pdfBase64 = null;
+    const DOC_TIMEOUT = 30000; // 30 seconds max for document generation
     try {
       const buffer = await Promise.race([
         generateDocxBuffer(doc, datosCliente),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('DOCX generation timeout (30s)')), DOCX_TIMEOUT))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('DOCX generation timeout (30s)')), DOC_TIMEOUT))
       ]);
       docxBase64 = buffer.toString('base64');
       console.log(`[MultiAgent] DOCX OK — ${Math.round(buffer.length / 1024)} KB`);
@@ -637,8 +652,22 @@ async function runFullReportJob(jobId, datosCliente) {
       push('progress', { agent: 'DOCX', message: `Advertència DOCX: ${docxErr.message} — el JSON es pot descarregar igualment`, fase: 5 });
     }
 
+    // Generate PDF from the same data
+    push('progress', { agent: 'PDF', message: 'Generant document PDF...', fase: 5 });
+    try {
+      const pdfBuf = await Promise.race([
+        generatePdfBuffer(doc, datosCliente),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('PDF generation timeout (30s)')), DOC_TIMEOUT))
+      ]);
+      pdfBase64 = pdfBuf.toString('base64');
+      console.log(`[MultiAgent] PDF OK — ${Math.round(pdfBuf.length / 1024)} KB`);
+    } catch (pdfErr) {
+      console.error('[MultiAgent] PDF generation failed:', pdfErr.message);
+      push('progress', { agent: 'PDF', message: `Advertència PDF: ${pdfErr.message}`, fase: 5 });
+    }
+
     // Store result immediately so download endpoints work
-    job.result = { doc, docxBase64, rawJsonBase64, clientName };
+    job.result = { doc, docxBase64, pdfBase64, rawJsonBase64, clientName };
 
     // Persist to Supabase for cross-instance downloads (Cloud Run)
     try {
@@ -648,6 +677,7 @@ async function runFullReportJob(jobId, datosCliente) {
           job_id: jobId,
           client_name: clientName,
           docx_base64: docxBase64,
+          pdf_base64: pdfBase64,
           raw_json_base64: rawJsonBase64,
         });
         console.log(`[MultiAgent] Download persisted to Supabase for job ${jobId}`);
@@ -666,6 +696,9 @@ async function runFullReportJob(jobId, datosCliente) {
         let attachments = [];
         if (docxBase64) {
           attachments.push({ filename: `Informe_${clientName.replace(/\s+/g, '_')}.docx`, content: docxBase64, encoding: 'base64' });
+        }
+        if (pdfBase64) {
+          attachments.push({ filename: `Informe_${clientName.replace(/\s+/g, '_')}.pdf`, content: pdfBase64, encoding: 'base64' });
         }
 
         const htmlBody = `<div style="font-family:sans-serif;">Hola,<br><br>S'ha completat la generació del teu informe personalitzat iteratiu amb IA sobre: <strong>${clientName}</strong>.<br><br>Trobaràs l'informe generat adjunt en aquest missatge.<br><br>Salutacions,<br>Equip Adeptify</div>`;
@@ -714,11 +747,11 @@ app.get('/api/automation/full-report/download/:jobId/:type', async (req, res) =>
       if (sb) {
         const { data } = await sb
           .from('report_downloads')
-          .select('client_name, docx_base64, raw_json_base64')
+          .select('client_name, docx_base64, pdf_base64, raw_json_base64')
           .eq('job_id', jobId)
           .single();
         if (data) {
-          result = { clientName: data.client_name, docxBase64: data.docx_base64, rawJsonBase64: data.raw_json_base64 };
+          result = { clientName: data.client_name, docxBase64: data.docx_base64, pdfBase64: data.pdf_base64, rawJsonBase64: data.raw_json_base64 };
           console.log(`[Download] Served from Supabase fallback for job ${jobId}`);
         }
       }
@@ -735,6 +768,13 @@ app.get('/api/automation/full-report/download/:jobId/:type', async (req, res) =>
     const buffer = Buffer.from(result.docxBase64, 'base64');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="Proposta_${safeName}.docx"`);
+    return res.end(buffer);
+  }
+
+  if (type === 'pdf' && result.pdfBase64) {
+    const buffer = Buffer.from(result.pdfBase64, 'base64');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Proposta_${safeName}.pdf"`);
     return res.end(buffer);
   }
 
