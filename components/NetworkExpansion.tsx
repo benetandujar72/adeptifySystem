@@ -39,6 +39,22 @@ const NetworkExpansion: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([41.5, 1.8]);
   const [mapZoom, setMapZoom] = useState(8);
 
+  // Lead data from intelligent capture
+  const [leadData, setLeadData] = useState<Record<string, any>>({});
+  const [loadingLeads, setLoadingLeads] = useState(false);
+
+  // Task 1: Save enrichment to DB
+  const [savingEnrichment, setSavingEnrichment] = useState(false);
+  const [enrichmentSaved, setEnrichmentSaved] = useState(false);
+
+  // Task 2: Institution outreach modal
+  const [outreachCenter, setOutreachCenter] = useState<CenterWithDistance | null>(null);
+  const [showOutreachModal, setShowOutreachModal] = useState(false);
+  const [outreachWebUrl, setOutreachWebUrl] = useState('');
+  const [outreachRunning, setOutreachRunning] = useState(false);
+  const [outreachProgress, setOutreachProgress] = useState<string[]>([]);
+  const [outreachDone, setOutreachDone] = useState(false);
+
   // Load centers
   useEffect(() => {
     let alive = true;
@@ -102,6 +118,35 @@ const NetworkExpansion: React.FC = () => {
     setSelectedForProposal(new Set(nearbyCenters.map(c => c.codi_centre)));
   }, [nearbyCenters]);
 
+  // Fetch lead data from intelligent capture
+  const fetchLeadData = useCallback(async (centersToCheck: CenterWithDistance[]) => {
+    const emails = centersToCheck
+      .map(c => c.email_centre)
+      .filter((e): e is string => !!e);
+    if (emails.length === 0) return;
+    setLoadingLeads(true);
+    try {
+      const resp = await fetch('/api/centers/get-lead-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails }),
+      });
+      const result = await resp.json();
+      if (result.leads) setLeadData(prev => ({ ...prev, ...result.leads }));
+    } catch (err) {
+      console.error('[FetchLeadData]', err);
+    } finally {
+      setLoadingLeads(false);
+    }
+  }, []);
+
+  // Auto-fetch lead data when reference center changes and nearby centers are available
+  useEffect(() => {
+    if (referenceCenter && nearbyCenters.length > 0) {
+      fetchLeadData(nearbyCenters);
+    }
+  }, [referenceCenter, nearbyCenters, fetchLeadData]);
+
   // Enrich with AI
   const enrichWithAI = useCallback(async () => {
     if (!referenceCenter || selectedForProposal.size === 0) return;
@@ -140,6 +185,98 @@ const NetworkExpansion: React.FC = () => {
       setIsEnriching(false);
     }
   }, [referenceCenter, selectedForProposal, nearbyCenters]);
+
+  // Save AI enrichment to DB
+  const saveEnrichmentToDB = useCallback(async () => {
+    if (Object.keys(aiData).length === 0 || !referenceCenter) return;
+    setSavingEnrichment(true);
+    try {
+      const enrichments = Object.entries(aiData).map(([codi, data]: [string, any]) => ({
+        codi_centre: codi,
+        opportunity_score: data.opportunity_score,
+        reason_for_similarity: data.reason_for_similarity,
+        custom_referral_pitch: data.custom_referral_pitch,
+      }));
+      const resp = await fetch('/api/centers/save-ai-enrichment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceCenterCode: referenceCenter.codi_centre,
+          enrichments,
+        }),
+      });
+      const result = await resp.json();
+      if (result.success) setEnrichmentSaved(true);
+    } catch (err) {
+      console.error('[Save Enrichment]', err);
+    } finally {
+      setSavingEnrichment(false);
+    }
+  }, [aiData, referenceCenter]);
+
+  // Start institution outreach pipeline
+  const startOutreach = useCallback(async () => {
+    if (!outreachCenter) return;
+    setOutreachRunning(true);
+    setOutreachProgress([]);
+    setOutreachDone(false);
+    try {
+      const studies = (['einf1c','einf2c','epri','eso','batx','cfpm','cfps','cfam','cfas'] as const)
+        .filter(k => (outreachCenter as any)[k]);
+
+      const resp = await fetch('/api/centers/institution-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          codi_centre: outreachCenter.codi_centre,
+          centerName: outreachCenter.denominacio_completa,
+          centerEmail: outreachCenter.email_centre,
+          webUrl: outreachWebUrl || null,
+          centerData: {
+            nom_naturalesa: outreachCenter.nom_naturalesa,
+            nom_municipi: outreachCenter.nom_municipi,
+            nom_comarca: outreachCenter.nom_comarca,
+            telefon: outreachCenter.telefon,
+            studies,
+          },
+          aiEnrichment: aiData[outreachCenter.codi_centre] || null,
+          referenceCenterName: referenceCenter?.denominacio_completa || '',
+          lang: 'ca',
+        }),
+      });
+      const { jobId } = await resp.json();
+
+      // Connect to SSE stream for progress
+      const es = new EventSource(`/api/automation/full-report/stream/${jobId}`);
+      es.addEventListener('progress', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          setOutreachProgress(prev => [...prev, `[${data.agent}] ${data.message}`]);
+        } catch {}
+      });
+      es.addEventListener('complete', () => {
+        setOutreachProgress(prev => [...prev, '✓ Pipeline completat! Email enviat correctament.']);
+        setOutreachRunning(false);
+        setOutreachDone(true);
+        es.close();
+      });
+      es.addEventListener('error_event', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          setOutreachProgress(prev => [...prev, `✗ Error: ${data.message}`]);
+        } catch {}
+        setOutreachRunning(false);
+        es.close();
+      });
+      es.onerror = () => {
+        setOutreachRunning(false);
+        es.close();
+      };
+    } catch (err) {
+      console.error('[Outreach]', err);
+      setOutreachRunning(false);
+    }
+  }, [outreachCenter, outreachWebUrl, aiData, referenceCenter]);
 
   // Export CSV
   const exportCsv = useCallback(() => {
@@ -270,7 +407,12 @@ const NetworkExpansion: React.FC = () => {
                         className="w-4 h-4 rounded border-slate-300 text-green-600" />
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-slate-900 truncate">{c.denominacio_completa}</p>
-                        <p className="text-[9px] text-slate-400">{c.nom_municipi} · {c._distance.toFixed(1)} km</p>
+                        <p className="text-[9px] text-slate-400">
+                          {c.nom_municipi} · {c._distance.toFixed(1)} km
+                          {c.email_centre && leadData[c.email_centre] && (
+                            <span className="ml-1 text-amber-600 font-bold" title="Lead existent a la BD">· Lead</span>
+                          )}
+                        </p>
                       </div>
                       {aiData[c.codi_centre] && (
                         <span className="text-[9px] font-black text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-lg">
@@ -288,6 +430,16 @@ const NetworkExpansion: React.FC = () => {
                   className="w-full py-3 bg-cyan-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-cyan-700 transition-all disabled:opacity-40">
                   {isEnriching ? ((t as any).expansionEnrichingAI || 'Analitzant...') : `${(t as any).expansionEnrichAI || 'Enriquir amb IA'} (${selectedForProposal.size})`}
                 </button>
+                {Object.keys(aiData).length > 0 && (
+                  <button onClick={saveEnrichmentToDB} disabled={savingEnrichment || enrichmentSaved}
+                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-40">
+                    {enrichmentSaved
+                      ? ((t as any).expansionSaved || 'Dades IA guardades')
+                      : savingEnrichment
+                        ? ((t as any).expansionSaving || 'Guardant...')
+                        : ((t as any).expansionSaveDB || 'Guardar dades IA a BD')}
+                  </button>
+                )}
                 <button onClick={exportCsv} disabled={selectedForProposal.size === 0}
                   className="w-full py-3 bg-emerald-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-700 transition-all disabled:opacity-40">
                   {(t as any).centerMapExportCsv || 'Exportar CSV'} ({selectedForProposal.size})
@@ -402,8 +554,179 @@ const NetworkExpansion: React.FC = () => {
                 <p className="text-xs text-slate-300 mb-2">{aiData[c.codi_centre].reason_for_similarity}</p>
                 <p className="text-xs italic text-cyan-200">"{aiData[c.codi_centre].custom_referral_pitch}"</p>
                 {c.email_centre && <p className="text-[10px] text-slate-500 mt-2">{c.email_centre}</p>}
+                {/* Lead data from intelligent capture */}
+                {c.email_centre && leadData[c.email_centre] && (
+                  <div className="mt-2 p-2 bg-amber-900/30 border border-amber-700/50 rounded-xl">
+                    <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mb-1">
+                      {(t as any).expansionLeadExists || 'Lead existent'}
+                    </p>
+                    {leadData[c.email_centre].ai_needs_analysis?.recommended_solution && (
+                      <p className="text-[10px] text-amber-200">{leadData[c.email_centre].ai_needs_analysis.recommended_solution}</p>
+                    )}
+                    {leadData[c.email_centre].ai_needs_analysis?.needs_detected && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(leadData[c.email_centre].ai_needs_analysis.needs_detected as string[]).slice(0, 3).map((n: string, i: number) => (
+                          <span key={i} className="text-[8px] bg-amber-800/50 text-amber-300 px-1.5 py-0.5 rounded">{n}</span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-[8px] text-amber-500 mt-1">
+                      {leadData[c.email_centre].status} · {new Date(leadData[c.email_centre].updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+                {c.email_centre && (
+                  <button
+                    onClick={() => {
+                      setOutreachCenter(c);
+                      setOutreachWebUrl(c.web_url || '');
+                      setOutreachProgress([]);
+                      setOutreachDone(false);
+                      setShowOutreachModal(true);
+                    }}
+                    className="mt-3 w-full py-2 bg-cyan-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-cyan-700 transition-all"
+                  >
+                    {(t as any).expansionOutreach || 'Prospectar + Enviar'}
+                  </button>
+                )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Outreach Modal */}
+      {showOutreachModal && outreachCenter && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4"
+             onClick={() => !outreachRunning && setShowOutreachModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+               onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">
+                  {(t as any).expansionOutreachTitle || 'Prospectar Centre'}
+                </h3>
+                <button onClick={() => !outreachRunning && setShowOutreachModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
+              {/* Center info */}
+              <div className="p-4 bg-slate-900 text-white rounded-2xl">
+                <h4 className="font-bold text-cyan-400">{outreachCenter.denominacio_completa}</h4>
+                <p className="text-[10px] text-slate-400 mt-1">{outreachCenter.nom_municipi} · {outreachCenter.nom_naturalesa}</p>
+                <p className="text-xs text-slate-300 mt-1">Email: {outreachCenter.email_centre}</p>
+                {outreachCenter.telefon && <p className="text-xs text-slate-400 mt-1">Tel: {outreachCenter.telefon}</p>}
+                {aiData[outreachCenter.codi_centre] && (
+                  <div className="mt-2 pt-2 border-t border-slate-700">
+                    <p className="text-xs text-cyan-300">Score: {aiData[outreachCenter.codi_centre].opportunity_score}/10</p>
+                    <p className="text-[10px] text-slate-400 mt-1">{aiData[outreachCenter.codi_centre].reason_for_similarity}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Lead data from intelligent capture */}
+              {outreachCenter.email_centre && leadData[outreachCenter.email_centre] && (() => {
+                const lead = leadData[outreachCenter.email_centre];
+                const ai = lead.ai_needs_analysis;
+                return (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest mb-2">
+                      {(t as any).expansionLeadCaptured || 'Informació capturada (Lead)'}
+                    </p>
+                    {ai?.recommended_solution && (
+                      <p className="text-xs text-amber-900 mb-2"><strong>Solució recomanada:</strong> {ai.recommended_solution}</p>
+                    )}
+                    {ai?.needs_detected && (
+                      <div className="mb-2">
+                        <p className="text-[10px] text-amber-700 font-bold mb-1">Necessitats detectades:</p>
+                        <ul className="text-[10px] text-amber-800 list-disc list-inside space-y-0.5">
+                          {(ai.needs_detected as string[]).map((n: string, i: number) => <li key={i}>{n}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {ai?.main_bottleneck && (
+                      <p className="text-[10px] text-amber-800"><strong>Principal coll d'ampolla:</strong> {ai.main_bottleneck}</p>
+                    )}
+                    {ai?.estimated_budget_range && (
+                      <p className="text-[10px] text-amber-800 mt-1"><strong>Pressupost estimat:</strong> {ai.estimated_budget_range}</p>
+                    )}
+                    <p className="text-[8px] text-amber-500 mt-2">
+                      Estat: {lead.status} · Font: {lead.source} · Actualitzat: {new Date(lead.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Web URL input */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                  {(t as any).expansionOutreachUrl || 'URL web del centre (opcional)'}
+                </label>
+                <input type="url" value={outreachWebUrl}
+                  onChange={e => setOutreachWebUrl(e.target.value)}
+                  placeholder="https://www.exemple-centre.cat"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                  disabled={outreachRunning} />
+                <p className="text-[9px] text-slate-400 mt-1">
+                  {(t as any).expansionOutreachUrlHint || "Si s'indica, es farà scraping per generar una proposta ultra-personalitzada."}
+                </p>
+              </div>
+
+              {/* Pipeline description */}
+              {!outreachRunning && !outreachDone && (
+                <div className="p-4 bg-indigo-50 rounded-xl">
+                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2">Pipeline de prospecció</p>
+                  <ol className="text-[10px] text-indigo-800 space-y-1 list-decimal list-inside">
+                    <li>Scraping web del centre (si URL disponible)</li>
+                    <li>Anàlisi multi-agent (14 agents, 5 fases)</li>
+                    <li>Generació de documents DOCX + PDF</li>
+                    <li>Creació d'email persuasiu amb tècniques PNL</li>
+                    <li>Enviament amb documents adjunts</li>
+                  </ol>
+                </div>
+              )}
+
+              {/* Progress log */}
+              {outreachProgress.length > 0 && (
+                <div className="p-4 bg-slate-50 rounded-xl max-h-[250px] overflow-y-auto">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Progrés</p>
+                  {outreachProgress.map((msg, i) => (
+                    <p key={i} className={`text-[10px] font-mono ${msg.startsWith('✓') ? 'text-green-600 font-bold' : msg.startsWith('✗') ? 'text-red-600 font-bold' : 'text-slate-600'}`}>{msg}</p>
+                  ))}
+                  {outreachRunning && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="w-3 h-3 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[9px] text-slate-400">{(t as any).expansionOutreachRunning || 'Processant pipeline...'}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowOutreachModal(false)} disabled={outreachRunning}
+                className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all disabled:opacity-40">
+                {(t as any).expansionOutreachCancel || 'Tancar'}
+              </button>
+              {!outreachDone && (
+                <button onClick={startOutreach}
+                  disabled={outreachRunning || !outreachCenter.email_centre}
+                  className="px-6 py-3 bg-cyan-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-cyan-700 transition-all disabled:opacity-40">
+                  {outreachRunning
+                    ? ((t as any).expansionOutreachRunning || 'Processant...')
+                    : ((t as any).expansionOutreachStart || 'Iniciar Pipeline')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

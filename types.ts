@@ -44,6 +44,13 @@ export interface CatEducationCenterFull {
   danp: boolean; dans: boolean; muse: boolean; musp: boolean;
   muss: boolean; tegm: boolean; tegs: boolean; estr: boolean;
   adults: boolean;
+  // AI enrichment columns (nullable, from migration 007)
+  ai_opportunity_score: number | null;
+  ai_reason_similarity: string | null;
+  ai_custom_pitch: string | null;
+  ai_enriched_at: string | null;
+  ai_enriched_by_ref: string | null;
+  web_url: string | null;
 }
 
 export type ProductType = 'LMS' | 'AUDIT' | 'VISION' | 'DEEP_AUDIT';

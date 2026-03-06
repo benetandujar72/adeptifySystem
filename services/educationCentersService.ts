@@ -77,6 +77,8 @@ const MAP_COLUMNS = [
   'aa03', 'cfps', 'ee', 'ife', 'pfi', 'pa01', 'cfam', 'pa02',
   'cfas', 'esdi', 'escm', 'escs', 'adr', 'crbc', 'idi', 'dane',
   'danp', 'dans', 'muse', 'musp', 'muss', 'tegm', 'tegs', 'estr', 'adults',
+  'ai_opportunity_score', 'ai_reason_similarity', 'ai_custom_pitch',
+  'ai_enriched_at', 'ai_enriched_by_ref', 'web_url',
 ].join(', ');
 
 export async function fetchAllCentersForMap(): Promise<CatEducationCenterFull[]> {

@@ -606,6 +606,341 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
   res.json({ sent, total: recipients.length, errors });
 });
 
+// -- Save AI enrichment data to cat_education_centers --
+app.post('/api/centers/save-ai-enrichment', async (req, res) => {
+  const { referenceCenterCode, enrichments } = req.body;
+  if (!Array.isArray(enrichments) || enrichments.length === 0) {
+    return res.status(400).json({ error: 'Enrichments array required' });
+  }
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+
+  let updated = 0;
+  const now = new Date().toISOString();
+  try {
+    for (const e of enrichments) {
+      const { error } = await supabase
+        .from('cat_education_centers')
+        .update({
+          ai_opportunity_score: Math.min(10, Math.max(1, Math.round(e.opportunity_score || 0))),
+          ai_reason_similarity: (e.reason_for_similarity || '').substring(0, 2000),
+          ai_custom_pitch: (e.custom_referral_pitch || '').substring(0, 2000),
+          ai_enriched_at: now,
+          ai_enriched_by_ref: referenceCenterCode || null,
+        })
+        .eq('codi_centre', e.codi_centre);
+      if (!error) updated++;
+      else console.warn(`[SaveEnrichment] Error updating ${e.codi_centre}:`, error.message);
+    }
+    console.log(`[SaveEnrichment] Updated ${updated}/${enrichments.length} centers`);
+    res.json({ success: true, updated });
+  } catch (err) {
+    console.error('[SaveEnrichment] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -- Scrape URL helper (reused by capture + outreach) --
+async function scrapeUrl(url) {
+  const fetchResp = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    signal: AbortSignal.timeout(15000),
+  });
+  const html = await fetchResp.text();
+  const $ = cheerio.load(html);
+  $('script, style, nav, footer, header').remove();
+  return $('body').text().replace(/\s+/g, ' ').trim().substring(0, 15000);
+}
+
+// -- NLP Persuasive Email Prompt Builder --
+function buildPersuasiveEmailPrompt(params, scrapedData, aiEnrichment, lang) {
+  const langMap = { ca: 'CATALÀ', es: 'CASTELLANO', eu: 'EUSKERA' };
+  const targetLang = langMap[lang] || 'CATALÀ';
+
+  return `Ets un expert en comunicació persuasiva i PNL (Programació NeuroLingüística) per al sector educatiu.
+
+CONTEXT DEL CENTRE DESTINATARI:
+- Nom: ${params.centerName}
+- Tipus: ${params.centerData?.nom_naturalesa || 'No especificat'}
+- Municipi: ${params.centerData?.nom_municipi || 'Catalunya'}
+- Comarca: ${params.centerData?.nom_comarca || ''}
+- Estudis: ${(params.centerData?.studies || []).join(', ') || 'Diversos'}
+- Email: ${params.centerEmail}
+${scrapedData?.scrapedText ? `- Informació de la web: ${scrapedData.scrapedText.substring(0, 3000)}` : ''}
+
+ANÀLISI IA PRÈVIA (prospecció per proximitat):
+- Puntuació d'oportunitat: ${aiEnrichment?.opportunity_score || 'N/A'}/10
+- Raó de similitud: ${aiEnrichment?.reason_for_similarity || 'Centre educatiu de la zona'}
+- Pitch personalitzat: ${aiEnrichment?.custom_referral_pitch || ''}
+
+CENTRE DE REFERÈNCIA (client exitós): ${params.referenceCenterName || 'Centre educatiu col·laborador'}
+
+INSTRUCCIONS DE PERSUASIÓ PNL — OBLIGATORIS:
+
+1. FILOSOFIA CENTRAL: La tecnologia serveix al centre, MAI al revés. El missatge ha de transmetre que Adeptify s'adapta a ells, no ells a Adeptify.
+
+2. RESPECTE PROFUND pels seus eines i processos actuals:
+   - "Sabem que el vostre equip ja fa una feina excel·lent amb les eines que teniu"
+   - "No volem canviar res del que ja funciona"
+   - Mai criticar o menystenir les seves solucions actuals
+
+3. OPTIMITZAR, NO CANVIAR:
+   - "El nostre objectiu és que pugueu fer MÉS amb MENYS esforç"
+   - "Automatitzar el que us roba temps perquè pugueu dedicar-vos al que realment importa: els vostres alumnes"
+   - Usa ancoratge PNL: vincular les seves emocions positives (passió per l'educació) amb la solució
+
+4. FRICCIÓ ZERO i gestió de la resistència al canvi:
+   - "Implementació transparent que no requereix formació complexa"
+   - "Comença funcionant al costat dels vostres sistemes actuals, sense substituir res"
+   - "Podeu provar-ho sense compromís i veure resultats en dies, no mesos"
+   - Usa el patró PNL "Yes-set": 3 afirmacions amb les quals estiguin d'acord abans de la proposta
+
+5. EXEMPLES CONCRETS de valor:
+   - Actes de reunions automatitzades: "Les gravacions s'encripten, es transcriuen amb IA, i es borren automàticament. Cap dada sensible queda guardada."
+   - Reducció de paperassa: "Convertiu 3 hores de feina burocràtica en 15 minuts"
+   - Privacitat per disseny: "Totes les dades es processen dins la UE, amb xifratge punt a punt. Les gravacions de veu o vídeo s'esborren un cop transcrites de forma automàtica. Anonimització de la informació sensible."
+
+6. TÈCNIQUES PNL ESPECÍFIQUES:
+   - Rapport: Usar el seu vocabulari (extret del scraping)
+   - Reframing: Convertir "un altre eina nova" en "menys feina per al vostre equip"
+   - Future pacing: "Imagineu que el proper trimestre, les actes es generen soles..."
+   - Social proof: "Centres similars a ${params.centerData?.nom_comarca || 'la vostra comarca'} ja ho fan servir"
+   - Scarcity suau: "Estem treballant amb un nombre limitat de centres pilot"
+
+7. LINK AL CONSULTOR: Inclou un link a https://consultor.adeptify.es amb el text "Feu un diagnòstic gratuït en 5 minuts"
+
+IDIOMA DE RESPOSTA: ${targetLang}
+
+GENERA EXACTAMENT AQUEST JSON (sense res més fora del JSON):
+{
+  "subject": "Assumpte del correu (curt, personal, sense spam words)",
+  "html_body": "Cos del correu en HTML amb estil professional (fonts sans-serif, colors suaus #2F1C6A i #673DE6). Inclou TOTS els elements PNL. Longitud: 400-600 paraules. Estructura: salutació personal → observació específica del centre → proposta de valor → exemples concrets → CTA suau → signatura Adeptify.",
+  "plain_body": "Versió text pla del mateix correu"
+}`;
+}
+
+// -- Send outreach email with attachments --
+async function sendOutreachEmail(email, emailContent, docxBase64, pdfBase64, centerName) {
+  const host = process.env.SMTP_HOST;
+  if (!host) throw new Error('SMTP not configured');
+
+  const transporter = nodemailer.createTransport({
+    host, port: Number(process.env.SMTP_PORT || 587), secure: false,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+
+  const interactionId = crypto.randomUUID();
+  const supabase = getSupabaseAdmin();
+
+  // CRM tracking
+  if (supabase) {
+    await supabase.from('leads').upsert({
+      tenant_slug: 'default',
+      email,
+      company_name: centerName,
+      source: 'network_expansion_outreach',
+      status: 'proposal_sent',
+    }, { onConflict: 'tenant_slug,email' }).catch(() => {});
+
+    await supabase.from('lead_interactions').insert({
+      id: interactionId,
+      lead_id: null,
+      interaction_type: 'outreach_email',
+      content_summary: emailContent.subject,
+    }).catch(() => {});
+  }
+
+  const trackPixel = `<img src="https://consultor.adeptify.es/api/crm/track/${interactionId}.png" width="1" height="1"/>`;
+  const html = `<div style="font-family:sans-serif;">${emailContent.html_body}${trackPixel}</div>`;
+
+  const attachments = [];
+  const safeName = centerName.replace(/[^a-zA-Z0-9àáèéíïòóúüçñ ]/g, '').replace(/\s+/g, '_');
+  if (docxBase64) attachments.push({ filename: `Proposta_${safeName}.docx`, content: docxBase64, encoding: 'base64' });
+  if (pdfBase64) attachments.push({ filename: `Proposta_${safeName}.pdf`, content: pdfBase64, encoding: 'base64' });
+
+  await transporter.sendMail({
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: emailContent.subject,
+    html,
+    attachments,
+  });
+  console.log(`[Outreach] Email sent to ${email} with ${attachments.length} attachments`);
+}
+
+// -- Institution outreach pipeline: scrape → multi-agent → NLP email --
+async function runInstitutionOutreach(jobId, params) {
+  const job = reportJobs.get(jobId);
+  const push = (type, payload) => { if (job) job.events.push({ type, ...payload }); };
+
+  try {
+    // STEP 1: Scrape website
+    push('progress', { agent: 'SCRAPER', message: 'Fent scraping de la web del centre...', fase: 1 });
+    let scrapedData = {};
+    if (params.webUrl) {
+      try {
+        const text = await scrapeUrl(params.webUrl);
+        scrapedData = { scrapedText: text, url: params.webUrl };
+        push('progress', { agent: 'SCRAPER', message: `Web analitzada: ${text.length} chars extrets`, fase: 1 });
+      } catch (e) {
+        push('progress', { agent: 'SCRAPER', message: `Scrape warning: ${e.message}`, fase: 1 });
+      }
+    } else {
+      push('progress', { agent: 'SCRAPER', message: 'Sense URL — saltant scraping', fase: 1 });
+    }
+
+    // STEP 2: Build datosCliente for multi-agent
+    push('progress', { agent: 'ORQUESTADOR', message: 'Construint dades pel sistema multi-agent...', fase: 2 });
+    const datosCliente = {
+      cliente: {
+        nombre: params.centerName,
+        tipo: 'centre_educatiu',
+        sector: 'Educació',
+        web: params.webUrl || '',
+        email: params.centerEmail,
+        naturalesa: params.centerData?.nom_naturalesa,
+        municipi: params.centerData?.nom_municipi,
+        comarca: params.centerData?.nom_comarca,
+        telefon: params.centerData?.telefon,
+        estudis: params.centerData?.studies,
+      },
+      sistemas_existentes: [],
+      proposta: {
+        idioma: params.lang || 'ca',
+        tipus_projecte: 'Consultoria educativa i transformació digital',
+        pressupost_orientatiu: '5000-15000',
+        termini_desitjat: '2-3 mesos',
+      },
+      contexto_inicial: {
+        scraped: scrapedData,
+        ai_enrichment: params.aiEnrichment,
+        reference_center: params.referenceCenterName,
+      },
+    };
+
+    // STEP 3: Run multi-agent orchestrator
+    push('progress', { agent: 'ORQUESTADOR', message: 'Sistema multi-agent iniciat (14 agents)...', fase: 2 });
+    const doc = await orchestrate(datosCliente, (agentId, message, fase) => {
+      push('progress', { agent: agentId, message, fase });
+    });
+
+    // STEP 4: Generate DOCX + PDF
+    push('progress', { agent: 'DOCX', message: 'Generant documents DOCX + PDF...', fase: 4 });
+    let docxBase64 = null, pdfBase64 = null;
+    const DOC_TIMEOUT = 30000;
+    try {
+      const buffer = await Promise.race([
+        generateDocxBuffer(doc, datosCliente),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout DOCX')), DOC_TIMEOUT)),
+      ]);
+      docxBase64 = buffer.toString('base64');
+      push('progress', { agent: 'DOCX', message: `DOCX generat: ${Math.round(buffer.length / 1024)} KB`, fase: 4 });
+    } catch (e) {
+      push('progress', { agent: 'DOCX', message: `DOCX warning: ${e.message}`, fase: 4 });
+    }
+
+    try {
+      const buf = await Promise.race([
+        generatePdfBuffer(doc, datosCliente),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout PDF')), DOC_TIMEOUT)),
+      ]);
+      pdfBase64 = buf.toString('base64');
+      push('progress', { agent: 'PDF', message: `PDF generat: ${Math.round(buf.length / 1024)} KB`, fase: 4 });
+    } catch (e) {
+      push('progress', { agent: 'PDF', message: `PDF warning: ${e.message}`, fase: 4 });
+    }
+
+    // STEP 5: Generate persuasive email via AI
+    push('progress', { agent: 'EMAIL_IA', message: 'Generant email persuasiu amb PNL...', fase: 5 });
+    const emailPrompt = buildPersuasiveEmailPrompt(params, scrapedData, params.aiEnrichment, params.lang);
+    const emailResult = await callClaude(emailPrompt);
+    const emailContent = typeof emailResult === 'string' ? JSON.parse(emailResult) : emailResult;
+    push('progress', { agent: 'EMAIL_IA', message: `Email generat: "${emailContent.subject}"`, fase: 5 });
+
+    // STEP 6: Send email
+    push('progress', { agent: 'EMAIL', message: `Enviant a ${params.centerEmail}...`, fase: 5 });
+    await sendOutreachEmail(params.centerEmail, emailContent, docxBase64, pdfBase64, params.centerName);
+
+    // STEP 7: Save report to Supabase
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const rawJsonBase64 = Buffer.from(JSON.stringify(doc, null, 2), 'utf-8').toString('base64');
+      await supabase.from('report_downloads').upsert({
+        job_id: jobId,
+        client_name: params.centerName,
+        docx_base64: docxBase64,
+        pdf_base64: pdfBase64,
+        raw_json_base64: rawJsonBase64,
+      }, { onConflict: 'job_id' }).catch(() => {});
+    }
+
+    job.result = { doc, docxBase64, pdfBase64, emailContent };
+    job.status = 'done';
+    push('complete', { centerName: params.centerName, success: true });
+    console.log(`[Outreach] Pipeline completed for ${params.centerName}`);
+  } catch (e) {
+    console.error(`[Outreach] Pipeline error for ${params.centerName}:`, e);
+    if (job) {
+      job.status = 'error';
+      job.error = e.message;
+    }
+    push('error', { message: e.message });
+  }
+}
+
+// -- Institution outreach endpoint --
+app.post('/api/centers/institution-outreach', async (req, res) => {
+  const { codi_centre, centerName, centerEmail, webUrl, centerData,
+          aiEnrichment, referenceCenterName, lang } = req.body;
+
+  if (!centerEmail) return res.status(400).json({ error: 'Email del centre requerit' });
+
+  const jobId = crypto.randomUUID();
+  reportJobs.set(jobId, { status: 'running', events: [], result: null, error: null });
+
+  // Run pipeline async
+  runInstitutionOutreach(jobId, {
+    codi_centre, centerName, centerEmail, webUrl, centerData,
+    aiEnrichment, referenceCenterName, lang: lang || 'ca',
+  });
+
+  // Auto-cleanup after 2h
+  setTimeout(() => reportJobs.delete(jobId), 2 * 60 * 60 * 1000);
+
+  res.json({
+    jobId,
+    message: "S'ha iniciat el pipeline de prospecció. Rebràs notificació quan estigui llest.",
+  });
+});
+
+// -- Retrieve lead data for centers (by email list) --
+app.post('/api/centers/get-lead-data', async (req, res) => {
+  const { emails } = req.body;
+  if (!Array.isArray(emails) || emails.length === 0) {
+    return res.status(400).json({ error: 'Emails array required' });
+  }
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+
+  try {
+    const { data, error } = await supabase
+      .from('leads')
+      .select('email, company_name, source, status, ai_needs_analysis, created_at, updated_at')
+      .in('email', emails.slice(0, 100));
+    if (error) throw error;
+
+    // Index by email for easy lookup
+    const byEmail = {};
+    for (const lead of (data || [])) {
+      byEmail[lead.email] = lead;
+    }
+    res.json({ leads: byEmail, total: Object.keys(byEmail).length });
+  } catch (err) {
+    console.error('[GetLeadData] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/automation/generate-docx', async (req, res) => {
   try {
     const { generateDocxBuffer } = require('./multi-agent/generate_docx');
