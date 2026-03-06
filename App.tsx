@@ -264,7 +264,7 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.CRM, Phase.CENTER_MAP].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
+      <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.CRM, Phase.CENTER_MAP, Phase.NETWORK_EXPANSION].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
         {phase === Phase.LANDING && <SelectionScreen centerName={diagnosis.centerName} onChoice={handleProductChoice} />}
         {phase === Phase.REGISTER && <Register initial={diagnosis} onRegistered={handleRegistered} />}
         {phase === Phase.DYNAMIC_DIAGNOSIS && (isProcessing ? <ProcessingScreen centerName={diagnosis.centerName} onComplete={() => { }} /> : <DynamicConsultant initialDiagnosis={diagnosis} onComplete={handleAuditComplete} />)}

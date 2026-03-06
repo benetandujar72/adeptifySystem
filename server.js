@@ -441,25 +441,28 @@ app.post('/api/automation/migrate-data', async (req, res) => {
 });
 
 app.post('/api/automation/network-prospecting', async (req, res) => {
-  const { referenceCenterName, location } = req.body;
-  const prompt = `Ets un estrateg d'expansió per a consultores educatives.
+  const { referenceCenterName, location, realCenters } = req.body;
+
+  let prompt;
+  if (Array.isArray(realCenters) && realCenters.length > 0) {
+    // Enrich real centers with AI-generated pitches
+    const centersJson = JSON.stringify(realCenters.slice(0, 20).map(c => ({
+      name: c.denominacio_completa, type: c.nom_naturalesa,
+      municipi: c.nom_municipi, comarca: c.nom_comarca, distance_km: c._distance
+    })));
+    prompt = `Ets un estrateg d'expansió per a consultores educatives.
+Centre de referència: "${referenceCenterName || 'centre educatiu'}".
+Aquests són centres reals propers: ${centersJson}
+Per a cadascun, genera opportunity_score (1-10), reason_for_similarity i custom_referral_pitch.
+Retorna EXACTAMENT JSON: { "expansion_nodes": [{ "target_name": "...", "opportunity_score": 8, "reason_for_similarity": "...", "custom_referral_pitch": "..." }] }`;
+  } else {
+    prompt = `Ets un estrateg d'expansió per a consultores educatives.
 Centre de referència: "${referenceCenterName || 'centre educatiu'}" a "${location || 'Catalunya'}".
 Identifica 5 centres educatius similars de la mateixa zona.
 Retorna EXACTAMENT aquest JSON:
-{
-  "expansion_nodes": [
-    { 
-      "target_name": "Nombre del centro", 
-      "location": "Municipi, Comarca", 
-      "type": "concertat|privat|públic",
-      "estimated_students": 500, 
-      "digital_maturity": "baix|mig|alt",
-      "opportunity_score": 8, 
-      "reason_for_similarity": "Per què s'assembla al de referència.",
-      "custom_referral_pitch": "Com contactar-los amb èxit." 
-    }
-  ]
-}`;
+{ "expansion_nodes": [{ "target_name": "Nom", "location": "Municipi, Comarca", "type": "concertat|privat|públic", "estimated_students": 500, "digital_maturity": "baix|mig|alt", "opportunity_score": 8, "reason_for_similarity": "Per què s'assembla.", "custom_referral_pitch": "Com contactar-los." }] }`;
+  }
+
   try {
     const result = await callClaude(prompt);
     res.json(result);
@@ -560,6 +563,35 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'image/gif' }).end(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
 });
 
+// -- Bulk email to education centers (from CenterMapExplorer) --
+app.post('/api/centers/send-bulk-email', async (req, res) => {
+  const { recipients, subject, body } = req.body;
+  if (!Array.isArray(recipients) || !subject || !body) {
+    return res.status(400).json({ error: 'Falten camps obligatoris' });
+  }
+  const host = process.env.SMTP_HOST;
+  if (!host) return res.status(503).json({ error: 'SMTP no configurat' });
+
+  const transporter = nodemailer.createTransport({
+    host, port: Number(process.env.SMTP_PORT || 587), secure: false,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+
+  let sent = 0;
+  const errors = [];
+  for (const r of recipients.slice(0, 200)) {
+    try {
+      const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}</div>`;
+      await transporter.sendMail({ from: process.env.SMTP_USER, to: r.email, subject, html });
+      sent++;
+    } catch (e) {
+      errors.push(`${r.email}: ${e.message}`);
+    }
+  }
+  console.log(`[BulkEmail] Sent ${sent}/${recipients.length}, errors: ${errors.length}`);
+  res.json({ sent, total: recipients.length, errors });
+});
+
 app.post('/api/automation/generate-docx', async (req, res) => {
   try {
     const { generateDocxBuffer } = require('./multi-agent/generate_docx');
@@ -608,6 +640,22 @@ async function runFullReportJob(jobId, datosCliente) {
     // Store result immediately so download endpoints work
     job.result = { doc, docxBase64, rawJsonBase64, clientName };
 
+    // Persist to Supabase for cross-instance downloads (Cloud Run)
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        await sb.from('report_downloads').upsert({
+          job_id: jobId,
+          client_name: clientName,
+          docx_base64: docxBase64,
+          raw_json_base64: rawJsonBase64,
+        });
+        console.log(`[MultiAgent] Download persisted to Supabase for job ${jobId}`);
+      }
+    } catch (persistErr) {
+      console.error('[MultiAgent] Failed to persist download:', persistErr.message);
+    }
+
     // Send email with the generated report (non-blocking for SSE)
     try {
       const host = process.env.SMTP_HOST;
@@ -653,22 +701,45 @@ async function runFullReportJob(jobId, datosCliente) {
 }
 
 // Nou endpoint per descarregar informes de la memòria a través de l'API web
-app.get('/api/automation/full-report/download/:jobId/:type', (req, res) => {
-  const job = reportJobs.get(req.params.jobId);
-  if (!job || !job.result) return res.status(404).send('Not Found o Caducat');
+app.get('/api/automation/full-report/download/:jobId/:type', async (req, res) => {
+  const { jobId, type } = req.params;
 
-  const { type } = req.params;
-  const safeName = (job.result.clientName || 'Informe').replace(/[^a-zA-Z0-9À-ÿ\s]/g, '').replace(/\s+/g, '_');
+  // Try in-memory first (same instance, fastest path)
+  let result = reportJobs.get(jobId)?.result;
 
-  if (type === 'docx' && job.result.docxBase64) {
-    const buffer = Buffer.from(job.result.docxBase64, 'base64');
+  // Fallback: read from Supabase (cross-instance / expired from memory)
+  if (!result) {
+    try {
+      const sb = getSupabaseAdmin();
+      if (sb) {
+        const { data } = await sb
+          .from('report_downloads')
+          .select('client_name, docx_base64, raw_json_base64')
+          .eq('job_id', jobId)
+          .single();
+        if (data) {
+          result = { clientName: data.client_name, docxBase64: data.docx_base64, rawJsonBase64: data.raw_json_base64 };
+          console.log(`[Download] Served from Supabase fallback for job ${jobId}`);
+        }
+      }
+    } catch (e) {
+      console.error('[Download] Supabase fallback error:', e.message);
+    }
+  }
+
+  if (!result) return res.status(404).send('Not Found o Caducat');
+
+  const safeName = (result.clientName || 'Informe').replace(/[^a-zA-Z0-9\u00C0-\u00FF\s]/g, '').replace(/\s+/g, '_');
+
+  if (type === 'docx' && result.docxBase64) {
+    const buffer = Buffer.from(result.docxBase64, 'base64');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="Proposta_${safeName}.docx"`);
     return res.end(buffer);
   }
 
-  if (type === 'json' && job.result.rawJsonBase64) {
-    const buffer = Buffer.from(job.result.rawJsonBase64, 'base64');
+  if (type === 'json' && result.rawJsonBase64) {
+    const buffer = Buffer.from(result.rawJsonBase64, 'base64');
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', `attachment; filename="Adeptify_${safeName}.json"`);
     return res.end(buffer);
@@ -709,8 +780,8 @@ app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), as
   // Run async (don't await)
   runFullReportJob(jobId, datosCliente);
 
-  // Clean up job after 30 min
-  setTimeout(() => reportJobs.delete(jobId), 30 * 60 * 1000);
+  // Clean up in-memory job after 2h (downloads persisted in Supabase)
+  setTimeout(() => reportJobs.delete(jobId), 2 * 60 * 60 * 1000);
 
   res.json({
     jobId,

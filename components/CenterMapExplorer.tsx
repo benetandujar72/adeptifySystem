@@ -23,26 +23,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// -- Custom colored marker icons --
-function colorIcon(color: string) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
-    <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="12.5" cy="12.5" r="5" fill="#fff"/>
-  </svg>`;
-  return L.divIcon({
-    html: svg,
-    className: '',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [0, -35],
-  });
-}
-
-const ICON_BLUE = colorIcon('#3b82f6');
-const ICON_ORANGE = colorIcon('#f97316');
-const ICON_PURPLE = colorIcon('#8b5cf6');
-const ICON_GREEN = colorIcon('#22c55e');
-const ICON_GRAY = colorIcon('#94a3b8');
+import { colorIcon, ICON_BLUE, ICON_ORANGE, ICON_PURPLE, ICON_GREEN, ICON_GRAY } from './mapUtils';
 
 // -- Study type groupings --
 const STUDY_GROUPS = [
@@ -125,6 +106,14 @@ const CenterMapExplorer: React.FC = () => {
   const [showDrawer, setShowDrawer] = useState(false);
   const [comarcaSearch, setComarcaSearch] = useState('');
   const [municipiSearch, setMunicipiSearch] = useState('');
+
+  // Email modal state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [emailChecked, setEmailChecked] = useState<Set<string>>(new Set());
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[] } | null>(null);
 
   // Load centers on mount
   useEffect(() => {
@@ -271,6 +260,52 @@ const CenterMapExplorer: React.FC = () => {
       setRefreshing(false);
     }
   }, [t]);
+
+  // Open email modal
+  const openEmailModal = useCallback(() => {
+    const centersWithEmails = centers
+      .filter(c => selected.has(c.codi_centre) && c.email_centre)
+      .map(c => c.codi_centre);
+    setEmailChecked(new Set(centersWithEmails));
+    setEmailSubject("Proposta de col·laboració - Adeptify");
+    setEmailBody("Benvolgut/da,\n\nEns adrecem a vostè per presentar els nostres serveis de consultoria educativa i transformació digital.\n\nEns agradaria concertar una breu reunió per explorar com podem ajudar al seu centre.\n\nSalutacions cordials,\nEquip Adeptify");
+    setShowEmailModal(true);
+    setEmailSendProgress(null);
+  }, [centers, selected]);
+
+  // Send bulk emails
+  const sendBulkEmails = useCallback(async () => {
+    const recipients = centers
+      .filter(c => emailChecked.has(c.codi_centre) && c.email_centre)
+      .map(c => ({ email: c.email_centre!, centerName: c.denominacio_completa, codi: c.codi_centre }));
+    if (recipients.length === 0) return;
+
+    setSendingEmails(true);
+    setEmailSendProgress({ sent: 0, total: recipients.length, errors: [] });
+    try {
+      const resp = await fetch('/api/centers/send-bulk-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients, subject: emailSubject, body: emailBody }),
+      });
+      const data = await resp.json();
+      setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [] });
+    } catch (err: any) {
+      setEmailSendProgress(prev => prev ? { ...prev, errors: [err.message] } : { sent: 0, total: recipients.length, errors: [err.message] });
+    } finally {
+      setSendingEmails(false);
+    }
+  }, [centers, emailChecked, emailSubject, emailBody]);
+
+  // Toggle email recipient
+  const toggleEmailChecked = useCallback((codi: string) => {
+    setEmailChecked(prev => {
+      const next = new Set(prev);
+      if (next.has(codi)) next.delete(codi);
+      else next.add(codi);
+      return next;
+    });
+  }, []);
 
   // Naturalesa filter toggle
   const toggleNaturalesa = (val: string) => {
@@ -569,6 +604,13 @@ const CenterMapExplorer: React.FC = () => {
             </h3>
             <div className="flex gap-2">
               <button
+                onClick={openEmailModal}
+                disabled={centers.filter(c => selected.has(c.codi_centre) && c.email_centre).length === 0}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-40"
+              >
+                {(t as any).centerMapSendEmail || 'Enviar Email'} ({centers.filter(c => selected.has(c.codi_centre) && c.email_centre).length})
+              </button>
+              <button
                 onClick={exportCsv}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-emerald-700 transition-all"
               >
@@ -624,6 +666,83 @@ const CenterMapExplorer: React.FC = () => {
                   ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => !sendingEmails && setShowEmailModal(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">{(t as any).centerMapEmailModalTitle || 'Enviar Email'}</h3>
+                <button onClick={() => !sendingEmails && setShowEmailModal(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-all">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+              {/* Subject */}
+              <div className="mb-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{(t as any).centerMapEmailSubject || 'Assumpte'}</label>
+                <input type="text" value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+              </div>
+
+              {/* Body */}
+              <div className="mb-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{(t as any).centerMapEmailBody || 'Cos del missatge'}</label>
+                <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={6}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-y" />
+              </div>
+
+              {/* Recipients */}
+              <div className="mb-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+                  {(t as any).centerMapEmailRecipients || 'Destinataris'} ({emailChecked.size})
+                </label>
+                <div className="max-h-[200px] overflow-y-auto border border-slate-200 rounded-xl">
+                  {centers.filter(c => selected.has(c.codi_centre)).map(c => (
+                    <label key={c.codi_centre} className={`flex items-center gap-3 px-4 py-2 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!c.email_centre ? 'opacity-40' : ''}`}>
+                      <input type="checkbox" checked={emailChecked.has(c.codi_centre)} disabled={!c.email_centre}
+                        onChange={() => c.email_centre && toggleEmailChecked(c.codi_centre)}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">{c.denominacio_completa}</p>
+                        <p className="text-[10px] text-slate-500">{c.email_centre || ((t as any).centerMapEmailNoEmail || 'sense email')}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-400">{c.nom_municipi}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress / Result */}
+              {emailSendProgress && (
+                <div className={`p-4 rounded-xl mb-4 text-sm font-bold ${emailSendProgress.errors.length > 0 ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
+                  {emailSendProgress.sent}/{emailSendProgress.total} {(t as any).centerMapEmailSent || 'enviats'}
+                  {emailSendProgress.errors.length > 0 && (
+                    <div className="mt-2 text-xs font-normal">
+                      {emailSendProgress.errors.length} {(t as any).centerMapEmailErrors || 'errors'}:
+                      <ul className="list-disc ml-4 mt-1">{emailSendProgress.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowEmailModal(false)} disabled={sendingEmails}
+                className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all disabled:opacity-50">
+                {(t as any).centerMapEmailClose || 'Tancar'}
+              </button>
+              <button onClick={sendBulkEmails} disabled={sendingEmails || emailChecked.size === 0}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50">
+                {sendingEmails ? ((t as any).centerMapEmailSending || 'Enviant...') : `${(t as any).centerMapEmailSend || 'Enviar'} (${emailChecked.size})`}
+              </button>
+            </div>
           </div>
         </div>
       )}
