@@ -13,6 +13,7 @@ import AutoOnboarding from './components/AutoOnboarding';
 import DigitalTwinDashboard from './components/DigitalTwinDashboard';
 import CustomerSuccessPanel from './components/CustomerSuccessPanel';
 import NetworkExpansion from './components/NetworkExpansion';
+import CenterMapExplorer from './components/CenterMapExplorer';
 import CRMDashboard from './components/CRMDashboard';
 import Login from './components/Login';
 import Register, { RegistrationData } from './components/Register';
@@ -249,6 +250,7 @@ const AppContent: React.FC = () => {
               <button onClick={() => setPhase(Phase.AUTO_ONBOARDING)} className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Migració</button>
               <button onClick={() => setPhase(Phase.DIGITAL_TWIN)} className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Twin</button>
               <button onClick={() => setPhase(Phase.NETWORK_EXPANSION)} className="text-[9px] font-black uppercase tracking-widest text-cyan-600 hover:text-slate-900 transition-colors">Expansió</button>
+              <button onClick={() => setPhase(Phase.CENTER_MAP)} className="text-[9px] font-black uppercase tracking-widest text-emerald-600 hover:text-slate-900 transition-colors">{t.centerMapNav}</button>
             </div>
           )}
 
@@ -262,7 +264,7 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.CRM].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
+      <main className={`w-full px-6 md:px-12 mt-32 mb-20 ${[Phase.ADMIN, Phase.PROPOSAL, Phase.DOC_GENERATOR, Phase.CRM, Phase.CENTER_MAP].includes(phase) ? 'max-w-[1600px]' : 'max-w-4xl'}`}>
         {phase === Phase.LANDING && <SelectionScreen centerName={diagnosis.centerName} onChoice={handleProductChoice} />}
         {phase === Phase.REGISTER && <Register initial={diagnosis} onRegistered={handleRegistered} />}
         {phase === Phase.DYNAMIC_DIAGNOSIS && (isProcessing ? <ProcessingScreen centerName={diagnosis.centerName} onComplete={() => { }} /> : <DynamicConsultant initialDiagnosis={diagnosis} onComplete={handleAuditComplete} />)}
@@ -273,6 +275,7 @@ const AppContent: React.FC = () => {
         {phase === Phase.DIGITAL_TWIN && <DigitalTwinDashboard />}
         {phase === Phase.CUSTOMER_SUCCESS && <CustomerSuccessPanel />}
         {phase === Phase.NETWORK_EXPANSION && <NetworkExpansion />}
+        {phase === Phase.CENTER_MAP && <CenterMapExplorer />}
         {phase === Phase.CRM && <CRMDashboard />}
         {phase === Phase.INTERACTIVE_AUDIT && auditToken && <InteractiveAudit token={auditToken} onBookConsultation={() => setPhase(Phase.LANDING)} />}
         {phase === Phase.LOGIN && <Login onLoginSuccess={handleLoginSuccess} />}

@@ -16,7 +16,34 @@ export enum Phase {
   DIGITAL_TWIN = 'DIGITAL_TWIN',
   CUSTOMER_SUCCESS = 'CUSTOMER_SUCCESS',
   NETWORK_EXPANSION = 'NETWORK_EXPANSION',
-  CRM = 'CRM'
+  CRM = 'CRM',
+  CENTER_MAP = 'CENTER_MAP'
+}
+
+export interface CatEducationCenterFull {
+  codi_centre: string;
+  denominacio_completa: string;
+  nom_naturalesa: string | null;
+  nom_titularitat: string | null;
+  adreca: string | null;
+  codi_postal: string | null;
+  telefon: string | null;
+  nom_delegacio: string | null;
+  nom_comarca: string | null;
+  nom_municipi: string | null;
+  coordenades_geo_x: number | null;
+  coordenades_geo_y: number | null;
+  email_centre: string | null;
+  estudis: string | null;
+  einf1c: boolean; einf2c: boolean; epri: boolean; eso: boolean;
+  batx: boolean; aa01: boolean; cfpm: boolean; ppas: boolean;
+  aa03: boolean; cfps: boolean; ee: boolean; ife: boolean;
+  pfi: boolean; pa01: boolean; cfam: boolean; pa02: boolean;
+  cfas: boolean; esdi: boolean; escm: boolean; escs: boolean;
+  adr: boolean; crbc: boolean; idi: boolean; dane: boolean;
+  danp: boolean; dans: boolean; muse: boolean; musp: boolean;
+  muss: boolean; tegm: boolean; tegs: boolean; estr: boolean;
+  adults: boolean;
 }
 
 export type ProductType = 'LMS' | 'AUDIT' | 'VISION' | 'DEEP_AUDIT';

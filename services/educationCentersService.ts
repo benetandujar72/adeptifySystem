@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import type { CatEducationCenterFull } from '../types';
 
 export type CatEducationCenter = {
   codi_centre: string;
@@ -66,4 +67,35 @@ export async function searchCatEducationCenters(query: string, limit = 12): Prom
     return [];
   }
   return data as CatEducationCenter[];
+}
+
+const MAP_COLUMNS = [
+  'codi_centre', 'denominacio_completa', 'nom_naturalesa', 'nom_titularitat',
+  'adreca', 'codi_postal', 'telefon', 'nom_delegacio', 'nom_comarca', 'nom_municipi',
+  'coordenades_geo_x', 'coordenades_geo_y', 'email_centre', 'estudis',
+  'einf1c', 'einf2c', 'epri', 'eso', 'batx', 'aa01', 'cfpm', 'ppas',
+  'aa03', 'cfps', 'ee', 'ife', 'pfi', 'pa01', 'cfam', 'pa02',
+  'cfas', 'esdi', 'escm', 'escs', 'adr', 'crbc', 'idi', 'dane',
+  'danp', 'dans', 'muse', 'musp', 'muss', 'tegm', 'tegs', 'estr', 'adults',
+].join(', ');
+
+export async function fetchAllCentersForMap(): Promise<CatEducationCenterFull[]> {
+  if (!supabase) return [];
+  const allRows: CatEducationCenterFull[] = [];
+  const PAGE_SIZE = 1000;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from('cat_education_centers')
+      .select(MAP_COLUMNS)
+      .not('coordenades_geo_y', 'is', null)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error || !data) break;
+    allRows.push(...(data as unknown as CatEducationCenterFull[]));
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
 }
