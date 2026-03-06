@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud run services logs read adeptify-consultor --project=gen-lang-client-0757991117 --region=europe-west1 --limit=30)",
+      "Bash(gcloud builds submit --config=cloudbuild.yaml --project=gen-lang-client-0757991117)"
+    ]
+  }
+}
