@@ -469,6 +469,64 @@ Retorna EXACTAMENT aquest JSON:
   }
 });
 
+// -- Refresh education centers from Generalitat API --
+app.post('/api/admin/centers/refresh', async (req, res) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase admin not configured");
+
+    const API_BASE = 'https://analisi.transparenciacatalunya.cat/resource/kvmv-ahh4.json';
+    const PAGE_SIZE = 5000;
+    let offset = 0;
+    let allRows = [];
+
+    while (true) {
+      const url = `${API_BASE}?$limit=${PAGE_SIZE}&$offset=${offset}`;
+      const resp = await fetch(url, { signal: AbortSignal.timeout(60000) });
+      if (!resp.ok) throw new Error(`API Generalitat error: ${resp.status}`);
+      const rows = await resp.json();
+      if (!Array.isArray(rows) || rows.length === 0) break;
+      allRows.push(...rows);
+      if (rows.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
+
+    console.log(`[Centers Refresh] Fetched ${allRows.length} rows from API`);
+
+    const mapped = allRows
+      .filter(r => r.codi_centre && r.denominaci_completa)
+      .map(r => ({
+        codi_centre: String(r.codi_centre).trim(),
+        denominacio_completa: String(r.denominaci_completa || '').trim(),
+        nom_naturalesa: (r.nom_naturalesa || '').trim() || null,
+        adreca: (r.adre_a || '').trim() || null,
+        nom_municipi: (r.nom_municipi || '').trim() || null,
+        codi_postal: (r.codi_postal || '').trim() || null,
+        telefon: (r.tel_fon || '').trim() || null,
+        coordenades_geo_x: r.coordenades_geo_x ? parseFloat(r.coordenades_geo_x) : null,
+        coordenades_geo_y: r.coordenades_geo_y ? parseFloat(r.coordenades_geo_y) : null,
+        email_centre: (r.correu_electr_nic || '').trim() || null,
+      }));
+
+    const BATCH_SIZE = 500;
+    let upserted = 0;
+    for (let i = 0; i < mapped.length; i += BATCH_SIZE) {
+      const batch = mapped.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase
+        .from('cat_education_centers')
+        .upsert(batch, { onConflict: 'codi_centre' });
+      if (error) throw error;
+      upserted += batch.length;
+    }
+
+    console.log(`[Centers Refresh] Upserted ${upserted} records`);
+    res.json({ success: true, fetched: allRows.length, upserted });
+  } catch (e) {
+    console.error("[Centers Refresh Error]", e);
+    res.status(500).json({ error: e.message || "Error refreshing centers" });
+  }
+});
+
 app.post('/api/leads/send-proposal', async (req, res) => {
   const { leadId, email, subject, body, pdfBase64, docxBase64, proposalData } = req.body;
   try {
