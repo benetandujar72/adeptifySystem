@@ -661,6 +661,7 @@ app.post('/api/automation/full-report/start', express.json({ limit: '2mb' }), as
 });
 
 // 2) SSE stream for job progress — use with EventSource(url) on the frontend
+//    Supports ?cursor=N for reconnection after QUIC drops
 app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
   const { jobId } = req.params;
 
@@ -670,17 +671,19 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no'); // disable nginx buffering
   res.flushHeaders();
 
-  let cursor = 0;
+  // Support reconnection: client can pass ?cursor=N to resume from event N
+  let cursor = Math.max(0, parseInt(req.query.cursor, 10) || 0);
   let heartbeatCount = 0;
   let jobNotFoundRetries = 0;
   const JOB_NOT_FOUND_MAX_RETRIES = 30; // 30 × 500ms = 15s de marge per Cloud Run multi-instancia
 
-  // Heartbeat cada 20s para prevenir QUIC_NETWORK_IDLE_TIMEOUT en Cloud Run
+  // Heartbeat cada 10s para prevenir QUIC_NETWORK_IDLE_TIMEOUT en Cloud Run
+  // (QUIC idle timeout can be as low as 30s; 10s keeps the connection alive)
   const heartbeat = setInterval(() => {
     try {
       res.write(`: ping ${++heartbeatCount}\n\n`);
     } catch (_) { }
-  }, 20000);
+  }, 10000);
 
   const interval = setInterval(() => {
     const job = reportJobs.get(jobId);
@@ -699,11 +702,11 @@ app.get('/api/automation/full-report/stream/:jobId', (req, res) => {
     // Job trobat — reiniciem el comptador de retries
     jobNotFoundRetries = 0;
 
-    // Drain new events
+    // Drain new events, sending cursor position so client can reconnect
     while (cursor < job.events.length) {
       const ev = job.events[cursor++];
       const { type, ...data } = ev;
-      res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
+      res.write(`event: ${type}\ndata: ${JSON.stringify({ ...data, _cursor: cursor })}\n\n`);
     }
 
     if (job.status === 'done' || job.status === 'error') {

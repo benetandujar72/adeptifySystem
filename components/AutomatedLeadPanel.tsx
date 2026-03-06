@@ -201,26 +201,21 @@ const AutomatedLeadPanel: React.FC = () => {
         setStatusMsg(message);
       }
       setActiveJobId(jobId);
-      // Usar fetch + ReadableStream en lugar de EventSource para evitar QUIC_PACKET_WRITE_ERROR en Cloud Run
-      const abortCtrl = new AbortController();
 
-      const sseResp = await fetch(`/api/automation/full-report/stream/${jobId}`, {
-        signal: abortCtrl.signal,
-      });
-
-      if (!sseResp.ok || !sseResp.body) {
-        throw new Error('No s\'ha pogut connectar amb el stream SSE');
-      }
-
-      // Parsear SSE manualment del ReadableStream
-      const reader = sseResp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      // SSE with auto-reconnect on QUIC/network drops
+      // Server sends _cursor in each event; on reconnect we pass ?cursor=N to resume
+      let sseCursor = 0;
+      let finished = false;
+      const MAX_RECONNECTS = 10;
+      let reconnectCount = 0;
 
       const dispatchSSE = (eventType: string, rawData: string) => {
         if (!rawData) return;
         try {
           const data = JSON.parse(rawData);
+          // Track cursor for reconnection
+          if (data._cursor) sseCursor = data._cursor;
+
           if (eventType === 'progress') {
             if (data.agent === 'TOKENS') {
               try {
@@ -232,8 +227,9 @@ const AutomatedLeadPanel: React.FC = () => {
             setReportProgress(prev => [...prev, data]);
             if (data.fase && data.fase > 0) setReportFase(data.fase);
           } else if (eventType === 'complete') {
+            finished = true;
             if (data.success) {
-              setReportDocxBase64('ready'); // Use as a flag to show buttons
+              setReportDocxBase64('ready');
               setReportRawJsonBase64('ready');
             }
             setReportClientName(data.clientName || lead.name);
@@ -243,49 +239,75 @@ const AutomatedLeadPanel: React.FC = () => {
             setReportProgress(prev => [...prev, { agent: 'ORQUESTADOR', message: msg, fase: 5 }]);
             setStatusMsg(msg);
             setIsGeneratingReport(false);
-            abortCtrl.abort();
           } else if (eventType === 'error') {
+            finished = true;
             const errMsg = data.message || 'Error desconegut';
             setReportError(errMsg);
             setReportProgress(prev => [...prev, { agent: 'ERROR', message: `ERROR: ${errMsg}`, fase: 0 }]);
             setIsGeneratingReport(false);
-            abortCtrl.abort();
           }
         } catch { /* ignore parse errors */ }
       };
 
-      const readSSE = async () => {
-        let currentEvent = 'message';
-        try {
-          while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() ?? '';
-            for (const line of lines) {
-              if (line.startsWith('event:')) {
-                currentEvent = line.slice(6).trim();
-              } else if (line.startsWith('data:')) {
-                dispatchSSE(currentEvent, line.slice(5).trim());
-                currentEvent = 'message';
-              } else if (line === '') {
-                // separador de blocs, reset
-                currentEvent = 'message';
-              }
-              // Les línies que comencen per ':' són heartbeats/comentaris, s'ignoren
+      const connectSSE = async () => {
+        while (!finished && reconnectCount <= MAX_RECONNECTS) {
+          const abortCtrl = new AbortController();
+          try {
+            const url = `/api/automation/full-report/stream/${jobId}${sseCursor ? `?cursor=${sseCursor}` : ''}`;
+            const sseResp = await fetch(url, { signal: abortCtrl.signal });
+
+            if (!sseResp.ok || !sseResp.body) {
+              throw new Error('SSE connection failed');
             }
+
+            // Reset reconnect counter on successful connection
+            reconnectCount = 0;
+            const reader = sseResp.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let currentEvent = 'message';
+
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() ?? '';
+              for (const line of lines) {
+                if (line.startsWith('event:')) {
+                  currentEvent = line.slice(6).trim();
+                } else if (line.startsWith('data:')) {
+                  dispatchSSE(currentEvent, line.slice(5).trim());
+                  currentEvent = 'message';
+                } else if (line === '') {
+                  currentEvent = 'message';
+                }
+              }
+            }
+
+            // Stream ended cleanly (server closed) — if not finished, reconnect
+            if (finished) return;
+          } catch (err: any) {
+            if (err?.name === 'AbortError' || finished) return;
+            // Network error (QUIC drop, etc.) — reconnect
           }
-        } catch (err: any) {
-          if (err?.name === 'AbortError') return; // tancament normal
-          const msg = 'Connexió SSE perduda. Comprova els logs del servidor.';
-          setReportError(msg);
-          setReportProgress(prev => [...prev, { agent: 'ERROR', message: msg, fase: 0 }]);
+
+          if (finished) return;
+          reconnectCount++;
+          setReportProgress(prev => [...prev, { agent: 'SSE', message: `Reconnectant... (${reconnectCount}/${MAX_RECONNECTS})`, fase: prev[prev.length - 1]?.fase || 0 }]);
+          // Wait before reconnecting (exponential backoff capped at 5s)
+          await new Promise(r => setTimeout(r, Math.min(1000 * reconnectCount, 5000)));
+        }
+
+        // Exhausted reconnects without finishing
+        if (!finished) {
+          setReportError('Connexió SSE perduda després de múltiples intents.');
+          setReportProgress(prev => [...prev, { agent: 'ERROR', message: 'Connexió SSE perduda. Comprova els logs del servidor.', fase: 0 }]);
           setIsGeneratingReport(false);
         }
       };
 
-      readSSE();
+      connectSSE();
 
     } catch (err: any) {
       const msg = err.message || 'Error desconegut';
