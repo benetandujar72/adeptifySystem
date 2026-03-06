@@ -73,7 +73,7 @@ async function callClaude(prompt, modelId = "claude-sonnet-4-6") {
         max_tokens: 8192,
         messages: [{ role: 'user', content: prompt }]
       }),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(50000)
     });
 
     if (!response.ok) {
@@ -149,7 +149,7 @@ async function callGeminiFallback(prompt, modelId = "gemini-2.0-flash") {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 8192 }
         }),
-        signal: AbortSignal.timeout(20000)
+        signal: AbortSignal.timeout(45000)
       });
 
       const data = await response.json();
