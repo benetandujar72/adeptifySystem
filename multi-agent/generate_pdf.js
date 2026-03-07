@@ -143,10 +143,12 @@ function tryImage(doc, base64, opts = {}) {
     const buf = Buffer.from(base64, 'base64');
     const w = opts.width || CW * 0.8;
     const h = opts.height || 200;
-    ensureSpace(doc, h + 20);
+    ensureSpace(doc, h + 40);
     const x = MARGIN + (CW - w) / 2;
-    doc.image(buf, x, doc.y, { width: w });
-    doc.moveDown(1);
+    doc.moveDown(0.5);
+    const yBefore = doc.y;
+    doc.image(buf, x, yBefore, { width: w, height: h, fit: [w, h], align: 'center', valign: 'center' });
+    doc.y = yBefore + h + 15;
   } catch (e) {
     console.warn(`[PDF] Image embed failed: ${e.message}`);
   }
