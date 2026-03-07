@@ -41,7 +41,7 @@ let LOGO_BUF = null;
 try {
   const p = path.join(__dirname, 'assets', 'logo_adeptify.png');
   if (fs.existsSync(p)) LOGO_BUF = fs.readFileSync(p);
-} catch (_) {}
+} catch (_) { }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,21 +64,21 @@ function heading(doc, text, level = 1) {
     doc.addPage();
     doc.y = MARGIN + 10;
     doc.fontSize(20).font('Helvetica-Bold').fillColor(COL.meteorite)
-       .text(text, MARGIN, doc.y, { width: CW });
+      .text(text, MARGIN, doc.y, { width: CW });
     doc.moveTo(MARGIN, doc.y).lineTo(PW - MARGIN, doc.y)
-       .strokeColor(COL.purple).lineWidth(1.5).stroke();
+      .strokeColor(COL.purple).lineWidth(1.5).stroke();
     doc.moveDown(0.5);
   } else if (level === 2) {
     ensureSpace(doc, 60);
     doc.moveDown(0.3);
     doc.fontSize(13).font('Helvetica-Bold').fillColor(COL.purple)
-       .text(text, MARGIN, doc.y, { width: CW });
+      .text(text, MARGIN, doc.y, { width: CW });
     doc.moveDown(0.3);
   } else {
     ensureSpace(doc, 50);
     doc.moveDown(0.2);
     doc.fontSize(11).font('Helvetica-Bold').fillColor(COL.lightPurple)
-       .text(text, MARGIN, doc.y, { width: CW });
+      .text(text, MARGIN, doc.y, { width: CW });
     doc.moveDown(0.2);
   }
 }
@@ -88,7 +88,7 @@ function bodyText(doc, text, opts = {}) {
   ensureSpace(doc, 40);
   const font = opts.bold ? 'Helvetica-Bold' : opts.italic ? 'Helvetica-Oblique' : 'Helvetica';
   doc.fontSize(10).font(font).fillColor(opts.color || COL.body)
-     .text(safe(text), MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 2 });
+    .text(safe(text), MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 2 });
   doc.moveDown(0.3);
 }
 
@@ -96,7 +96,7 @@ function bulletItem(doc, text) {
   if (!text) return;
   ensureSpace(doc, 30);
   doc.fontSize(10).font('Helvetica').fillColor(COL.body)
-     .text(`  •  ${safe(text)}`, MARGIN, doc.y, { width: CW, lineGap: 2 });
+    .text(`  •  ${safe(text)}`, MARGIN, doc.y, { width: CW, lineGap: 2 });
   doc.moveDown(0.1);
 }
 
@@ -130,7 +130,7 @@ function drawTable(doc, rows) {
       doc.restore();
       doc.rect(x, y, colW, rH).strokeColor(COL.border).lineWidth(0.3).stroke();
       doc.fontSize(fs).font(fn).fillColor(tc)
-         .text(norm[ri][ci], x + 3, y + 4, { width: colW - 6, height: rH - 4, ellipsis: true });
+        .text(norm[ri][ci], x + 3, y + 4, { width: colW - 6, height: rH - 4, ellipsis: true });
     }
     doc.y = y + rH;
   }
@@ -165,15 +165,15 @@ function renderCover(doc, docData, datosCliente, vis) {
 
   // Logo
   if (LOGO_BUF) {
-    try { doc.image(LOGO_BUF, (PW - 100) / 2, 15, { width: 100 }); } catch (_) {}
+    try { doc.image(LOGO_BUF, (PW - 100) / 2, 15, { width: 100 }); } catch (_) { }
   }
 
   doc.y = 120;
   doc.fontSize(30).font('Helvetica-Bold').fillColor(COL.meteorite)
-     .text('Adeptify Systems', { align: 'center', width: PW });
+    .text('Adeptify Systems', { align: 'center', width: PW });
   doc.moveDown(0.2);
   doc.fontSize(11).font('Helvetica-Oblique').fillColor(COL.secondary)
-     .text(S.marca.claim, { align: 'center', width: PW });
+    .text(S.marca.claim, { align: 'center', width: PW });
   doc.moveDown(1.5);
 
   // Cover image
@@ -187,13 +187,13 @@ function renderCover(doc, docData, datosCliente, vis) {
   const barY = doc.y;
   doc.rect(MARGIN + 40, barY, CW - 80, 36).fill(COL.meteorite);
   doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.white)
-     .text('Proposta de Transformació Digital', 0, barY + 10, { align: 'center', width: PW });
+    .text('Proposta de Transformació Digital', 0, barY + 10, { align: 'center', width: PW });
   doc.y = barY + 50;
   doc.moveDown(1);
 
   // Client name
   doc.fontSize(24).font('Helvetica-Bold').fillColor(COL.purple)
-     .text(cl.nombre || meta.cliente || 'Client', { align: 'center' });
+    .text(cl.nombre || meta.cliente || 'Client', { align: 'center' });
   doc.moveDown(0.3);
   const loc = `${safe(cl.sector)} · ${safe(cl.ubicacion)}`.replace(/^ · | · $/g, '');
   if (loc.trim()) {
@@ -203,10 +203,10 @@ function renderCover(doc, docData, datosCliente, vis) {
 
   // Reference
   doc.fontSize(9).font('Helvetica').fillColor(COL.secondary)
-     .text(`Ref: ${safe(meta.referencia, 'ADT-2026-001')}  ·  Data: ${safe(meta.fecha, new Date().toLocaleDateString('ca-ES'))}  ·  Versió: ${safe(meta.version, '1.0')}`, { align: 'center' });
+    .text(`Ref: ${safe(meta.referencia, 'ADT-2026-001')}  ·  Data: ${safe(meta.fecha, new Date().toLocaleDateString('ca-ES'))}  ·  Versió: ${safe(meta.version, '1.0')}`, { align: 'center' });
   doc.moveDown(0.8);
   doc.fontSize(9).font('Helvetica-Bold').fillColor(COL.meteorite)
-     .text('— DOCUMENT CONFIDENCIAL —', { align: 'center' });
+    .text('— DOCUMENT CONFIDENCIAL —', { align: 'center' });
 }
 
 // ── Sections ─────────────────────────────────────────────────────────────────
@@ -313,7 +313,7 @@ function renderS10(doc, s) {
   if (s.plan_formacion?.length) {
     heading(doc, 'Pla de Formació', 2);
     const rows = [['Sessió', 'Audiència', 'Durada', 'Format'],
-      ...s.plan_formacion.map(f => [safe(f.sesion), safe(f.audiencia), safe(f.duracion), safe(f.formato)])];
+    ...s.plan_formacion.map(f => [safe(f.sesion), safe(f.audiencia), safe(f.duracion), safe(f.formato)])];
     drawTable(doc, rows);
   }
 }
@@ -353,16 +353,16 @@ function addHeadersFooters(doc, clientName) {
     // Footer
     doc.save();
     doc.moveTo(MARGIN, PH - 42).lineTo(PW - MARGIN, PH - 42)
-       .strokeColor(COL.purple).lineWidth(0.5).stroke();
+      .strokeColor(COL.purple).lineWidth(0.5).stroke();
     doc.fontSize(7).font('Helvetica').fillColor(COL.secondary)
-       .text(`CONFIDENCIAL  |  ${i + 1} / ${range.count}  |  © Adeptify Systems`,
-         MARGIN, PH - 35, { width: CW, align: 'center' });
+      .text(`CONFIDENCIAL  |  ${i + 1} / ${range.count}  |  © Adeptify Systems`,
+        MARGIN, PH - 35, { width: CW, align: 'center' });
     // Header (skip cover)
     if (i > 0) {
       doc.fontSize(7).font('Helvetica').fillColor(COL.secondary)
-         .text(`Adeptify Systems  |  ${safe(clientName)}`, MARGIN, 15, { width: CW, align: 'right' });
+        .text(`Adeptify Systems  |  ${safe(clientName)}`, MARGIN, 15, { width: CW, align: 'right' });
       doc.moveTo(MARGIN, 28).lineTo(PW - MARGIN, 28)
-         .strokeColor(COL.purple).lineWidth(0.3).stroke();
+        .strokeColor(COL.purple).lineWidth(0.3).stroke();
     }
     doc.restore();
   }
@@ -457,38 +457,38 @@ async function generateBrochurePdfBuffer() {
       // Cover bar
       doc.rect(0, 0, PW, 90).fill(COL.meteorite);
       if (LOGO_BUF) {
-        try { doc.image(LOGO_BUF, (PW - 90) / 2, 10, { width: 90 }); } catch (_) {}
+        try { doc.image(LOGO_BUF, (PW - 90) / 2, 10, { width: 90 }); } catch (_) { }
       }
 
       doc.y = 110;
       doc.fontSize(26).font('Helvetica-Bold').fillColor(COL.meteorite)
-         .text('Adeptify Systems', { align: 'center' });
+        .text('Adeptify Systems', { align: 'center' });
       doc.moveDown(0.2);
       doc.fontSize(11).font('Helvetica-Oblique').fillColor(COL.secondary)
-         .text(S.marca.claim, { align: 'center' });
+        .text(S.marca.claim, { align: 'center' });
       doc.moveDown(1);
 
       // Divider
       doc.moveTo(MARGIN + 80, doc.y).lineTo(PW - MARGIN - 80, doc.y)
-         .strokeColor(COL.purple).lineWidth(1).stroke();
+        .strokeColor(COL.purple).lineWidth(1).stroke();
       doc.moveDown(1);
 
       // Intro
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.purple)
-         .text('Consultoria Estratègica en Intel·ligència Artificial', MARGIN, doc.y, { width: CW, align: 'center' });
+        .text('Consultoria Estratègica en Intel·ligència Artificial', MARGIN, doc.y, { width: CW, align: 'center' });
       doc.moveDown(0.8);
 
       doc.fontSize(10).font('Helvetica').fillColor(COL.body)
-         .text(
-           'A Adeptify, ens especialitzem en transformació digital per a centres educatius i institucions. ' +
-           'Combinem IA avançada, automatització de processos i consultoria estratègica per generar impacte real.',
-           MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 3 }
-         );
+        .text(
+          'A Adeptify, ens especialitzem en transformació digital per a centres educatius i institucions. ' +
+          'Combinem IA avançada, automatització de processos i consultoria estratègica per generar impacte real.',
+          MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 3 }
+        );
       doc.moveDown(1);
 
       // Services
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.meteorite)
-         .text('Els Nostres Serveis', MARGIN);
+        .text('Els Nostres Serveis', MARGIN);
       doc.moveDown(0.5);
 
       const services = [
@@ -504,15 +504,41 @@ async function generateBrochurePdfBuffer() {
         doc.moveDown(0.3);
         doc.fontSize(11).font('Helvetica-Bold').fillColor(COL.purple).text(svc.name, MARGIN);
         doc.fontSize(9.5).font('Helvetica').fillColor(COL.body)
-           .text(svc.desc, MARGIN, doc.y, { width: CW, lineGap: 2 });
+          .text(svc.desc, MARGIN, doc.y, { width: CW, lineGap: 2 });
         doc.moveDown(0.6);
       }
 
       doc.moveDown(1);
 
+      // Customization emphasis and examples
+      ensureSpace(doc, 100);
+      doc.rect(MARGIN, doc.y, CW, 2).fill(COL.purple);
+      doc.moveDown(1);
+      doc.fontSize(15).font('Helvetica-Bold').fillColor(COL.purple)
+        .text("És la tecnologia qui s'adapta al client i no viceversa", MARGIN, doc.y, { width: CW, align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(10).font('Helvetica').fillColor(COL.body)
+        .text("Adeptify desenvolupa solucions completament a mida i personalitzades. Provem el vostre ecosistema educatiu amb un enfocament totalment individualitzat.", MARGIN, doc.y, { width: CW, align: 'center' });
+      doc.moveDown(1);
+
+      try {
+        const p1 = path.join(__dirname, '..', 'public', 'images', 'projects', 'assistatut.png');
+        const p2 = path.join(__dirname, '..', 'public', 'images', 'projects', 'matchcare.png');
+        if (fs.existsSync(p1)) {
+          ensureSpace(doc, 190);
+          tryImage(doc, fs.readFileSync(p1).toString('base64'), { width: 380, height: 170 });
+        }
+        if (fs.existsSync(p2)) {
+          ensureSpace(doc, 190);
+          tryImage(doc, fs.readFileSync(p2).toString('base64'), { width: 380, height: 170 });
+        }
+      } catch (e) { console.warn('Could not load project images:', e.message); }
+
+      doc.moveDown(1);
+
       // Value proposition
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.meteorite)
-         .text('Per Què Adeptify?', MARGIN);
+        .text('Per Què Adeptify?', MARGIN);
       doc.moveDown(0.5);
 
       const values = [
@@ -527,24 +553,38 @@ async function generateBrochurePdfBuffer() {
       doc.moveDown(1.5);
 
       // CTA bar
-      ensureSpace(doc, 80);
+      ensureSpace(doc, 90);
       const ctaY = doc.y;
-      doc.rect(MARGIN, ctaY, CW, 60).fill(COL.meteorite);
+      doc.rect(MARGIN, ctaY, CW, 75).fill(COL.meteorite);
       doc.fontSize(13).font('Helvetica-Bold').fillColor(COL.white)
-         .text('Vol veure com ho fem?', MARGIN + 20, ctaY + 10, { width: CW - 40 });
+        .text('Vol veure com ho fem?', MARGIN + 20, ctaY + 10, { width: CW - 40 });
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#fff')
+        .text('consultor.adeptify.es', MARGIN + 20, ctaY + 28, { width: CW - 40, link: 'https://consultor.adeptify.es/', underline: true });
       doc.fontSize(9).font('Helvetica').fillColor('#D4CCFF')
-         .text('Agenda una sessió de consultoria estratègica personalitzada.', MARGIN + 20, ctaY + 28, { width: CW - 40 });
+        .text('Agenda una sessió de consultoria estratègica personalitzada.', MARGIN + 20, ctaY + 44, { width: CW - 40 });
       doc.fontSize(9).font('Helvetica').fillColor(COL.white)
-         .text('bandujar@edutac.es  ·  www.adeptify.es', MARGIN + 20, ctaY + 42, { width: CW - 40 });
+        .text('hola@adeptify.es  ·  Tel: 690831770  ·  C. Independència 3, Local 2, 08290 Cerdanyola del Vallès', MARGIN + 20, ctaY + 58, { width: CW - 40 });
 
       // Footer
       const range = doc.bufferedPageRange();
+      const privacy = "Aquest missatge i els seus arxius adjunts poden contenir informació confidencial. D'acord amb el RGPD, l'informem que les seves dades personals només es faran servir per a mantenir la relació empresarial amb la pròpia institució i de manera única, i no es faran servir per altres entitats.";
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(i);
         doc.save();
+
+        doc.moveTo(MARGIN, PH - 50).lineTo(PW - MARGIN, PH - 50)
+          .strokeColor(COL.border).lineWidth(0.5).stroke();
+
+        doc.fontSize(6).font('Helvetica').fillColor(COL.secondary)
+          .text(privacy, MARGIN, PH - 45, { width: CW - 65, align: 'justify' });
+
+        doc.fontSize(7).font('Helvetica-Bold').fillColor(COL.meteorite)
+          .text(`Pàgina ${i + 1} de ${range.count}`, PW - MARGIN - 60, PH - 40, { width: 60, align: 'right' });
+
         doc.fontSize(7).font('Helvetica').fillColor(COL.secondary)
-           .text('adeptify.es · Document informatiu · © Adeptify Systems',
-             MARGIN, PH - 30, { width: CW, align: 'center' });
+          .text('Adeptify Systems | hola@adeptify.es | Tel: 690831770 | C. Independència 3, Local 2, 08290 Cerdanyola del Vallès, Barcelona',
+            MARGIN, PH - 20, { width: CW, align: 'center' });
+
         doc.restore();
       }
     } catch (e) {

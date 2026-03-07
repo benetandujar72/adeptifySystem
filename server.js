@@ -589,11 +589,28 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
     console.warn('[BulkEmail] Brochure PDF generation failed:', e.message);
   }
 
+  const privacyText = `Aquest missatge i els seus arxius adjunts van dirigits exclusivament al seu destinatari i poden contenir informació confidencial. D'acord amb el Reglament (UE) 2016/679 (RGPD), l'informem que les seves dades personals només es faran servir per a mantenir la relació empresarial, tècnica o comercial amb la pròpia institució, i no es faran servir per a altres entitats. Vostè pot exercir els seus drets d'accés, rectificació, cancel·lació i oposició adreçant-se a hola@adeptify.es o consultant la nostra política de privacitat a adeptify.es.`;
+  const signatureHtml = `
+    <br><br>
+    <div style="font-family: Arial, sans-serif; font-size: 11px; color: #555; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
+      <p style="margin: 0 0 5px;"><strong>Adeptify Systems</strong></p>
+      <p style="margin: 0 0 5px;">
+        <a href="https://adeptify.es" style="color: #673DE6; text-decoration: none;">adeptify.es</a> | 
+        <a href="https://consultor.adeptify.es" style="color: #673DE6; text-decoration: none;">consultor.adeptify.es</a> <br>
+        hola@adeptify.es | Tel: 690831770 <br>
+        C. Independència 3, Local 2, Cerdanyola del Vallès, 08290 Barcelona
+      </p>
+      <p style="margin: 10px 0 0; font-size: 9px; color: #888; text-align: justify; line-height: 1.3;">
+        ${privacyText}
+      </p>
+    </div>
+  `;
+
   let sent = 0;
   const errors = [];
   for (const r of recipients.slice(0, 200)) {
     try {
-      const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}</div>`;
+      const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}</div>${signatureHtml}`;
       const mailOpts = { from: process.env.SMTP_USER, to: r.email, subject, html };
       if (brochureAttachment) mailOpts.attachments = [brochureAttachment];
       await transporter.sendMail(mailOpts);
@@ -740,14 +757,14 @@ async function sendOutreachEmail(email, emailContent, docxBase64, pdfBase64, cen
       company_name: centerName,
       source: 'network_expansion_outreach',
       status: 'proposal_sent',
-    }, { onConflict: 'tenant_slug,email' }).catch(() => {});
+    }, { onConflict: 'tenant_slug,email' }).catch(() => { });
 
     await supabase.from('lead_interactions').insert({
       id: interactionId,
       lead_id: null,
       interaction_type: 'outreach_email',
       content_summary: emailContent.subject,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   const trackPixel = `<img src="https://consultor.adeptify.es/api/crm/track/${interactionId}.png" width="1" height="1"/>`;
@@ -871,7 +888,7 @@ async function runInstitutionOutreach(jobId, params) {
         docx_base64: docxBase64,
         pdf_base64: pdfBase64,
         raw_json_base64: rawJsonBase64,
-      }, { onConflict: 'job_id' }).catch(() => {});
+      }, { onConflict: 'job_id' }).catch(() => { });
     }
 
     job.result = { doc, docxBase64, pdfBase64, emailContent };
@@ -891,7 +908,7 @@ async function runInstitutionOutreach(jobId, params) {
 // -- Institution outreach endpoint --
 app.post('/api/centers/institution-outreach', async (req, res) => {
   const { codi_centre, centerName, centerEmail, webUrl, centerData,
-          aiEnrichment, referenceCenterName, lang } = req.body;
+    aiEnrichment, referenceCenterName, lang } = req.body;
 
   if (!centerEmail) return res.status(400).json({ error: 'Email del centre requerit' });
 
