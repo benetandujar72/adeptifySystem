@@ -552,7 +552,7 @@ app.post('/api/leads/send-proposal', async (req, res) => {
       attachments.push({ filename: 'Proposta_Adeptify.pdf', content: pdfBase64, encoding: 'base64' });
     }
 
-    await transporter.sendMail({ from: process.env.SMTP_USER, to: email, subject, html, attachments });
+    await transporter.sendMail({ from: '"Adeptify" <hola@adeptify.es>', to: email, subject, html, attachments });
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -765,7 +765,7 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
       if (logoCid) attachments.push(logoCid);
       if (brochureAttachment) attachments.push(brochureAttachment);
       await transporter.sendMail({
-        from: process.env.SMTP_USER,
+        from: '"Adeptify" <hola@adeptify.es>',
         to: r.email,
         subject,
         html,
@@ -933,7 +933,7 @@ async function sendOutreachEmail(email, emailContent, docxBase64, pdfBase64, cen
   if (pdfBase64) attachments.push({ filename: `Proposta_${safeName}.pdf`, content: pdfBase64, encoding: 'base64' });
 
   await transporter.sendMail({
-    from: process.env.SMTP_USER,
+    from: '"Adeptify" <hola@adeptify.es>',
     to: email,
     subject: emailContent.subject,
     html,
@@ -1213,7 +1213,7 @@ async function runFullReportJob(jobId, datosCliente) {
         const htmlBody = `<div style="font-family:sans-serif;">Hola,<br><br>S'ha completat la generació del teu informe personalitzat iteratiu amb IA sobre: <strong>${clientName}</strong>.<br><br>Trobaràs l'informe generat adjunt en aquest missatge.<br><br>Salutacions,<br>Equip Adeptify</div>`;
 
         await transporter.sendMail({
-          from: process.env.SMTP_USER,
+          from: '"Adeptify" <hola@adeptify.es>',
           to: emailTo,
           subject: `El teu informe personalitzat de ${clientName} està llest`,
           html: htmlBody,
