@@ -110,7 +110,6 @@ const CenterMapExplorer: React.FC = () => {
   // Email modal state
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
   const [emailChecked, setEmailChecked] = useState<Set<string>>(new Set());
   const [sendingEmails, setSendingEmails] = useState(false);
   const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[] } | null>(null);
@@ -268,7 +267,6 @@ const CenterMapExplorer: React.FC = () => {
       .map(c => c.codi_centre);
     setEmailChecked(new Set(centersWithEmails));
     setEmailSubject("Proposta de col·laboració - Adeptify");
-    setEmailBody("Benvolgut/da,\n\nEns adrecem a vostè per presentar els nostres serveis de consultoria educativa i transformació digital.\n\nEns agradaria concertar una breu reunió per explorar com podem ajudar al seu centre.\n\nSalutacions cordials,\nEquip Adeptify");
     setShowEmailModal(true);
     setEmailSendProgress(null);
   }, [centers, selected]);
@@ -286,7 +284,7 @@ const CenterMapExplorer: React.FC = () => {
       const resp = await fetch('/api/centers/send-bulk-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients, subject: emailSubject, body: emailBody }),
+        body: JSON.stringify({ recipients, subject: emailSubject, useHtmlTemplate: true }),
       });
       const data = await resp.json();
       setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [] });
@@ -295,7 +293,7 @@ const CenterMapExplorer: React.FC = () => {
     } finally {
       setSendingEmails(false);
     }
-  }, [centers, emailChecked, emailSubject, emailBody]);
+  }, [centers, emailChecked, emailSubject]);
 
   // Toggle email recipient
   const toggleEmailChecked = useCallback((codi: string) => {
@@ -691,17 +689,35 @@ const CenterMapExplorer: React.FC = () => {
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
               </div>
 
-              {/* Body */}
+              {/* HTML Template Preview */}
               <div className="mb-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{(t as any).centerMapEmailBody || 'Cos del missatge'}</label>
-                <textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={6}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm resize-y" />
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 max-h-[300px] overflow-y-auto">
+                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                    <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Plantilla HTML Professional</span>
+                  </div>
+                  <div className="space-y-2 text-xs text-slate-600">
+                    <p className="font-bold text-slate-800">Contingut de l'email:</p>
+                    <ul className="list-disc ml-4 space-y-1">
+                      <li><strong>Logo Adeptify</strong> — Capçalera amb marca</li>
+                      <li><strong>Introducció</strong> — "No tots els problemes de centre es resolen amb una app estàndard"</li>
+                      <li><strong>3 situacions</strong> — Punts de dolor habituals dels centres</li>
+                      <li><strong>Metodologia</strong> — Analitzar → Definir → Construir i implantar</li>
+                      <li><strong>3 casos reals</strong> — Amb captures de pantalla (dashboard, horaris, IA)</li>
+                      <li><strong>CTA</strong> — "Parlem-ne en 20 minuts" amb link a consultor.adeptify.es</li>
+                      <li><strong>Peu</strong> — Contacte + avís legal RGPD</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
-              {/* PDF Attachment note */}
+              {/* PDF + DOCX Attachment note */}
               <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-3">
                 <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <p className="text-[10px] text-indigo-700 font-bold">S'adjuntarà automàticament un PDF amb informació dels serveis Adeptify a cada email.</p>
+                <p className="text-[10px] text-indigo-700 font-bold">S'adjuntarà automàticament el document d'informació general Adeptify (PDF) a cada email.</p>
               </div>
 
               {/* Recipients */}

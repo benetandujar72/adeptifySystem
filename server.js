@@ -565,10 +565,166 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'image/gif' }).end(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
 });
 
+// -- Build professional HTML email for bulk send --
+function buildBulkEmailHtml(centerName) {
+  const BASE = 'https://consultor.adeptify.es';
+  const sc = (name) => `${BASE}/screenshots/${name}`;
+  const img = (name) => `${BASE}/images/projects/${name}`;
+
+  const numCircle = (n) => `<div style="width:32px;height:32px;border-radius:50%;background:#673DE6;color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">${n}</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#333;">
+<div style="max-width:680px;margin:0 auto;background:#ffffff;">
+
+  <!-- HEADER with logo -->
+  <div style="background:#1a1a2e;padding:32px 40px;text-align:center;">
+    <img src="cid:adeptify-logo" alt="Adeptify" style="height:48px;margin-bottom:8px;" />
+    <p style="color:#a0a0c0;font-size:12px;margin:0;letter-spacing:1px;">Consultoria i solucions digitals ad hoc per a centres educatius</p>
+  </div>
+
+  <!-- INTRO -->
+  <div style="padding:40px 40px 24px;">
+    <h1 style="font-size:22px;color:#1a1a2e;margin:0 0 20px;line-height:1.3;font-weight:700;">No tots els problemes de centre es resolen amb una app est&agrave;ndard.</h1>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">
+      Quan la direcci&oacute; necessita decidir amb m&eacute;s claredat, la coordinaci&oacute; TIC o digital ha de sostenir processos dispersos i els professionals del CRP o l'equip impulsor necessiten donar resposta amb criteri, el problema no sol ser la manca d'eines. <strong>El problema &eacute;s que cap no encaixa prou b&eacute; amb la realitat del centre.</strong>
+    </p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">
+      Per aix&ograve;, el que cal no &eacute;s afegir una altra app. <strong>El que cal &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong>
+    </p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
+      Adeptify treballa aix&iacute;: analitza la realitat del centre, detecta els punts de fricci&oacute; i construeix una resposta digital alineada amb els processos, els equips i els objectius reals.
+    </p>
+  </div>
+
+  <!-- SEPARATOR -->
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- PAIN POINTS -->
+  <div style="padding:32px 40px;">
+    <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 24px;font-weight:700;">Us sona alguna d'aquestes situacions?</h2>
+
+    <div style="display:flex;align-items:flex-start;margin-bottom:20px;">
+      ${numCircle(1)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Les incid&egrave;ncies, les demandes internes o els seguiments importants arriben per massa canals i costa mantenir-ne el control.</p>
+    </div>
+    <div style="display:flex;align-items:flex-start;margin-bottom:20px;">
+      ${numCircle(2)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Hi ha dades, formularis, fulls i documents &uacute;tils, per&ograve; no treballen com un sistema coherent i aix&ograve; dificulta la presa de decisions.</p>
+    </div>
+    <div style="display:flex;align-items:flex-start;margin-bottom:0;">
+      ${numCircle(3)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Hi ha processos rellevants que depenen massa de persones concretes, de peda&ccedil;os temporals o d'una dedicaci&oacute; manual que ja no &eacute;s sostenible.</p>
+    </div>
+  </div>
+
+  <!-- SEPARATOR -->
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- METHODOLOGY -->
+  <div style="padding:32px 40px;">
+    <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;font-weight:700;">Qu&egrave; fa Adeptify quan detecta aquesta realitat?</h2>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">No ofereix un cat&agrave;leg tancat. Escolta, analitza i defineix la millor resposta per al centre. Despr&eacute;s la construeix i l'ajusta fins que encaixa en el dia a dia.</p>
+
+    <!-- 3 steps -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <tr>
+        <td style="width:33%;padding:16px;background:#f7f5ff;border-radius:12px 0 0 12px;vertical-align:top;border-right:2px solid #fff;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">1.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Analitzar</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Entendre abans de decidir. Processos, rols, objectius, l&iacute;mits i oportunitats reals.</p>
+        </td>
+        <td style="width:33%;padding:16px;background:#f7f5ff;vertical-align:top;border-right:2px solid #fff;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">2.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Definir</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Dissenyar la resposta adequada. Fluxos, dades, automatitzacions i experi&egrave;ncia d'&uacute;s.</p>
+        </td>
+        <td style="width:33%;padding:16px;background:#f7f5ff;border-radius:0 12px 12px 0;vertical-align:top;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">3.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Construir i implantar</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Fer que funcioni de veritat. Desenvolupament, ajust i adopci&oacute; progressiva.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- SEPARATOR -->
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- CASE STUDIES -->
+  <div style="padding:32px 40px;">
+    <p style="font-size:13px;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;font-weight:700;">Les aplicacions ja creades no s&oacute;n el producte. S&oacute;n la prova del model.</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 28px;">Alguns centres han necessitat resoldre operativa IT. Altres, seguiment tutorial, avaluaci&oacute;, comunicaci&oacute; o gesti&oacute; de dades. Les solucions desenvolupades fins ara demostren una capacitat: <strong>adaptar tecnologia a necessitats singulars.</strong></p>
+
+    <!-- CASE 1 -->
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 1</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Centralitzar incid&egrave;ncies i seguiment t&egrave;cnic</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan el centre necessita ordre, tra&ccedil;abilitat i rapidesa de resposta en la seva operativa IT.</p>
+      <div style="text-align:center;">
+        <img src="${sc('media__1772879559317.png')}" alt="Dashboard" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />
+      </div>
+    </div>
+
+    <!-- CASE 2 -->
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 2</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Escalar tutories, entrevistes i comunicaci&oacute; amb fam&iacute;lies</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan cal sostenir un seguiment tutorial exigent sense perdre qualitat ni claredat.</p>
+      <div style="text-align:center;">
+        <img src="${sc('media__1772879594564.png')}" alt="Horaris i guàrdies" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
+        <img src="${sc('media__1772879618029.png')}" alt="Importacions" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
+      </div>
+    </div>
+
+    <!-- CASE 3 -->
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:0;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 3</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Convertir dades i avaluaci&oacute; en informaci&oacute; accionable</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan l'equip directiu o pedag&ograve;gic necessita entendre millor qu&egrave; est&agrave; passant per decidir amb m&eacute;s criteri.</p>
+      <div style="text-align:center;">
+        <img src="${sc('media__1772879694256.png')}" alt="Anàlisi IA" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />
+      </div>
+    </div>
+  </div>
+
+  <!-- SEPARATOR -->
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- CTA -->
+  <div style="padding:32px 40px;text-align:center;">
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
+      Si mentre llegiu aquest correu ja us han vingut al cap dos o tres processos que avui us resten temps i energia, probablement ja hi ha una <strong>oportunitat clara de millora</strong>.
+    </p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
+      Adeptify us pot ajudar a analitzar-los, prioritzar-los i convertir-los en una soluci&oacute; realista, &uacute;til i assumible per al vostre centre o servei.
+    </p>
+    <a href="${BASE}" style="display:inline-block;background:#673DE6;color:#ffffff;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">Parlem-ne en 20 minuts</a>
+    <p style="font-size:12px;color:#999;margin:16px 0 0;">Tamb&eacute; podeu respondre directament aquest correu o escriure a <a href="mailto:hola@adeptify.es" style="color:#673DE6;text-decoration:none;">hola@adeptify.es</a></p>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#1a1a2e;padding:28px 40px;text-align:center;">
+    <p style="color:#a0a0c0;font-size:12px;margin:0 0 4px;font-weight:600;">Adeptify Systems</p>
+    <p style="color:#777;font-size:11px;margin:0 0 4px;">
+      <a href="https://adeptify.es" style="color:#a0a0c0;text-decoration:none;">adeptify.es</a> &middot;
+      <a href="${BASE}" style="color:#a0a0c0;text-decoration:none;">consultor.adeptify.es</a>
+    </p>
+    <p style="color:#777;font-size:11px;margin:0 0 12px;">hola@adeptify.es &middot; Tel: 690831770 &middot; C. Independ&egrave;ncia 3, Local 2, Cerdanyola del Vall&egrave;s, 08290 Barcelona</p>
+    <p style="color:#555;font-size:9px;margin:0;line-height:1.4;text-align:justify;">
+      Aquest missatge i els seus arxius adjunts van dirigits exclusivament al seu destinatari i poden contenir informaci&oacute; confidencial. D'acord amb el Reglament (UE) 2016/679 (RGPD), l'informem que les seves dades personals nom&eacute;s es faran servir per a mantenir la relaci&oacute; empresarial, t&egrave;cnica o comercial amb la pr&ograve;pia instituci&oacute;, i no es faran servir per a altres entitats. Vost&egrave; pot exercir els seus drets d'acc&eacute;s, rectificaci&oacute;, cancel&middot;laci&oacute; i oposici&oacute; adre&ccedil;ant-se a hola@adeptify.es o consultant la nostra pol&iacute;tica de privacitat a adeptify.es.
+    </p>
+  </div>
+
+</div>
+</body></html>`;
+}
+
 // -- Bulk email to education centers (from CenterMapExplorer) --
 app.post('/api/centers/send-bulk-email', async (req, res) => {
-  const { recipients, subject, body } = req.body;
-  if (!Array.isArray(recipients) || !subject || !body) {
+  const { recipients, subject, useHtmlTemplate } = req.body;
+  if (!Array.isArray(recipients) || !subject) {
     return res.status(400).json({ error: 'Falten camps obligatoris' });
   }
   const host = process.env.SMTP_HOST;
@@ -583,37 +739,38 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
   let brochureAttachment = null;
   try {
     const brochureBuf = await generateBrochurePdfBuffer();
-    brochureAttachment = { filename: 'Adeptify_Serveis.pdf', content: brochureBuf.toString('base64'), encoding: 'base64' };
+    brochureAttachment = { filename: 'Adeptify_Informacio_General.pdf', content: brochureBuf.toString('base64'), encoding: 'base64' };
     console.log(`[BulkEmail] Brochure PDF generated: ${Math.round(brochureBuf.length / 1024)} KB`);
   } catch (e) {
     console.warn('[BulkEmail] Brochure PDF generation failed:', e.message);
   }
 
-  const privacyText = `Aquest missatge i els seus arxius adjunts van dirigits exclusivament al seu destinatari i poden contenir informació confidencial. D'acord amb el Reglament (UE) 2016/679 (RGPD), l'informem que les seves dades personals només es faran servir per a mantenir la relació empresarial, tècnica o comercial amb la pròpia institució, i no es faran servir per a altres entitats. Vostè pot exercir els seus drets d'accés, rectificació, cancel·lació i oposició adreçant-se a hola@adeptify.es o consultant la nostra política de privacitat a adeptify.es.`;
-  const signatureHtml = `
-    <br><br>
-    <div style="font-family: Arial, sans-serif; font-size: 11px; color: #555; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px;">
-      <p style="margin: 0 0 5px;"><strong>Adeptify Systems</strong></p>
-      <p style="margin: 0 0 5px;">
-        <a href="https://adeptify.es" style="color: #673DE6; text-decoration: none;">adeptify.es</a> | 
-        <a href="https://consultor.adeptify.es" style="color: #673DE6; text-decoration: none;">consultor.adeptify.es</a> <br>
-        hola@adeptify.es | Tel: 690831770 <br>
-        C. Independència 3, Local 2, Cerdanyola del Vallès, 08290 Barcelona
-      </p>
-      <p style="margin: 10px 0 0; font-size: 9px; color: #888; text-align: justify; line-height: 1.3;">
-        ${privacyText}
-      </p>
-    </div>
-  `;
+  // Read logo for CID embedding
+  let logoCid = null;
+  try {
+    const logoPath = path.join(__dirname, 'dist', 'brand', 'adeptify-logo.png');
+    const logoPathAlt = path.join(__dirname, 'public', 'brand', 'adeptify-logo.png');
+    const lp = fs.existsSync(logoPath) ? logoPath : logoPathAlt;
+    if (fs.existsSync(lp)) {
+      logoCid = { filename: 'adeptify-logo.png', path: lp, cid: 'adeptify-logo' };
+    }
+  } catch (e) { /* logo optional */ }
 
   let sent = 0;
   const errors = [];
   for (const r of recipients.slice(0, 200)) {
     try {
-      const html = `<div style="font-family:sans-serif;">${body.replace(/\n/g, '<br>')}</div>${signatureHtml}`;
-      const mailOpts = { from: process.env.SMTP_USER, to: r.email, subject, html };
-      if (brochureAttachment) mailOpts.attachments = [brochureAttachment];
-      await transporter.sendMail(mailOpts);
+      const html = buildBulkEmailHtml(r.centerName || '');
+      const attachments = [];
+      if (logoCid) attachments.push(logoCid);
+      if (brochureAttachment) attachments.push(brochureAttachment);
+      await transporter.sendMail({
+        from: process.env.SMTP_USER,
+        to: r.email,
+        subject,
+        html,
+        attachments,
+      });
       sent++;
     } catch (e) {
       errors.push(`${r.email}: ${e.message}`);
