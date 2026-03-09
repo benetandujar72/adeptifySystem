@@ -112,7 +112,7 @@ const CenterMapExplorer: React.FC = () => {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailChecked, setEmailChecked] = useState<Set<string>>(new Set());
   const [sendingEmails, setSendingEmails] = useState(false);
-  const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[] } | null>(null);
+  const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[]; aiPersonalized?: number } | null>(null);
 
   // Load centers on mount
   useEffect(() => {
@@ -275,7 +275,21 @@ const CenterMapExplorer: React.FC = () => {
   const sendBulkEmails = useCallback(async () => {
     const recipients = centers
       .filter(c => emailChecked.has(c.codi_centre) && c.email_centre)
-      .map(c => ({ email: c.email_centre!, centerName: c.denominacio_completa, codi: c.codi_centre }));
+      .map(c => ({
+        email: c.email_centre!, centerName: c.denominacio_completa, codi: c.codi_centre,
+        nom_naturalesa: c.nom_naturalesa, nom_municipi: c.nom_municipi, nom_comarca: c.nom_comarca,
+        estudis: c.estudis,
+        einf1c: c.einf1c, einf2c: c.einf2c, epri: c.epri, eso: c.eso, batx: c.batx,
+        cfpm: c.cfpm, cfps: c.cfps, cfam: c.cfam, cfas: c.cfas,
+        ee: c.ee, adults: c.adults, idi: c.idi,
+        esdi: c.esdi, escm: c.escm, escs: c.escs,
+        dane: c.dane, danp: c.danp, dans: c.dans,
+        muse: c.muse, musp: c.musp, muss: c.muss,
+        tegm: c.tegm, tegs: c.tegs, estr: c.estr,
+        ai_opportunity_score: c.ai_opportunity_score,
+        ai_reason_similarity: c.ai_reason_similarity,
+        ai_custom_pitch: c.ai_custom_pitch,
+      }));
     if (recipients.length === 0) return;
 
     setSendingEmails(true);
@@ -284,10 +298,10 @@ const CenterMapExplorer: React.FC = () => {
       const resp = await fetch('/api/centers/send-bulk-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients, subject: emailSubject, useHtmlTemplate: true }),
+        body: JSON.stringify({ recipients, subject: emailSubject }),
       });
       const data = await resp.json();
-      setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [] });
+      setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [], aiPersonalized: data.aiPersonalized || 0 });
     } catch (err: any) {
       setEmailSendProgress(prev => prev ? { ...prev, errors: [err.message] } : { sent: 0, total: recipients.length, errors: [err.message] });
     } finally {
@@ -689,35 +703,34 @@ const CenterMapExplorer: React.FC = () => {
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
               </div>
 
-              {/* HTML Template Preview */}
+              {/* Personalization info */}
               <div className="mb-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{(t as any).centerMapEmailBody || 'Cos del missatge'}</label>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 max-h-[300px] overflow-y-auto">
-                  <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 pb-2 border-b border-indigo-100">
                     <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     </div>
-                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Plantilla HTML Professional</span>
+                    <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Email personalitzat per centre</span>
                   </div>
                   <div className="space-y-2 text-xs text-slate-600">
-                    <p className="font-bold text-slate-800">Contingut de l'email:</p>
+                    <p className="font-bold text-slate-800">Cada email s'adapta automàticament al centre:</p>
                     <ul className="list-disc ml-4 space-y-1">
-                      <li><strong>Logo Adeptify</strong> — Capçalera amb marca</li>
-                      <li><strong>Introducció</strong> — "No tots els problemes de centre es resolen amb una app estàndard"</li>
-                      <li><strong>3 situacions</strong> — Punts de dolor habituals dels centres</li>
-                      <li><strong>Metodologia</strong> — Analitzar → Definir → Construir i implantar</li>
-                      <li><strong>3 casos reals</strong> — Amb captures de pantalla (dashboard, horaris, IA)</li>
-                      <li><strong>CTA</strong> — "Parlem-ne en 20 minuts" amb link a consultor.adeptify.es</li>
-                      <li><strong>Peu</strong> — Contacte + avís legal RGPD</li>
+                      <li><strong>Nom del centre</strong> — Mencionat a la primera frase</li>
+                      <li><strong>Tipus</strong> — Públic / Concertat / Privat — to adaptat</li>
+                      <li><strong>Estudis</strong> — Infantil, ESO, Batxillerat, FP... segons l'oferta real</li>
+                      <li><strong>Ubicació</strong> — Comarca i municipi del centre</li>
+                      <li><strong>Dades IA</strong> — Si existeixen, s'afegeix un pitch personalitzat</li>
+                      <li><strong>Leads</strong> — Si hi ha necessitats detectades, IA genera intro única</li>
                     </ul>
                   </div>
                 </div>
               </div>
 
-              {/* PDF + DOCX Attachment note */}
+              {/* Attachments note */}
               <div className="mb-4 p-3 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-3">
                 <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-                <p className="text-[10px] text-indigo-700 font-bold">S'adjuntarà automàticament el document d'informació general Adeptify (PDF) a cada email.</p>
+                <p className="text-[10px] text-indigo-700 font-bold">S'adjunta automàticament: Logo Adeptify + PDF d'informació general + casos reals amb captures</p>
               </div>
 
               {/* Recipients */}
@@ -741,10 +754,21 @@ const CenterMapExplorer: React.FC = () => {
                 </div>
               </div>
 
+              {/* Sending spinner */}
+              {sendingEmails && !emailSendProgress?.sent && (
+                <div className="p-4 bg-indigo-50 rounded-xl mb-4 flex items-center gap-3">
+                  <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-indigo-700 font-bold">Personalitzant i enviant emails... Això pot trigar fins a 1 minut.</p>
+                </div>
+              )}
+
               {/* Progress / Result */}
-              {emailSendProgress && (
+              {emailSendProgress && emailSendProgress.sent > 0 && (
                 <div className={`p-4 rounded-xl mb-4 text-sm font-bold ${emailSendProgress.errors.length > 0 ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
                   {emailSendProgress.sent}/{emailSendProgress.total} {(t as any).centerMapEmailSent || 'enviats'}
+                  {(emailSendProgress.aiPersonalized || 0) > 0 && (
+                    <span className="ml-2 text-xs font-normal text-indigo-600">({emailSendProgress.aiPersonalized} amb intro IA)</span>
+                  )}
                   {emailSendProgress.errors.length > 0 && (
                     <div className="mt-2 text-xs font-normal">
                       {emailSendProgress.errors.length} {(t as any).centerMapEmailErrors || 'errors'}:

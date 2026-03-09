@@ -40,6 +40,27 @@ const COLORS = {
   BORDER: "B0C4DE"
 };
 
+// -- Study group labels for email personalization --
+const STUDY_GROUP_SUMMARIES = [
+  { label: 'Infantil', fields: ['einf1c', 'einf2c'] },
+  { label: 'Primària', fields: ['epri'] },
+  { label: 'ESO', fields: ['eso'] },
+  { label: 'Batxillerat', fields: ['batx'] },
+  { label: 'FP Grau Mitjà', fields: ['cfpm', 'cfam'] },
+  { label: 'FP Grau Superior', fields: ['cfps', 'cfas'] },
+  { label: 'Educació Especial', fields: ['ee'] },
+  { label: 'Adults', fields: ['adults'] },
+  { label: 'Arts i Disseny', fields: ['esdi', 'escm', 'escs', 'dane', 'danp', 'dans', 'muse', 'musp', 'muss'] },
+  { label: 'Esportiu', fields: ['tegm', 'tegs', 'estr'] },
+  { label: 'Idiomes', fields: ['idi'] },
+];
+
+function getStudyLabels(center) {
+  return STUDY_GROUP_SUMMARIES
+    .filter(g => g.fields.some(f => center[f]))
+    .map(g => g.label);
+}
+
 // --- DB CLIENT ---
 let cachedSupabase = null;
 const getSupabaseAdmin = () => {
@@ -565,12 +586,122 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'image/gif' }).end(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
 });
 
-// -- Build professional HTML email for bulk send --
-function buildBulkEmailHtml(centerName) {
+// -- Personalized intro builder (Tier 1: template, Tier 2: + AI pitch) --
+function buildTemplatePersonalizedIntro(c) {
+  const name = c.centerName || 'el vostre centre';
+  const type = (c.nom_naturalesa || '').toLowerCase();
+  const municipi = c.nom_municipi || '';
+  const comarca = c.nom_comarca || '';
+  const studies = getStudyLabels(c);
+
+  // Opening line tailored to center type
+  let opening = '';
+  if (type.includes('públic')) {
+    opening = `Sabem que gestionar un centre p&uacute;blic com <strong>${name}</strong> implica fer molt amb recursos limitats, temps escassos i una normativa que no para de canviar. Cada hora que el vostre equip dedica a tasques administratives repetitives &eacute;s una hora menys per a l'alumnat.`;
+  } else if (type.includes('concertat')) {
+    opening = `A <strong>${name}</strong>, com a centre concertat, entenem que heu de compaginar les exig&egrave;ncies administratives amb la identitat pr&ograve;pia del vostre projecte educatiu. Mantenir l'excel&middot;l&egrave;ncia pedag&ograve;gica mentre es gestionen processos dispersos &eacute;s un repte diari.`;
+  } else if (type.includes('privat')) {
+    opening = `A <strong>${name}</strong>, l'excel&middot;l&egrave;ncia i la diferenciaci&oacute; s&oacute;n part del vostre ADN. Sabem que busqueu eines que estiguin a l'altura del vostre projecte, no solucions gen&egrave;riques que obliguin a adaptar-vos a elles.`;
+  } else {
+    opening = `A <strong>${name}</strong>, cada dia gestioneu reptes educatius que mereixen una resposta a mida. Sabem que el temps del vostre equip &eacute;s limitat i que les eines gen&egrave;riques sovint creen m&eacute;s fricci&oacute; de la que resolen.`;
+  }
+
+  // Study-specific line
+  let studyLine = '';
+  if (studies.length > 0) {
+    const studyStr = studies.join(', ');
+    if (studies.length >= 3) {
+      studyLine = `Amb una oferta tan diversa com <strong>${studyStr}</strong>, la complexitat de coordinaci&oacute;, seguiment i gesti&oacute; de dades &eacute;s considerable &mdash; i sabem que cap eina est&agrave;ndard cobreix tota aquesta realitat.`;
+    } else {
+      studyLine = `Amb oferta en <strong>${studyStr}</strong>, entenem els reptes espec&iacute;fics de coordinaci&oacute; i seguiment que aix&ograve; comporta.`;
+    }
+  }
+
+  // Location connection
+  let locationLine = '';
+  if (municipi && comarca) {
+    locationLine = `Treballem amb centres de <strong>${comarca}</strong> i coneixem la realitat educativa de ${municipi}.`;
+  } else if (comarca) {
+    locationLine = `Coneixem la realitat dels centres educatius de <strong>${comarca}</strong>.`;
+  }
+
+  // AI enrichment pitch (Tier 2)
+  let aiLine = '';
+  if (c.ai_custom_pitch) {
+    aiLine = c.ai_custom_pitch;
+  }
+
+  return `
+  <div style="padding:40px 40px 24px;">
+    <h1 style="font-size:22px;color:#1a1a2e;margin:0 0 20px;line-height:1.3;font-weight:700;">${opening}</h1>
+    ${studyLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${studyLine}</p>` : ''}
+    ${locationLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${locationLine}</p>` : ''}
+    ${aiLine ? `<p style="font-size:14px;color:#673DE6;line-height:1.7;margin:0 0 12px;font-style:italic;border-left:3px solid #673DE6;padding-left:12px;">${aiLine}</p>` : ''}
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
+      Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context concret.</strong>
+    </p>
+  </div>`;
+}
+
+// -- AI batch intro generator for Tier 3 (centers with lead data) --
+async function generateAIIntros(centersWithLeads) {
+  const BATCH_SIZE = 10;
+  const results = {};
+  for (let i = 0; i < centersWithLeads.length; i += BATCH_SIZE) {
+    const batch = centersWithLeads.slice(i, i + BATCH_SIZE);
+    const centersCtx = batch.map((item, idx) => {
+      const c = item.centerData;
+      const lead = item.leadData;
+      const studies = getStudyLabels(c);
+      const needs = lead?.ai_needs_analysis;
+      return `
+CENTRE ${idx + 1} [ID: ${item.codi}]:
+- Nom: ${c.centerName}
+- Tipus: ${c.nom_naturalesa || 'No especificat'}
+- Municipi: ${c.nom_municipi || 'Catalunya'}, Comarca: ${c.nom_comarca || ''}
+- Estudis: ${studies.join(', ') || 'Diversos'}
+${c.ai_reason_similarity ? `- Per què encaixa: ${c.ai_reason_similarity}` : ''}
+${needs?.needs_detected?.length ? `- Necessitats detectades: ${needs.needs_detected.join(', ')}` : ''}
+${needs?.main_bottleneck ? `- Principal coll d'ampolla: ${needs.main_bottleneck}` : ''}
+${needs?.recommended_solution ? `- Solució recomanada: ${needs.recommended_solution}` : ''}`;
+    }).join('\n---\n');
+
+    const prompt = `Ets un expert en comunicació per al sector educatiu a Catalunya. Genera un paràgraf introductori personalitzat per a cada centre (3-4 frases, 60-80 paraules) per a un email d'Adeptify (consultoria digital educativa).
+
+REGLES IMPORTANTS:
+- Idioma: CATALÀ
+- Demostra que coneixes la realitat específica d'aquell centre i els seus reptes
+- Fes referència a les necessitats detectades i al tipus d'estudis
+- To professional, empàtic, sense pressió comercial
+- NO salutació ni signatura — només el paràgraf
+- Cada intro ha de ser ÚNICA — no repeteixis frases entre centres
+- Menciona el nom del centre naturalment
+- Mostra comprensió dels reptes reals: temps, resistències al canvi, normativa, coordinació d'equips
+
+CENTRES:
+${centersCtx}
+
+Retorna EXACTAMENT aquest JSON:
+{"intros":{"[codi_1]":"paràgraf...","[codi_2]":"paràgraf..."}}`;
+
+    try {
+      const raw = await callGeminiFallback(prompt);
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const intros = parsed.intros || parsed;
+      for (const [codi, text] of Object.entries(intros)) {
+        if (typeof text === 'string' && text.length > 20) results[codi] = text;
+      }
+    } catch (err) {
+      console.warn(`[BulkEmail AI] Batch ${i}-${i + BATCH_SIZE} failed:`, err.message);
+    }
+  }
+  return results;
+}
+
+// -- Build full HTML email with personalized intro + static body --
+function buildBulkEmailHtml(introHtml) {
   const BASE = 'https://consultor.adeptify.es';
   const sc = (name) => `${BASE}/screenshots/${name}`;
-  const img = (name) => `${BASE}/images/projects/${name}`;
-
   const numCircle = (n) => `<div style="width:32px;height:32px;border-radius:50%;background:#673DE6;color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">${n}</div>`;
 
   return `<!DOCTYPE html>
@@ -578,33 +709,20 @@ function buildBulkEmailHtml(centerName) {
 <body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#333;">
 <div style="max-width:680px;margin:0 auto;background:#ffffff;">
 
-  <!-- HEADER with logo -->
+  <!-- HEADER -->
   <div style="background:#1a1a2e;padding:32px 40px;text-align:center;">
     <img src="cid:adeptify-logo" alt="Adeptify" style="height:48px;margin-bottom:8px;" />
     <p style="color:#a0a0c0;font-size:12px;margin:0;letter-spacing:1px;">Consultoria i solucions digitals ad hoc per a centres educatius</p>
   </div>
 
-  <!-- INTRO -->
-  <div style="padding:40px 40px 24px;">
-    <h1 style="font-size:22px;color:#1a1a2e;margin:0 0 20px;line-height:1.3;font-weight:700;">No tots els problemes de centre es resolen amb una app est&agrave;ndard.</h1>
-    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">
-      Quan la direcci&oacute; necessita decidir amb m&eacute;s claredat, la coordinaci&oacute; TIC o digital ha de sostenir processos dispersos i els professionals del CRP o l'equip impulsor necessiten donar resposta amb criteri, el problema no sol ser la manca d'eines. <strong>El problema &eacute;s que cap no encaixa prou b&eacute; amb la realitat del centre.</strong>
-    </p>
-    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">
-      Per aix&ograve;, el que cal no &eacute;s afegir una altra app. <strong>El que cal &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong>
-    </p>
-    <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
-      Adeptify treballa aix&iacute;: analitza la realitat del centre, detecta els punts de fricci&oacute; i construeix una resposta digital alineada amb els processos, els equips i els objectius reals.
-    </p>
-  </div>
+  <!-- PERSONALIZED INTRO -->
+  ${introHtml}
 
-  <!-- SEPARATOR -->
   <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
 
   <!-- PAIN POINTS -->
   <div style="padding:32px 40px;">
     <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 24px;font-weight:700;">Us sona alguna d'aquestes situacions?</h2>
-
     <div style="display:flex;align-items:flex-start;margin-bottom:20px;">
       ${numCircle(1)}
       <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Les incid&egrave;ncies, les demandes internes o els seguiments importants arriben per massa canals i costa mantenir-ne el control.</p>
@@ -619,15 +737,12 @@ function buildBulkEmailHtml(centerName) {
     </div>
   </div>
 
-  <!-- SEPARATOR -->
   <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
 
   <!-- METHODOLOGY -->
   <div style="padding:32px 40px;">
     <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;font-weight:700;">Qu&egrave; fa Adeptify quan detecta aquesta realitat?</h2>
     <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">No ofereix un cat&agrave;leg tancat. Escolta, analitza i defineix la millor resposta per al centre. Despr&eacute;s la construeix i l'ajusta fins que encaixa en el dia a dia.</p>
-
-    <!-- 3 steps -->
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       <tr>
         <td style="width:33%;padding:16px;background:#f7f5ff;border-radius:12px 0 0 12px;vertical-align:top;border-right:2px solid #fff;">
@@ -649,57 +764,41 @@ function buildBulkEmailHtml(centerName) {
     </table>
   </div>
 
-  <!-- SEPARATOR -->
   <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
 
   <!-- CASE STUDIES -->
   <div style="padding:32px 40px;">
     <p style="font-size:13px;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;font-weight:700;">Les aplicacions ja creades no s&oacute;n el producte. S&oacute;n la prova del model.</p>
     <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 28px;">Alguns centres han necessitat resoldre operativa IT. Altres, seguiment tutorial, avaluaci&oacute;, comunicaci&oacute; o gesti&oacute; de dades. Les solucions desenvolupades fins ara demostren una capacitat: <strong>adaptar tecnologia a necessitats singulars.</strong></p>
-
-    <!-- CASE 1 -->
     <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
       <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 1</p>
       <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Centralitzar incid&egrave;ncies i seguiment t&egrave;cnic</h3>
       <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan el centre necessita ordre, tra&ccedil;abilitat i rapidesa de resposta en la seva operativa IT.</p>
-      <div style="text-align:center;">
-        <img src="${sc('media__1772879559317.png')}" alt="Dashboard" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />
-      </div>
+      <div style="text-align:center;"><img src="${sc('media__1772879559317.png')}" alt="Dashboard" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" /></div>
     </div>
-
-    <!-- CASE 2 -->
     <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
       <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 2</p>
       <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Escalar tutories, entrevistes i comunicaci&oacute; amb fam&iacute;lies</h3>
       <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan cal sostenir un seguiment tutorial exigent sense perdre qualitat ni claredat.</p>
       <div style="text-align:center;">
-        <img src="${sc('media__1772879594564.png')}" alt="Horaris i guàrdies" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
+        <img src="${sc('media__1772879594564.png')}" alt="Horaris" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
         <img src="${sc('media__1772879618029.png')}" alt="Importacions" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
       </div>
     </div>
-
-    <!-- CASE 3 -->
-    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:0;">
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;">
       <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Cas real 3</p>
       <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Convertir dades i avaluaci&oacute; en informaci&oacute; accionable</h3>
       <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">Quan l'equip directiu o pedag&ograve;gic necessita entendre millor qu&egrave; est&agrave; passant per decidir amb m&eacute;s criteri.</p>
-      <div style="text-align:center;">
-        <img src="${sc('media__1772879694256.png')}" alt="Anàlisi IA" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" />
-      </div>
+      <div style="text-align:center;"><img src="${sc('media__1772879694256.png')}" alt="Anàlisi IA" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" /></div>
     </div>
   </div>
 
-  <!-- SEPARATOR -->
   <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
 
   <!-- CTA -->
   <div style="padding:32px 40px;text-align:center;">
-    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
-      Si mentre llegiu aquest correu ja us han vingut al cap dos o tres processos que avui us resten temps i energia, probablement ja hi ha una <strong>oportunitat clara de millora</strong>.
-    </p>
-    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
-      Adeptify us pot ajudar a analitzar-los, prioritzar-los i convertir-los en una soluci&oacute; realista, &uacute;til i assumible per al vostre centre o servei.
-    </p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Si mentre llegiu aquest correu ja us han vingut al cap dos o tres processos que avui us resten temps i energia, probablement ja hi ha una <strong>oportunitat clara de millora</strong>.</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Adeptify us pot ajudar a analitzar-los, prioritzar-los i convertir-los en una soluci&oacute; realista, &uacute;til i assumible per al vostre centre o servei.</p>
     <a href="${BASE}" style="display:inline-block;background:#673DE6;color:#ffffff;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">Parlem-ne en 20 minuts</a>
     <p style="font-size:12px;color:#999;margin:16px 0 0;">Tamb&eacute; podeu respondre directament aquest correu o escriure a <a href="mailto:hola@adeptify.es" style="color:#673DE6;text-decoration:none;">hola@adeptify.es</a></p>
   </div>
@@ -723,7 +822,7 @@ function buildBulkEmailHtml(centerName) {
 
 // -- Bulk email to education centers (from CenterMapExplorer) --
 app.post('/api/centers/send-bulk-email', async (req, res) => {
-  const { recipients, subject, useHtmlTemplate } = req.body;
+  const { recipients, subject } = req.body;
   if (!Array.isArray(recipients) || !subject) {
     return res.status(400).json({ error: 'Falten camps obligatoris' });
   }
@@ -735,49 +834,94 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
 
-  // Generate Adeptify brochure PDF to attach to each email
+  // Generate brochure PDF
   let brochureAttachment = null;
   try {
     const brochureBuf = await generateBrochurePdfBuffer();
     brochureAttachment = { filename: 'Adeptify_Informacio_General.pdf', content: brochureBuf.toString('base64'), encoding: 'base64' };
     console.log(`[BulkEmail] Brochure PDF generated: ${Math.round(brochureBuf.length / 1024)} KB`);
-  } catch (e) {
-    console.warn('[BulkEmail] Brochure PDF generation failed:', e.message);
-  }
+  } catch (e) { console.warn('[BulkEmail] Brochure PDF failed:', e.message); }
 
-  // Read logo for CID embedding
+  // Read logo for CID
   let logoCid = null;
   try {
     const logoPath = path.join(__dirname, 'dist', 'brand', 'adeptify-logo.png');
     const logoPathAlt = path.join(__dirname, 'public', 'brand', 'adeptify-logo.png');
     const lp = fs.existsSync(logoPath) ? logoPath : logoPathAlt;
-    if (fs.existsSync(lp)) {
-      logoCid = { filename: 'adeptify-logo.png', path: lp, cid: 'adeptify-logo' };
-    }
-  } catch (e) { /* logo optional */ }
+    if (fs.existsSync(lp)) logoCid = { filename: 'adeptify-logo.png', path: lp, cid: 'adeptify-logo' };
+  } catch (e) { /* optional */ }
 
+  const capped = recipients.slice(0, 200);
+
+  // Fetch lead data for personalization (Tier 3)
+  let leadsByEmail = {};
+  try {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const emails = capped.map(r => r.email).filter(Boolean);
+      if (emails.length > 0) {
+        const { data } = await supabase.from('leads')
+          .select('email, company_name, status, ai_needs_analysis')
+          .in('email', emails);
+        for (const lead of (data || [])) leadsByEmail[lead.email] = lead;
+      }
+    }
+  } catch (e) { console.warn('[BulkEmail] Lead fetch failed:', e.message); }
+
+  // Identify Tier 3 centers (have lead data with needs analysis)
+  const tier3 = capped.filter(r => {
+    const lead = leadsByEmail[r.email];
+    return lead?.ai_needs_analysis && (
+      lead.ai_needs_analysis.recommended_solution ||
+      (lead.ai_needs_analysis.needs_detected && lead.ai_needs_analysis.needs_detected.length > 0)
+    );
+  });
+
+  // Generate AI intros for Tier 3
+  let aiIntros = {};
+  if (tier3.length > 0) {
+    console.log(`[BulkEmail] Generating AI intros for ${tier3.length} Tier 3 centers...`);
+    try {
+      aiIntros = await generateAIIntros(tier3.map(r => ({
+        codi: r.codi,
+        centerData: r,
+        leadData: leadsByEmail[r.email],
+      })));
+      console.log(`[BulkEmail] AI intros generated: ${Object.keys(aiIntros).length}`);
+    } catch (e) { console.warn('[BulkEmail] AI intros failed:', e.message); }
+  }
+
+  // Send personalized emails
   let sent = 0;
   const errors = [];
-  for (const r of recipients.slice(0, 200)) {
+  for (const r of capped) {
     try {
-      const html = buildBulkEmailHtml(r.centerName || '');
+      let introHtml;
+      if (aiIntros[r.codi]) {
+        // Tier 3: AI-generated intro wrapped in styled HTML
+        introHtml = `
+        <div style="padding:40px 40px 24px;">
+          <h1 style="font-size:20px;color:#1a1a2e;margin:0 0 16px;line-height:1.3;font-weight:700;">${r.centerName || 'El vostre centre'}</h1>
+          <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 16px;">${aiIntros[r.codi]}</p>
+          <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong></p>
+        </div>`;
+      } else {
+        // Tier 1 or 2: template-based intro
+        introHtml = buildTemplatePersonalizedIntro(r);
+      }
+      const html = buildBulkEmailHtml(introHtml);
       const attachments = [];
       if (logoCid) attachments.push(logoCid);
       if (brochureAttachment) attachments.push(brochureAttachment);
-      await transporter.sendMail({
-        from: '"Adeptify" <hola@adeptify.es>',
-        to: r.email,
-        subject,
-        html,
-        attachments,
-      });
+      await transporter.sendMail({ from: '"Adeptify" <hola@adeptify.es>', to: r.email, subject, html, attachments });
       sent++;
     } catch (e) {
       errors.push(`${r.email}: ${e.message}`);
     }
   }
-  console.log(`[BulkEmail] Sent ${sent}/${recipients.length}, errors: ${errors.length}`);
-  res.json({ sent, total: recipients.length, errors });
+  const t3count = Object.keys(aiIntros).length;
+  console.log(`[BulkEmail] Sent ${sent}/${capped.length} (${t3count} AI-personalized), errors: ${errors.length}`);
+  res.json({ sent, total: capped.length, errors, aiPersonalized: t3count });
 });
 
 // -- Save AI enrichment data to cat_education_centers --
