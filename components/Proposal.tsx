@@ -63,7 +63,7 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
   return (
     <div className="space-y-16 fade-up pb-32">
       <div ref={proposalRef} className="bg-white rounded-xl shadow-[0_40px_80px_rgba(0,0,0,0.08)] border border-slate-100 overflow-hidden max-w-5xl mx-auto">
-        
+
         {/* Capçalera Estil Informe */}
         <div className="p-16 border-b border-slate-100 flex justify-between items-start">
           <div className="space-y-6">
@@ -74,13 +74,13 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
             </div>
           </div>
           <div className="text-right space-y-2">
-             <span className="inline-block bg-slate-50 border border-slate-100 px-4 py-2 rounded text-[10px] font-bold text-slate-600 tracking-widest uppercase">
-               Ref: {proposalRefCode.current}
-             </span>
-             <p className="text-[10px] text-slate-400 font-medium">{t.dateEmit}: {new Date().toLocaleDateString()}</p>
+            <span className="inline-block bg-slate-50 border border-slate-100 px-4 py-2 rounded text-[10px] font-bold text-slate-600 tracking-widest uppercase">
+              Ref: {proposalRefCode.current}
+            </span>
+            <p className="text-[10px] text-slate-400 font-medium">{t.dateEmit}: {new Date().toLocaleDateString()}</p>
           </div>
         </div>
-        
+
         <div className="p-16 space-y-20">
           {/* Executive Summary */}
           <section className="max-w-3xl">
@@ -211,10 +211,10 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-slate-100 border border-slate-100 rounded-lg overflow-hidden">
               {(data?.phases || []).length > 0 ? data.phases.map((phase, idx) => (
                 <div key={idx} className="bg-white p-8 space-y-4">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">{t.phaseLabel} 0{idx+1}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{t.phaseLabel} 0{idx + 1}</span>
                   <h5 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{phase?.name || t.proposalUnnamedPhase}</h5>
                   <p className="text-xs text-slate-500 leading-relaxed font-medium">{phase?.description || t.proposalPendingDescription}</p>
-                  <p className="text-[10px] font-bold text-indigo-600 pt-2">{t.weekLabel} {phase?.startWeek || idx+1}</p>
+                  <p className="text-[10px] font-bold text-indigo-600 pt-2">{t.weekLabel} {phase?.startWeek || idx + 1}</p>
 
                   {typeof (phase as any)?.cost === 'number' && (
                     <p className="text-[10px] font-bold text-slate-700">{t.proposalPhaseCostLabel}: {(phase as any).cost.toLocaleString()}€</p>
@@ -236,6 +236,73 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                   {t.roadmapGenerating}
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* New Sections for PDF */}
+
+          {/* 1. Features (Solucions en Acció) */}
+          <section className="bg-white border top border-slate-100 p-12 rounded-xl text-center space-y-8">
+            <div className="max-w-2xl mx-auto space-y-4">
+              <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-2">{t.proposalFeaturesTitle}</h4>
+              <p className="text-sm font-medium text-slate-500">{t.proposalFeaturesDesc}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+              <div className="bg-slate-50 rounded-lg h-64 border border-slate-100 flex items-center justify-center overflow-hidden relative shadow-sm">
+                <img src="/screenshots/media__1772879444571.png" alt="Screenshot 1" className="object-cover w-full h-full opacity-90" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+              <div className="bg-slate-50 rounded-lg h-64 border border-slate-100 flex items-center justify-center overflow-hidden relative shadow-sm">
+                <img src="/screenshots/media__1772879559317.png" alt="Screenshot 2" className="object-cover w-full h-full opacity-90" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+              </div>
+            </div>
+          </section>
+
+          {/* 2. Testimonial (L'Opinió dels Centres) */}
+          <section className="bg-indigo-50/50 p-12 rounded-xl text-center space-y-8">
+            <h4 className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.4em] mb-6">{t.proposalTestimonialTitle}</h4>
+            <blockquote className="text-xl md:text-2xl font-serif italic text-slate-800 leading-snug max-w-3xl mx-auto">
+              {t.proposalTestimonialQuote}
+            </blockquote>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.proposalTestimonialAuthor}</p>
+          </section>
+
+          {/* 3. Security (Seguretat i Privacitat) */}
+          <section className="bg-slate-900 text-white p-12 rounded-xl">
+            <div className="max-w-xl mb-12">
+              <h4 className="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.4em] mb-4">{t.proposalSecurityTitle}</h4>
+              <p className="text-sm text-slate-300 leading-relaxed font-medium">{t.proposalSecurityDesc}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-3">
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h5 className="text-xs font-bold text-white uppercase tracking-wider">{t.proposalSecurity1Title}</h5>
+                <p className="text-[10px] text-slate-400 leading-relaxed">{t.proposalSecurity1Desc}</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <h5 className="text-xs font-bold text-white uppercase tracking-wider">{t.proposalSecurity2Title}</h5>
+                <p className="text-[10px] text-slate-400 leading-relaxed">{t.proposalSecurity2Desc}</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h5 className="text-xs font-bold text-white uppercase tracking-wider">{t.proposalSecurity3Title}</h5>
+                <p className="text-[10px] text-slate-400 leading-relaxed">{t.proposalSecurity3Desc}</p>
+              </div>
             </div>
           </section>
 
@@ -270,11 +337,11 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{t.totalInvestment}</span>
                 <span className="text-6xl font-serif text-slate-900 tracking-tighter">{(data?.totalInitial || 0).toLocaleString()}€</span>
               </div>
-              
+
               <div className="bg-indigo-600 text-white p-8 rounded-xl space-y-2 min-w-[300px] shadow-xl shadow-indigo-100">
-                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{t.nextGenBadge}</p>
-                 <p className="text-4xl font-serif italic">0,00€<span className="text-sm opacity-60 ml-2 font-sans font-normal">*</span></p>
-                 <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">{t.nextGenDisclaimer}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{t.nextGenBadge}</p>
+                <p className="text-4xl font-serif italic">0,00€<span className="text-sm opacity-60 ml-2 font-sans font-normal">*</span></p>
+                <p className="text-[8px] opacity-60 leading-tight pt-2 uppercase font-bold tracking-widest">{t.nextGenDisclaimer}</p>
               </div>
             </div>
 
@@ -355,32 +422,32 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
             )}
           </section>
         </div>
-        
+
         {/* Footer del Document */}
         <div className="bg-slate-50 p-12 border-t border-slate-100 flex flex-col items-center gap-6">
-           <p className="text-[9px] text-slate-400 font-medium uppercase tracking-[0.2em] text-center max-w-2xl leading-relaxed">
-             Adeptify Systems SLU • NIF {ADEPTIFY_INFO.nif} • {ADEPTIFY_INFO.address}<br/>
-             {t.proposalFooterDisclaimer}
-           </p>
-           <p className="text-[9px] text-slate-500 font-medium text-center max-w-2xl leading-relaxed">
-             {t.proposalGeneratedNote
-               .replace('{model}', modelUsed || t.unknownModel)
-               .replace('{date}', new Date().toLocaleDateString())}
-           </p>
+          <p className="text-[9px] text-slate-400 font-medium uppercase tracking-[0.2em] text-center max-w-2xl leading-relaxed">
+            Adeptify Systems SLU • NIF {ADEPTIFY_INFO.nif} • {ADEPTIFY_INFO.address}<br />
+            {t.proposalFooterDisclaimer}
+          </p>
+          <p className="text-[9px] text-slate-500 font-medium text-center max-w-2xl leading-relaxed">
+            {t.proposalGeneratedNote
+              .replace('{model}', modelUsed || t.unknownModel)
+              .replace('{date}', new Date().toLocaleDateString())}
+          </p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4 no-print px-4">
-        <button 
-          onClick={downloadPDF} 
-          disabled={isExporting} 
+        <button
+          onClick={downloadPDF}
+          disabled={isExporting}
           className="flex-1 bg-slate-900 text-white py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl btn-premium"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           {isExporting ? t.exporting : t.exportPdf}
         </button>
-        
-        <button 
+
+        <button
           onClick={sendByEmail}
           className="flex-1 bg-indigo-600 text-white py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl"
         >
@@ -388,11 +455,11 @@ const Proposal: React.FC<ProposalProps> = ({ data, centerName, onAccept }) => {
           {t.sendEmail}
         </button>
 
-        <button 
+        <button
           onClick={() => window.open(`https://wa.me/34690831770`, '_blank')}
           className="flex-1 bg-white border border-slate-200 text-slate-700 py-5 rounded-xl font-bold text-xs uppercase tracking-widest hover:border-slate-400 transition-all flex items-center justify-center gap-3"
         >
-          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.63 1.438h.004c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.659 1.437 5.63 1.438h.004c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
           {t.contactConsultant}
         </button>
       </div>

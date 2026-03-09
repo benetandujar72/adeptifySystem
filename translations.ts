@@ -120,6 +120,21 @@ const ca = {
   proposalItemDetailsFallback: "Detalls de la partida",
   proposalHoursBreakdown: "{hours}h × {rate}€/h",
 
+  proposalFeaturesTitle: "Solucions en Acció",
+  proposalFeaturesDesc: "Mostra de l'entorn de treball dissenyat per simplificar la gestió diària.",
+  proposalTestimonialTitle: "L'Opinió dels Centres",
+  proposalTestimonialQuote: "«L'impacte de la solució al nostre dia a dia ha estat increïble. Hem recuperat hores vitals de la nostra feina, permetent-nos centrar-nos en l'alumnat i en la qualitat pedagògica.»",
+  proposalTestimonialAuthor: "— Coordinació d'un centre",
+  proposalSecurityTitle: "Seguretat i Privacitat Absoluta",
+  proposalSecurityDesc: "Anonimització absoluta de les dades, encriptació d'informació personal i compliment estricte de la normativa (RGPD / LOPDGDD).",
+  proposalSecurity1Title: "Encriptació Avançada",
+  proposalSecurity1Desc: "Dades xifrades en trànsit i en repòs per garantir-ne l'aïllament.",
+  proposalSecurity2Title: "Anonimització",
+  proposalSecurity2Desc: "Dades de l'alumnat absolutament privades.",
+  proposalSecurity3Title: "Compliment Normatiu",
+  proposalSecurity3Desc: "Auditat i dissenyat complint els marcs legals educatius.",
+
+
   // Consultant
   consultantTitle: "Pla d'eficiència",
   consultantSubtitle: "Adeptify Consulting",
@@ -765,6 +780,21 @@ const es = {
   proposalConceptFallback: "Concepto",
   proposalItemDetailsFallback: "Detalles de la partida",
   proposalHoursBreakdown: "{hours}h × {rate}€/h",
+
+  proposalFeaturesTitle: "Soluciones en Acción",
+  proposalFeaturesDesc: "Muestra del entorno de trabajo diseñado para simplificar la gestión diaria.",
+  proposalTestimonialTitle: "La Opinión de los Centros",
+  proposalTestimonialQuote: "«El impacto de la solución en nuestro día a día ha sido increíble. Hemos recuperado horas vitales, permitiéndonos centrarnos en el alumnado y en la calidad pedagógica.»",
+  proposalTestimonialAuthor: "— Coordinación de un centro",
+  proposalSecurityTitle: "Seguridad y Privacidad Absoluta",
+  proposalSecurityDesc: "Anonimización absoluta de los datos, encriptación de información personal y cumplimiento estricto de la normativa (RGPD / LOPDGDD).",
+  proposalSecurity1Title: "Encriptación Avanzada",
+  proposalSecurity1Desc: "Datos cifrados en tránsito y en reposo para garantizar su aislamiento.",
+  proposalSecurity2Title: "Anonimización",
+  proposalSecurity2Desc: "Datos del alumnado absolutamente privados.",
+  proposalSecurity3Title: "Cumplimiento Normativo",
+  proposalSecurity3Desc: "Auditado y diseñado cumpliendo los marcos legales educativos.",
+
 
   // Consultant
   consultantTitle: "Plan de eficiencia",
