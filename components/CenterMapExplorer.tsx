@@ -112,7 +112,7 @@ const CenterMapExplorer: React.FC = () => {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailChecked, setEmailChecked] = useState<Set<string>>(new Set());
   const [sendingEmails, setSendingEmails] = useState(false);
-  const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[]; aiPersonalized?: number } | null>(null);
+  const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[]; aiPersonalized?: number; mongoEnriched?: number; leadsCreated?: number } | null>(null);
 
   // Load centers on mount
   useEffect(() => {
@@ -301,7 +301,7 @@ const CenterMapExplorer: React.FC = () => {
         body: JSON.stringify({ recipients, subject: emailSubject }),
       });
       const data = await resp.json();
-      setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [], aiPersonalized: data.aiPersonalized || 0 });
+      setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [], aiPersonalized: data.aiPersonalized || 0, mongoEnriched: data.mongoEnriched || 0, leadsCreated: data.leadsCreated || 0 });
     } catch (err: any) {
       setEmailSendProgress(prev => prev ? { ...prev, errors: [err.message] } : { sent: 0, total: recipients.length, errors: [err.message] });
     } finally {
@@ -768,6 +768,12 @@ const CenterMapExplorer: React.FC = () => {
                   {emailSendProgress.sent}/{emailSendProgress.total} {(t as any).centerMapEmailSent || 'enviats'}
                   {(emailSendProgress.aiPersonalized || 0) > 0 && (
                     <span className="ml-2 text-xs font-normal text-indigo-600">({emailSendProgress.aiPersonalized} amb intro IA)</span>
+                  )}
+                  {(emailSendProgress.mongoEnriched || 0) > 0 && (
+                    <span className="ml-2 text-xs font-normal text-blue-600">({emailSendProgress.mongoEnriched} amb perfil enriquit)</span>
+                  )}
+                  {(emailSendProgress.leadsCreated || 0) > 0 && (
+                    <span className="ml-2 text-xs font-normal text-emerald-600">({emailSendProgress.leadsCreated} nous leads CRM)</span>
                   )}
                   {emailSendProgress.errors.length > 0 && (
                     <div className="mt-2 text-xs font-normal">

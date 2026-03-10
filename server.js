@@ -12,6 +12,25 @@ const docx = require('docx');
 const { orchestrate } = require('./multi-agent/orchestrator');
 const { generateDocxBuffer } = require('./multi-agent/generate_docx');
 const { generatePdfBuffer, generateBrochurePdfBuffer } = require('./multi-agent/generate_pdf');
+const { MongoClient } = require('mongodb');
+
+// --- MongoDB cached client ---
+let cachedMongo = null;
+async function getMongoDb() {
+  if (cachedMongo) return cachedMongo;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) return null;
+  try {
+    const client = new MongoClient(uri);
+    await client.connect();
+    cachedMongo = client.db(process.env.MONGODB_DB || 'centros_educativos_cat');
+    console.log('[MongoDB] Connected to', cachedMongo.databaseName);
+    return cachedMongo;
+  } catch (e) {
+    console.warn('[MongoDB] Connection failed:', e.message);
+    return null;
+  }
+}
 
 // In-memory job store for SSE progress streaming
 const reportJobs = new Map(); // jobId -> { status, events[], result, error }
@@ -586,8 +605,49 @@ app.get('/api/crm/track/:id.png', async (req, res) => {
   res.writeHead(200, { 'Content-Type': 'image/gif' }).end(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
 });
 
+// -- Fetch MongoDB profiles for a list of center codes --
+async function fetchMongoProfiles(codiList) {
+  const db = await getMongoDb();
+  if (!db || !codiList.length) return {};
+  try {
+    const docs = await db.collection('institutions')
+      .find({ codi_centre: { $in: codiList }, status: 'processed' })
+      .project({ codi_centre: 1, needs: 1, profile: 1, message: 1, sentiment: 1, social_media: 1, website: 1, website_score: 1, web_status: 1, nivells_educatius: 1, estudis_decodificats: 1 })
+      .toArray();
+    const byCode = {};
+    for (const d of docs) byCode[d.codi_centre] = d;
+    console.log(`[MongoDB] Fetched ${docs.length} profiles for ${codiList.length} codes`);
+    return byCode;
+  } catch (e) {
+    console.warn('[MongoDB] fetchMongoProfiles failed:', e.message);
+    return {};
+  }
+}
+
+// -- MongoDB exploration endpoints --
+app.get('/api/mongo/stats', async (req, res) => {
+  const db = await getMongoDb();
+  if (!db) return res.status(503).json({ error: 'MongoDB not configured' });
+  try {
+    const total = await db.collection('institutions').countDocuments();
+    const processed = await db.collection('institutions').countDocuments({ status: 'processed' });
+    const withNeeds = await db.collection('institutions').countDocuments({ needs: { $ne: null } });
+    res.json({ total, processed, withNeeds });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/mongo/center/:codi', async (req, res) => {
+  const db = await getMongoDb();
+  if (!db) return res.status(503).json({ error: 'MongoDB not configured' });
+  try {
+    const doc = await db.collection('institutions').findOne({ codi_centre: req.params.codi });
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+    res.json(doc);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // -- Personalized intro builder (Tier 1: template, Tier 2: + AI pitch) --
-function buildTemplatePersonalizedIntro(c) {
+function buildTemplatePersonalizedIntro(c, mongoProfile) {
   const name = c.centerName || 'el vostre centre';
   const type = (c.nom_naturalesa || '').toLowerCase();
   const municipi = c.nom_municipi || '';
@@ -631,11 +691,29 @@ function buildTemplatePersonalizedIntro(c) {
     aiLine = c.ai_custom_pitch;
   }
 
+  // MongoDB enrichment: needs, digital maturity, pain point
+  let mongoLine = '';
+  if (mongoProfile) {
+    const needs = mongoProfile.needs;
+    const profile = mongoProfile.profile;
+    if (needs?.dolor_principal) {
+      mongoLine = needs.dolor_principal;
+    } else if (needs?.necesidades_principales?.length) {
+      mongoLine = needs.necesidades_principales[0];
+    }
+    // Add digital maturity insight from profile
+    if (profile?.tecnologia_uso && !profile.tecnologia_uso.includes('no pot ser avaluat')) {
+      const techSnippet = profile.tecnologia_uso.length > 200 ? profile.tecnologia_uso.substring(0, 200) + '...' : profile.tecnologia_uso;
+      mongoLine = mongoLine ? `${mongoLine} A m&eacute;s, ${techSnippet.charAt(0).toLowerCase()}${techSnippet.slice(1)}` : techSnippet;
+    }
+  }
+
   return `
   <div style="padding:40px 40px 24px;">
     <h1 style="font-size:22px;color:#1a1a2e;margin:0 0 20px;line-height:1.3;font-weight:700;">${opening}</h1>
     ${studyLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${studyLine}</p>` : ''}
     ${locationLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${locationLine}</p>` : ''}
+    ${mongoLine ? `<p style="font-size:14px;color:#2E75B6;line-height:1.7;margin:0 0 12px;border-left:3px solid #2E75B6;padding-left:12px;"><strong>Hem detectat:</strong> ${mongoLine}</p>` : ''}
     ${aiLine ? `<p style="font-size:14px;color:#673DE6;line-height:1.7;margin:0 0 12px;font-style:italic;border-left:3px solid #673DE6;padding-left:12px;">${aiLine}</p>` : ''}
     <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
       Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context concret.</strong>
@@ -652,8 +730,11 @@ async function generateAIIntros(centersWithLeads) {
     const centersCtx = batch.map((item, idx) => {
       const c = item.centerData;
       const lead = item.leadData;
+      const mongo = item.mongoProfile;
       const studies = getStudyLabels(c);
       const needs = lead?.ai_needs_analysis;
+      const mongoNeeds = mongo?.needs;
+      const mongoProfile = mongo?.profile;
       return `
 CENTRE ${idx + 1} [ID: ${item.codi}]:
 - Nom: ${c.centerName}
@@ -663,7 +744,12 @@ CENTRE ${idx + 1} [ID: ${item.codi}]:
 ${c.ai_reason_similarity ? `- Per què encaixa: ${c.ai_reason_similarity}` : ''}
 ${needs?.needs_detected?.length ? `- Necessitats detectades: ${needs.needs_detected.join(', ')}` : ''}
 ${needs?.main_bottleneck ? `- Principal coll d'ampolla: ${needs.main_bottleneck}` : ''}
-${needs?.recommended_solution ? `- Solució recomanada: ${needs.recommended_solution}` : ''}`;
+${needs?.recommended_solution ? `- Solució recomanada: ${needs.recommended_solution}` : ''}
+${mongoNeeds?.dolor_principal ? `- Dolor principal (anàlisi web): ${mongoNeeds.dolor_principal}` : ''}
+${mongoNeeds?.necesidades_principales?.length ? `- Necessitats (anàlisi web): ${mongoNeeds.necesidades_principales.join('; ')}` : ''}
+${mongoNeeds?.urgencia ? `- Urgència: ${mongoNeeds.urgencia}` : ''}
+${mongoProfile?.retos_identificados?.length ? `- Reptes: ${mongoProfile.retos_identificados.join('; ')}` : ''}
+${mongoProfile?.contexto_socioeconomico ? `- Context socioeconòmic: ${mongoProfile.contexto_socioeconomico}` : ''}`;
     }).join('\n---\n');
 
     const prompt = `Ets un expert en comunicació per al sector educatiu a Catalunya. Genera un paràgraf introductori personalitzat per a cada centre (3-4 frases, 60-80 paraules) per a un email d'Adeptify (consultoria digital educativa).
@@ -852,29 +938,42 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
   } catch (e) { /* optional */ }
 
   const capped = recipients.slice(0, 200);
+  const supabase = getSupabaseAdmin();
 
   // Fetch lead data for personalization (Tier 3)
   let leadsByEmail = {};
   try {
-    const supabase = getSupabaseAdmin();
     if (supabase) {
       const emails = capped.map(r => r.email).filter(Boolean);
       if (emails.length > 0) {
         const { data } = await supabase.from('leads')
-          .select('email, company_name, status, ai_needs_analysis')
+          .select('id, email, company_name, status, ai_needs_analysis')
           .in('email', emails);
         for (const lead of (data || [])) leadsByEmail[lead.email] = lead;
       }
     }
   } catch (e) { console.warn('[BulkEmail] Lead fetch failed:', e.message); }
 
-  // Identify Tier 3 centers (have lead data with needs analysis)
+  // Fetch MongoDB profiles for all centers (enrichment)
+  let mongoProfiles = {};
+  try {
+    const codis = capped.map(r => r.codi).filter(Boolean);
+    if (codis.length > 0) {
+      mongoProfiles = await fetchMongoProfiles(codis);
+      console.log(`[BulkEmail] MongoDB profiles found: ${Object.keys(mongoProfiles).length}/${codis.length}`);
+    }
+  } catch (e) { console.warn('[BulkEmail] MongoDB fetch failed:', e.message); }
+
+  // Identify Tier 3 centers (have lead data with needs analysis OR rich MongoDB profile)
   const tier3 = capped.filter(r => {
     const lead = leadsByEmail[r.email];
-    return lead?.ai_needs_analysis && (
+    const mongo = mongoProfiles[r.codi];
+    const hasLeadNeeds = lead?.ai_needs_analysis && (
       lead.ai_needs_analysis.recommended_solution ||
       (lead.ai_needs_analysis.needs_detected && lead.ai_needs_analysis.needs_detected.length > 0)
     );
+    const hasMongoNeeds = mongo?.needs?.dolor_principal || mongo?.needs?.necesidades_principales?.length;
+    return hasLeadNeeds || hasMongoNeeds;
   });
 
   // Generate AI intros for Tier 3
@@ -886,16 +985,64 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
         codi: r.codi,
         centerData: r,
         leadData: leadsByEmail[r.email],
+        mongoProfile: mongoProfiles[r.codi] || null,
       })));
       console.log(`[BulkEmail] AI intros generated: ${Object.keys(aiIntros).length}`);
     } catch (e) { console.warn('[BulkEmail] AI intros failed:', e.message); }
   }
 
-  // Send personalized emails
+  // Send personalized emails with lead tracking
   let sent = 0;
+  let leadsCreated = 0;
   const errors = [];
+  const PRESERVE_STATUSES = ['proposal_sent', 'qualified', 'closed', 'converted'];
+
   for (const r of capped) {
     try {
+      // A) Upsert lead in Supabase
+      let leadId = leadsByEmail[r.email]?.id || null;
+      if (supabase) {
+        try {
+          const existingLead = leadsByEmail[r.email];
+          const upsertData = {
+            tenant_slug: 'default',
+            email: r.email,
+            company_name: r.centerName || r.email,
+            source: existingLead?.source || 'bulk_email_map',
+            last_contacted_at: new Date().toISOString(),
+          };
+          // Only set status to 'new' if lead doesn't exist or has no advanced status
+          if (!existingLead || !PRESERVE_STATUSES.includes(existingLead.status)) {
+            upsertData.status = existingLead?.status || 'new';
+          }
+          const { data: upserted } = await supabase.from('leads')
+            .upsert(upsertData, { onConflict: 'tenant_slug,email', ignoreDuplicates: false })
+            .select('id').single();
+          if (upserted?.id) {
+            leadId = upserted.id;
+            if (!existingLead) leadsCreated++;
+          }
+        } catch (le) { console.warn(`[BulkEmail] Lead upsert failed for ${r.email}:`, le.message); }
+      }
+
+      // B) Create interaction record + tracking pixel
+      const interactionId = crypto.randomUUID();
+      if (supabase && leadId) {
+        try {
+          const tierUsed = aiIntros[r.codi] ? 'tier3_ai' : (r.ai_custom_pitch ? 'tier2_pitch' : 'tier1_template');
+          const hasMongo = !!mongoProfiles[r.codi];
+          await supabase.from('lead_interactions').insert({
+            id: interactionId,
+            lead_id: leadId,
+            interaction_type: 'bulk_email',
+            content_summary: subject,
+            payload_json: { centerName: r.centerName, codi: r.codi, tier: tierUsed, mongoEnriched: hasMongo },
+          });
+        } catch (ie) { console.warn(`[BulkEmail] Interaction insert failed:`, ie.message); }
+      }
+
+      // C) Build personalized intro
+      const mongoProfile = mongoProfiles[r.codi] || null;
       let introHtml;
       if (aiIntros[r.codi]) {
         // Tier 3: AI-generated intro wrapped in styled HTML
@@ -906,10 +1053,15 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
           <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong></p>
         </div>`;
       } else {
-        // Tier 1 or 2: template-based intro
-        introHtml = buildTemplatePersonalizedIntro(r);
+        // Tier 1 or 2: template-based intro (enriched with MongoDB)
+        introHtml = buildTemplatePersonalizedIntro(r, mongoProfile);
       }
-      const html = buildBulkEmailHtml(introHtml);
+
+      // D) Build full HTML with tracking pixel
+      let html = buildBulkEmailHtml(introHtml);
+      const trackPixel = `<img src="https://consultor.adeptify.es/api/crm/track/${interactionId}.png" width="1" height="1" style="display:block;" alt="" />`;
+      html = html.replace('</body>', `${trackPixel}</body>`);
+
       const attachments = [];
       if (logoCid) attachments.push(logoCid);
       if (brochureAttachment) attachments.push(brochureAttachment);
@@ -920,8 +1072,9 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
     }
   }
   const t3count = Object.keys(aiIntros).length;
-  console.log(`[BulkEmail] Sent ${sent}/${capped.length} (${t3count} AI-personalized), errors: ${errors.length}`);
-  res.json({ sent, total: capped.length, errors, aiPersonalized: t3count });
+  const mongoCount = Object.keys(mongoProfiles).length;
+  console.log(`[BulkEmail] Sent ${sent}/${capped.length} (${t3count} AI, ${mongoCount} MongoDB, ${leadsCreated} new leads), errors: ${errors.length}`);
+  res.json({ sent, total: capped.length, errors, aiPersonalized: t3count, mongoEnriched: mongoCount, leadsCreated });
 });
 
 // -- Save AI enrichment data to cat_education_centers --
