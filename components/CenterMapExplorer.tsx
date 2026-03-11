@@ -49,6 +49,27 @@ interface MapFilters {
   studyTypes: StudyGroupKey[];
 }
 
+// -- Region view constants --
+const REGION_VIEW: Record<string, [number, number, number]> = {
+  'ALL':   [40.0, -3.5, 5],
+  'ES-CT': [41.5, 1.8, 8],
+  'ES-MD': [40.4, -3.7, 9],
+  'ES-PV': [43.0, -2.5, 8],
+  'ES-NC': [42.7, -1.6, 8],
+  'ES-VC': [39.5, -0.5, 8],
+  'ES-AN': [37.4, -4.5, 7],
+};
+
+// -- Fly-to region component --
+function FlyToRegion({ region }: { region: string }) {
+  const map = useMap();
+  useEffect(() => {
+    const v = REGION_VIEW[region] || REGION_VIEW['ALL'];
+    map.flyTo([v[0], v[1]], v[2], { duration: 1.5 });
+  }, [region, map]);
+  return null;
+}
+
 // -- Draw control component --
 function DrawControl({ onAreaSelected }: { onAreaSelected: (bounds: L.LatLngBounds) => void }) {
   const map = useMap();
@@ -121,6 +142,13 @@ const CenterMapExplorer: React.FC = () => {
   const [listLoading, setListLoading] = useState(false);
   const [listRegion, setListRegion] = useState('ES-MD');
   const [listSearch, setListSearch] = useState('');
+  const [listTypeFilter, setListTypeFilter] = useState('');
+  const [listEmailOnly, setListEmailOnly] = useState(false);
+  const [listPage, setListPage] = useState(1);
+  const LIST_PAGE_SIZE = 50;
+
+  // Map region filter
+  const [mapRegion, setMapRegion] = useState<string>('ALL');
 
   // Load centers on mount
   useEffect(() => {
@@ -144,6 +172,9 @@ const CenterMapExplorer: React.FC = () => {
       .then(setListCenters)
       .finally(() => setListLoading(false));
   }, [viewMode, listRegion]);
+
+  // Reset list page when search/filter changes
+  useEffect(() => { setListPage(1); }, [listSearch, listRegion, listTypeFilter, listEmailOnly]);
 
   // Derive filter options from data
   const filterOptions = useMemo(() => {
@@ -171,6 +202,7 @@ const CenterMapExplorer: React.FC = () => {
   // Filtered centers (map)
   const filteredCenters = useMemo(() => {
     return centers.filter((c) => {
+      if (mapRegion !== 'ALL' && (c.pais || 'ES-CT') !== mapRegion) return false;
       if (filters.naturalesa.length > 0 && !filters.naturalesa.includes(c.nom_naturalesa || '')) return false;
       if (filters.comarca && c.nom_comarca !== filters.comarca) return false;
       if (filters.municipi && c.nom_municipi !== filters.municipi) return false;
@@ -184,14 +216,23 @@ const CenterMapExplorer: React.FC = () => {
       }
       return true;
     });
-  }, [centers, filters]);
+  }, [centers, filters, mapRegion]);
 
-  // Filtered list centers (search)
+  // Filtered list centers (search + type + email filters)
   const filteredListCenters = useMemo(() =>
-    listCenters.filter(c =>
-      !listSearch || [c.denominacio_completa, c.nom_municipi, c.email_centre]
-        .some(f => f?.toLowerCase().includes(listSearch.toLowerCase()))
-    ), [listCenters, listSearch]);
+    listCenters.filter(c => {
+      if (listEmailOnly && !c.email_centre) return false;
+      if (listTypeFilter && !(c.nom_naturalesa || '').toLowerCase().includes(listTypeFilter.toLowerCase())) return false;
+      if (!listSearch) return true;
+      return [c.denominacio_completa, c.nom_municipi, c.email_centre]
+        .some(f => f?.toLowerCase().includes(listSearch.toLowerCase()));
+    }), [listCenters, listSearch, listTypeFilter, listEmailOnly]);
+
+  // Paginated list centers
+  const pagedListCenters = useMemo(() =>
+    filteredListCenters.slice((listPage - 1) * LIST_PAGE_SIZE, listPage * LIST_PAGE_SIZE),
+    [filteredListCenters, listPage]);
+  const totalListPages = Math.ceil(filteredListCenters.length / LIST_PAGE_SIZE);
 
   // All centers (map + list) for lookup
   const allCentersMap = useMemo(() => {
@@ -466,13 +507,13 @@ const CenterMapExplorer: React.FC = () => {
           onClick={() => setViewMode('map')}
           className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
         >
-          Mapa — Catalunya
+          Mapa d'Espanya
         </button>
         <button
           onClick={() => setViewMode('list')}
           className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
         >
-          Llista — Madrid / Euskadi / Navarra
+          Llista (sense coordenades)
         </button>
       </div>
 
@@ -491,23 +532,35 @@ const CenterMapExplorer: React.FC = () => {
               <option value="ES-NC">Navarra</option>
               <option value="ES-VC">Comunitat Valenciana</option>
               <option value="ES-AN">Andalucía</option>
-              <option value="ALL">Totes les regions importades</option>
+              <option value="ALL">Totes les regions</option>
             </select>
             <input
               type="text"
               value={listSearch}
               onChange={e => setListSearch(e.target.value)}
               placeholder="Cercar per nom, municipi o email..."
-              className="flex-1 min-w-[200px] p-2 bg-white border border-slate-200 rounded-xl text-xs"
+              className="flex-1 min-w-[180px] p-2 bg-white border border-slate-200 rounded-xl text-xs"
             />
+            <input
+              type="text"
+              value={listTypeFilter}
+              onChange={e => setListTypeFilter(e.target.value)}
+              placeholder="Tipus (públic, concertat...)"
+              className="w-[180px] p-2 bg-white border border-slate-200 rounded-xl text-xs"
+            />
+            <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
+              <input type="checkbox" checked={listEmailOnly} onChange={e => setListEmailOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-300 text-indigo-600" />
+              Amb email
+            </label>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {filteredListCenters.length} centres · {selected.size} seleccionats
+              {filteredListCenters.length} · {selected.size} sel.
             </span>
             <button
               onClick={selectAllListVisible}
               className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all"
             >
-              Seleccionar tots ({filteredListCenters.length})
+              Selec. tots ({filteredListCenters.length})
             </button>
             <button
               onClick={clearSelection}
@@ -552,7 +605,7 @@ const CenterMapExplorer: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredListCenters.map(c => (
+                    {pagedListCenters.map(c => (
                       <tr
                         key={c.codi_centre}
                         className={`border-b border-slate-50 cursor-pointer transition-colors ${selected.has(c.codi_centre) ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
@@ -591,6 +644,28 @@ const CenterMapExplorer: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              {/* Pagination controls */}
+              {totalListPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+                  <button
+                    onClick={() => setListPage(p => Math.max(1, p - 1))}
+                    disabled={listPage === 1}
+                    className="px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg disabled:opacity-40 hover:bg-slate-200 transition-all"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    Pàgina {listPage} de {totalListPages} · {filteredListCenters.length} centres
+                  </span>
+                  <button
+                    onClick={() => setListPage(p => Math.min(totalListPages, p + 1))}
+                    disabled={listPage === totalListPages}
+                    className="px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg disabled:opacity-40 hover:bg-slate-200 transition-all"
+                  >
+                    Següent →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -601,6 +676,24 @@ const CenterMapExplorer: React.FC = () => {
         {/* Sidebar Filters */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-6 space-y-5 overflow-y-auto" style={{ maxHeight: '75vh' }}>
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.centerMapFilter}</h3>
+
+          {/* Region selector */}
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Regió</label>
+            <select
+              value={mapRegion}
+              onChange={e => setMapRegion(e.target.value)}
+              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+            >
+              <option value="ALL">Tota Espanya</option>
+              <option value="ES-CT">Catalunya</option>
+              <option value="ES-MD">Madrid</option>
+              <option value="ES-PV">País Vasco / Euskadi</option>
+              <option value="ES-NC">Navarra</option>
+              <option value="ES-VC">Comunitat Valenciana</option>
+              <option value="ES-AN">Andalucía</option>
+            </select>
+          </div>
 
           {/* Titularitat */}
           <div>
@@ -727,8 +820,8 @@ const CenterMapExplorer: React.FC = () => {
         {/* Map */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden" style={{ minHeight: '65vh' }}>
           <MapContainer
-            center={[41.5, 1.8]}
-            zoom={8}
+            center={[40.0, -3.5]}
+            zoom={5}
             style={{ height: '100%', width: '100%', minHeight: '65vh' }}
             scrollWheelZoom={true}
           >
@@ -736,6 +829,7 @@ const CenterMapExplorer: React.FC = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <FlyToRegion region={mapRegion} />
             <DrawControl onAreaSelected={handleAreaSelected} />
             <MarkerClusterGroup
               chunkedLoading

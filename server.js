@@ -2306,10 +2306,12 @@ app.post('/api/centers/import/pais-vasco', async (req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(503).json({ error: 'DB not configured' });
   try {
-    const resp = await fetch('https://opendata.euskadi.eus/contenidos/ds_localizaciones/centros_docentes_no_universit/es_euskadi/adjuntos/dirgennouniv.csv');
-    if (!resp.ok) throw new Error(`Euskadi API responded with ${resp.status}`);
+    const url = 'https://opendata.euskadi.eus/contenidos/ds_localizaciones/centros_docentes_no_universit/es_euskadi/adjuntos/dirgennouniv.csv';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' }, redirect: 'follow' });
+    if (!resp.ok) throw new Error(`Euskadi API (${url}) responded HTTP ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 300)}`);
     const text = await resp.text();
-    const records = csvParse(text, { columns: true, delimiter: ';', skip_empty_lines: true, relax_quotes: true, trim: true });
+    const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
     const rows = [];
     for (const rec of records) {
       const name = (rec['NOMBRE'] || rec['nombre'] || rec['Nombre'] || '').trim();
@@ -2328,7 +2330,7 @@ app.post('/api/centers/import/pais-vasco', async (req, res) => {
     }
     const { imported, errors } = await batchUpsertCenters(supabase, rows);
     console.log(`[Import PV] ${imported}/${rows.length} centres importats del País Vasco`);
-    res.json({ imported, total: rows.length, errors });
+    res.json({ imported, total: rows.length, errors, debug: { rowsParsed: records.length, rowsWithName: rows.length, delimiter, sampleKeys: records[0] ? Object.keys(records[0]).slice(0, 6).join(', ') : '' } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2337,15 +2339,17 @@ app.post('/api/centers/import/navarra', async (req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(503).json({ error: 'DB not configured' });
   try {
-    const resp = await fetch('https://datosabiertos.navarra.es/es/datastore/dump/39c2c8af-80b5-472a-b017-1ac196fafa59?format=csv&bom=True');
-    if (!resp.ok) throw new Error(`Navarra API responded with ${resp.status}`);
+    const url = 'https://datosabiertos.navarra.es/es/datastore/dump/39c2c8af-80b5-472a-b017-1ac196fafa59?format=csv&bom=True';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' }, redirect: 'follow' });
+    if (!resp.ok) throw new Error(`Navarra API (${url}) responded HTTP ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 300)}`);
     const text = await resp.text();
-    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, skip_empty_lines: true, relax_quotes: true, trim: true });
+    const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
     const rows = [];
     for (const rec of records) {
-      const name = (rec['DENOMINACION'] || rec['denominacion'] || '').trim();
+      const name = (rec['DENOMINACION'] || rec['denominacion'] || rec['Denominación'] || '').trim();
       if (!name) continue;
-      const email = (rec['CORREO_ELECTRONICO'] || rec['correo_electronico'] || '').trim().toLowerCase() || null;
+      const email = (rec['CORREO_ELECTRONICO'] || rec['correo_electronico'] || rec['email'] || rec['EMAIL'] || '').trim().toLowerCase() || null;
       const codi = generateCodi('ES-NC', email, name);
       rows.push({
         codi_centre: codi,
@@ -2359,7 +2363,7 @@ app.post('/api/centers/import/navarra', async (req, res) => {
     }
     const { imported, errors } = await batchUpsertCenters(supabase, rows);
     console.log(`[Import NAV] ${imported}/${rows.length} centres importats de Navarra`);
-    res.json({ imported, total: rows.length, errors });
+    res.json({ imported, total: rows.length, errors, debug: { rowsParsed: records.length, rowsWithName: rows.length, delimiter, sampleKeys: records[0] ? Object.keys(records[0]).slice(0, 6).join(', ') : '' } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2367,26 +2371,41 @@ app.post('/api/centers/import/navarra', async (req, res) => {
 app.post('/api/centers/import/madrid', async (req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const MADRID_URLS = [
+    'https://datos.comunidad.madrid/catalogo/dataset/c750856d-3166-4dac-8e80-d1b824c968b5/resource/28d60557-1d73-4281-ab08-6cfd3b2f5f83/download/centros_educativos.csv',
+    'https://datos.comunidad.madrid/catalogo/dataset/c750856d-3166-4dac-8e80-d1b824c968b5/resource/28d60557-1d73-4281-ab08-6cfd3b2f5f83/download/centros_educativos.csv',
+  ];
+  let text = null, lastError = null;
+  for (const url of MADRID_URLS) {
+    try {
+      const resp = await fetch(url, { headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' }, redirect: 'follow' });
+      if (resp.ok) { text = await resp.text(); break; }
+      lastError = `Madrid API (${url}) responded HTTP ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 300)}`;
+    } catch (e) { lastError = e.message; }
+  }
+  if (!text) return res.status(500).json({ error: lastError || 'No s\'ha pogut descarregar el CSV de Madrid' });
   try {
-    const resp = await fetch('https://datos.comunidad.madrid/catalogo/dataset/c750856d-3166-4dac-8e80-d1b824c968b5/resource/28d60557-1d73-4281-ab08-6cfd3b2f5f83/download/centros_educativos.csv');
-    if (!resp.ok) throw new Error(`Madrid API responded with ${resp.status}`);
-    const text = await resp.text();
-    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter: ';', skip_empty_lines: true, relax_quotes: true, trim: true });
+    const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
     const rows = [];
     for (const rec of records) {
-      const name = Object.values(rec).find((v, i) => i === 0 && v?.trim()) || '';
-      if (!name || typeof name !== 'string') continue;
-      // Madrid CSV field names vary — try common patterns
       const keys = Object.keys(rec);
       const getField = (...patterns) => {
         const k = keys.find(k => patterns.some(p => k.toLowerCase().includes(p)));
-        return k ? rec[k]?.trim() : null;
+        return k ? (rec[k]?.trim() || null) : null;
       };
+      // Madrid CSV column name varies across dataset versions
+      const name = (
+        rec['NOMBRE_CENTRO'] || rec['CENTRO'] || rec['NOMBRE'] ||
+        rec['denominacion'] || rec['DENOMINACION'] || rec['nombre_centro'] ||
+        getField('nombre', 'centro', 'denominacion') || Object.values(rec)[0] || ''
+      ).trim();
+      if (!name || typeof name !== 'string') continue;
       const email = getField('correo', 'email', 'mail')?.toLowerCase() || null;
-      const codi = generateCodi('ES-MD', email, name.trim());
+      const codi = generateCodi('ES-MD', email, name);
       rows.push({
         codi_centre: codi,
-        denominacio_completa: name.trim(),
+        denominacio_completa: name,
         nom_naturalesa: getField('tipo', 'tipo_centro', 'naturaleza') || null,
         nom_municipi: getField('municipio', 'localidad', 'ciudad') || null,
         adreca: getField('direccion', 'domicilio', 'calle') || null,
@@ -2396,7 +2415,7 @@ app.post('/api/centers/import/madrid', async (req, res) => {
     }
     const { imported, errors } = await batchUpsertCenters(supabase, rows);
     console.log(`[Import MAD] ${imported}/${rows.length} centres importats de Madrid`);
-    res.json({ imported, total: rows.length, errors });
+    res.json({ imported, total: rows.length, errors, debug: { rowsParsed: records.length, rowsWithName: rows.length, delimiter, sampleKeys: records[0] ? Object.keys(records[0]).slice(0, 6).join(', ') : '' } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2405,10 +2424,10 @@ app.post('/api/centers/import/valencia', async (req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(503).json({ error: 'DB not configured' });
   try {
-    const resp = await fetch('https://dadesobertes.gva.es/dataset/68eb1d94-76d3-4305-8507-e1aab7717d0e/resource/1aa53c3a-4639-41aa-ac85-d58254c428c0/download/centros-docentes-de-la-comunitat-valenciana.csv');
-    if (!resp.ok) throw new Error(`GVA API responded with ${resp.status}`);
+    const url = 'https://dadesobertes.gva.es/dataset/68eb1d94-76d3-4305-8507-e1aab7717d0e/resource/1aa53c3a-4639-41aa-ac85-d58254c428c0/download/centros-docentes-de-la-comunitat-valenciana.csv';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' }, redirect: 'follow' });
+    if (!resp.ok) throw new Error(`GVA API (${url}) responded HTTP ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 300)}`);
     const text = await resp.text();
-    // Try semicolon first, fallback to comma
     const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
     const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
     const rows = [];
@@ -2436,7 +2455,7 @@ app.post('/api/centers/import/valencia', async (req, res) => {
     }
     const { imported, errors } = await batchUpsertCenters(supabase, rows);
     console.log(`[Import VC] ${imported}/${rows.length} centres importats de la Comunitat Valenciana`);
-    res.json({ imported, total: rows.length, errors });
+    res.json({ imported, total: rows.length, errors, debug: { rowsParsed: records.length, rowsWithName: rows.length, delimiter, sampleKeys: records[0] ? Object.keys(records[0]).slice(0, 6).join(', ') : '' } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2445,17 +2464,23 @@ app.post('/api/centers/import/andalucia', async (req, res) => {
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(503).json({ error: 'DB not configured' });
   try {
-    const resp = await fetch('https://gdc-pdpopendata-ckan.paas.junta-andalucia.es/datosabiertos/portal/dataset/e039df22-4b82-4d0d-9884-0ab5952e24e4/resource/b5924e81-0b53-4418-9d93-b1f39ba1ef65/download/da_centros.csv');
-    if (!resp.ok) throw new Error(`Andalucía API responded with ${resp.status}`);
+    const url = 'https://gdc-pdpopendata-ckan.paas.junta-andalucia.es/datosabiertos/portal/dataset/e039df22-4b82-4d0d-9884-0ab5952e24e4/resource/b5924e81-0b53-4418-9d93-b1f39ba1ef65/download/da_centros.csv';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' }, redirect: 'follow' });
+    if (!resp.ok) throw new Error(`Andalucía API (${url}) responded HTTP ${resp.status}: ${(await resp.text().catch(() => '')).slice(0, 300)}`);
     const text = await resp.text();
     const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
     const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
     const rows = [];
+    let withCoords = 0;
     for (const rec of records) {
       const name = (rec['D_DENOMINA'] || rec['d_denomina'] || '').trim();
       if (!name) continue;
       const email = (rec['Correo_e'] || rec['correo_e'] || rec['CORREO_E'] || '').trim().toLowerCase() || null;
       const codi = generateCodi('ES-AN', email, name);
+      // Parse GPS coordinates from Andalucía dataset (N_LATITUD / N_LONGITUD)
+      const lat = parseFloat(rec['N_LATITUD'] || rec['n_latitud'] || '') || null;
+      const lon = parseFloat(rec['N_LONGITUD'] || rec['n_longitud'] || '') || null;
+      if (lat && lon) withCoords++;
       rows.push({
         codi_centre: codi,
         denominacio_completa: name,
@@ -2465,13 +2490,89 @@ app.post('/api/centers/import/andalucia', async (req, res) => {
         codi_postal: rec['C_POSTAL'] || rec['c_postal'] || null,
         telefon: rec['N_TELEFONO'] || rec['n_telefono'] || null,
         email_centre: email || null,
+        coordenades_geo_y: lat,
+        coordenades_geo_x: lon,
         region: 'Andalucía', pais: 'ES-AN', source: 'andalucia_open_data',
       });
     }
     const { imported, errors } = await batchUpsertCenters(supabase, rows);
-    console.log(`[Import AN] ${imported}/${rows.length} centres importats d'Andalucía`);
-    res.json({ imported, total: rows.length, errors });
+    console.log(`[Import AN] ${imported}/${rows.length} centres importats d'Andalucía (${withCoords} amb coordenades)`);
+    res.json({ imported, total: rows.length, errors, debug: { rowsParsed: records.length, rowsWithName: rows.length, withCoords, delimiter, sampleKeys: records[0] ? Object.keys(records[0]).slice(0, 8).join(', ') : '' } });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/centers/geocode-region — Geocode centers by municipality using Nominatim (OSM)
+// Processes up to batch_size unique municipalities per call (rate-limited to 1 req/sec per Nominatim TOS).
+app.post('/api/centers/geocode-region', async (req, res) => {
+  const { pais, batch_size = 50 } = req.body;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  if (!pais) return res.status(400).json({ error: 'pais is required (e.g. ES-PV, ES-NC, ES-MD, ES-VC, ES-AN)' });
+
+  const PAIS_TO_REGION = {
+    'ES-PV': 'País Vasco', 'ES-NC': 'Navarra', 'ES-MD': 'Comunidad de Madrid',
+    'ES-VC': 'Comunitat Valenciana', 'ES-AN': 'Andalucía',
+  };
+
+  try {
+    const { data: centers, error } = await supabase
+      .from('cat_education_centers')
+      .select('codi_centre, nom_municipi')
+      .eq('pais', pais)
+      .is('coordenades_geo_y', null);
+
+    if (error) return res.status(500).json({ error: error.message });
+    if (!centers || centers.length === 0) {
+      return res.json({ geocoded_municipalities: 0, updated_centers: 0, remaining_municipalities: 0, total_municipalities: 0 });
+    }
+
+    // Deduplicate by municipality to minimise API calls
+    const muniMap = new Map();
+    for (const c of centers) {
+      const muni = (c.nom_municipi || '').trim();
+      if (!muni) continue;
+      if (!muniMap.has(muni)) muniMap.set(muni, []);
+      muniMap.get(muni).push(c.codi_centre);
+    }
+
+    const regionStr = PAIS_TO_REGION[pais] || 'Spain';
+    const limit = Math.min(Number(batch_size) || 50, 50);
+    const uniqueMusis = [...muniMap.keys()].slice(0, limit);
+    let geocoded_municipalities = 0;
+    let updated_centers = 0;
+
+    for (const muni of uniqueMusis) {
+      try {
+        const q = encodeURIComponent(`${muni}, ${regionStr}, Spain`);
+        const geoResp = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'Adeptify/1.0 (hola@adeptify.es)' },
+        });
+        if (geoResp.ok) {
+          const results = await geoResp.json();
+          if (results && results[0]) {
+            const lat = parseFloat(results[0].lat);
+            const lon = parseFloat(results[0].lon);
+            const codis = muniMap.get(muni);
+            const { error: upErr } = await supabase
+              .from('cat_education_centers')
+              .update({ coordenades_geo_y: lat, coordenades_geo_x: lon })
+              .in('codi_centre', codis);
+            if (!upErr) { geocoded_municipalities++; updated_centers += codis.length; }
+          }
+        }
+      } catch (geoErr) {
+        console.warn(`[Geocode] Failed for "${muni}":`, geoErr.message);
+      }
+      // Nominatim rate limit: max 1 req/sec
+      await new Promise(r => setTimeout(r, 1100));
+    }
+
+    const remaining_municipalities = muniMap.size - uniqueMusis.length;
+    console.log(`[Geocode] ${pais}: geocoded ${geocoded_municipalities}/${uniqueMusis.length} munis, updated ${updated_centers} centers, ${remaining_municipalities} munis remaining`);
+    res.json({ geocoded_municipalities, updated_centers, remaining_municipalities, total_municipalities: muniMap.size });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Health check (Cloud Run / load balancers)

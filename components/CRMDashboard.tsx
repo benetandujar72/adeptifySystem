@@ -22,7 +22,8 @@ interface LeadDetail {
   lead: Lead; interactions: Interaction[]; notes: CrmNote[];
   centerData?: any; mongoProfile?: any;
 }
-interface ImportResult { imported: number; total?: number; skipped?: number; errors?: string[]; }
+interface ImportResult { imported: number; total?: number; skipped?: number; errors?: string[]; debug?: { rowsParsed?: number; rowsWithName?: number; withCoords?: number; delimiter?: string; sampleKeys?: string }; }
+interface GeocodeResult { geocoded_municipalities: number; updated_centers: number; remaining_municipalities: number; total_municipalities: number; }
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -97,6 +98,8 @@ const CRMDashboard: React.FC = () => {
   const [importTab, setImportTab] = useState<'csv' | 'pais-vasco' | 'navarra' | 'madrid' | 'valencia' | 'andalucia'>('csv');
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodingResult, setGeocodingResult] = useState<GeocodeResult | null>(null);
   const [csvText, setCsvText] = useState('');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvColumnMap, setCsvColumnMap] = useState<Record<string, string>>({});
@@ -261,12 +264,30 @@ const CRMDashboard: React.FC = () => {
   };
 
   const handleApiImport = async (endpoint: string) => {
-    setImportLoading(true); setImportResult(null);
+    setImportLoading(true); setImportResult(null); setGeocodingResult(null);
     try {
       const resp = await fetch(`/api/centers/import/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       setImportResult(await resp.json());
     } catch (e: any) { setImportResult({ imported: 0, errors: [e.message] }); }
     finally { setImportLoading(false); }
+  };
+
+  const IMPORT_TAB_TO_PAIS: Record<string, string> = {
+    'pais-vasco': 'ES-PV', 'navarra': 'ES-NC', 'madrid': 'ES-MD', 'valencia': 'ES-VC', 'andalucia': 'ES-AN',
+  };
+  const handleGeocode = async () => {
+    const pais = IMPORT_TAB_TO_PAIS[importTab];
+    if (!pais) return;
+    setGeocoding(true);
+    try {
+      const resp = await fetch('/api/centers/geocode-region', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pais, batch_size: 50 }),
+      });
+      setGeocodingResult(await resp.json());
+    } catch (e: any) { setGeocodingResult(null); }
+    finally { setGeocoding(false); }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -681,10 +702,41 @@ const CRMDashboard: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6">
               {/* Result */}
               {importResult && (
-                <div className={`mb-4 p-4 rounded-xl text-sm font-bold ${importResult.errors?.length ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
-                  {importResult.imported} centres importats correctament
-                  {importResult.total ? ` de ${importResult.total}` : ''}
-                  {importResult.errors?.length ? ` · ${importResult.errors.length} errors` : ''}
+                <div className="mb-4 space-y-2">
+                  <div className={`p-4 rounded-xl text-sm font-bold ${importResult.errors?.length ? 'bg-amber-50 text-amber-700' : 'bg-green-50 text-green-700'}`}>
+                    {importResult.imported} centres importats correctament
+                    {importResult.total ? ` de ${importResult.total}` : ''}
+                    {importResult.errors?.length ? ` · ${importResult.errors.length} errors` : ''}
+                    {importResult.debug && (
+                      <div className="mt-1 text-[10px] font-normal opacity-70 space-y-0.5">
+                        <div>Registres CSV parsejats: {importResult.debug.rowsParsed ?? '?'} · amb nom: {importResult.debug.rowsWithName ?? '?'} · delimitador: "{importResult.debug.delimiter ?? '?'}"</div>
+                        {importResult.debug.withCoords != null && <div>Amb coordenades GPS: {importResult.debug.withCoords}</div>}
+                        {importResult.debug.sampleKeys && <div>Columnes detectades: {importResult.debug.sampleKeys}</div>}
+                      </div>
+                    )}
+                  </div>
+                  {/* Geocoding button (not needed for Andalucía which already has GPS coords, nor for CSV uploads) */}
+                  {importResult.imported > 0 && importTab !== 'andalucia' && importTab !== 'csv' && (
+                    <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
+                      <p className="text-xs text-indigo-700 font-bold">Geocodificació GPS (necessari per aparèixer al mapa)</p>
+                      <p className="text-[10px] text-indigo-600">Els centres importats no tenen coordenades GPS. Usa Nominatim (OSM) per geocodificar per municipi. Processa 50 municipis/crida (~55 s).</p>
+                      {geocodingResult && (
+                        <div className="text-[10px] font-bold text-indigo-800">
+                          ✓ {geocodingResult.geocoded_municipalities} municipis geocodificats · {geocodingResult.updated_centers} centres actualitzats
+                          {geocodingResult.remaining_municipalities > 0 && ` · ${geocodingResult.remaining_municipalities} municipis restants`}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleGeocode}
+                          disabled={geocoding}
+                          className="px-4 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-all"
+                        >
+                          {geocoding ? 'Geocodificant...' : geocodingResult?.remaining_municipalities === 0 ? '✓ Completat' : geocodingResult ? 'Continuar geocodificació' : 'Geocodificar Centres'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
