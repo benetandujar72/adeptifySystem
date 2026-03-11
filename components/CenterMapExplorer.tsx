@@ -110,6 +110,7 @@ const CenterMapExplorer: React.FC = () => {
   // Email modal state
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailSubject, setEmailSubject] = useState('');
+  const [campaignName, setCampaignName] = useState('');
   const [emailChecked, setEmailChecked] = useState<Set<string>>(new Set());
   const [sendingEmails, setSendingEmails] = useState(false);
   const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[]; aiPersonalized?: number; mongoEnriched?: number; leadsCreated?: number } | null>(null);
@@ -298,7 +299,7 @@ const CenterMapExplorer: React.FC = () => {
       const resp = await fetch('/api/centers/send-bulk-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recipients, subject: emailSubject }),
+        body: JSON.stringify({ recipients, subject: emailSubject, campaignName: campaignName.trim() || null }),
       });
       const data = await resp.json();
       setEmailSendProgress({ sent: data.sent || 0, total: recipients.length, errors: data.errors || [], aiPersonalized: data.aiPersonalized || 0, mongoEnriched: data.mongoEnriched || 0, leadsCreated: data.leadsCreated || 0 });
@@ -701,6 +702,15 @@ const CenterMapExplorer: React.FC = () => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">{(t as any).centerMapEmailSubject || 'Assumpte'}</label>
                 <input type="text" value={emailSubject} onChange={e => setEmailSubject(e.target.value)}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+              </div>
+
+              {/* Campaign name */}
+              <div className="mb-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nom de la Campanya (opcional)</label>
+                <input type="text" value={campaignName} onChange={e => setCampaignName(e.target.value)}
+                  placeholder={`Campanya ${new Date().toLocaleDateString('ca')} · ${emailChecked.size} centres`}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                <p className="text-[10px] text-slate-400 mt-1">Es crearà una carpeta al CRM per agrupar aquest enviament i fer-ne el seguiment</p>
               </div>
 
               {/* Personalization info */}

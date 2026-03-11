@@ -908,7 +908,7 @@ function buildBulkEmailHtml(introHtml) {
 
 // -- Bulk email to education centers (from CenterMapExplorer) --
 app.post('/api/centers/send-bulk-email', async (req, res) => {
-  const { recipients, subject } = req.body;
+  const { recipients, subject, campaignName, tenantSlug: reqTenantSlug } = req.body;
   if (!Array.isArray(recipients) || !subject) {
     return res.status(400).json({ error: 'Falten camps obligatoris' });
   }
@@ -939,6 +939,24 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
 
   const capped = recipients.slice(0, 200);
   const supabase = getSupabaseAdmin();
+  const tenantSlug = reqTenantSlug || 'default';
+
+  // Create campaign for this send batch (if name provided)
+  let campaignId = null;
+  if (supabase && campaignName) {
+    try {
+      const { data: camp } = await supabase.from('campaigns').insert({
+        tenant_slug: tenantSlug,
+        name: campaignName,
+        description: `Enviament massiu del ${new Date().toLocaleDateString('ca')}`,
+        status: 'active',
+        goal: `${capped.length} centres`,
+        metadata_json: { subject, recipient_count: capped.length },
+      }).select('id').single();
+      campaignId = camp?.id || null;
+      if (campaignId) console.log(`[BulkEmail] Campaign created: ${campaignName} (${campaignId})`);
+    } catch (e) { console.warn('[BulkEmail] Campaign creation failed:', e.message); }
+  }
 
   // Fetch lead data for personalization (Tier 3)
   let leadsByEmail = {};
@@ -1005,12 +1023,16 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
         try {
           const existingLead = leadsByEmail[r.email];
           const upsertData = {
-            tenant_slug: 'default',
+            tenant_slug: tenantSlug,
             email: r.email,
             company_name: r.centerName || r.email,
             source: existingLead?.source || 'bulk_email_map',
             last_contacted_at: new Date().toISOString(),
+            codi_centre_ref: r.codi || null,
+            region: r.nom_comarca ? 'Catalunya' : (r.region || 'Catalunya'),
+            pais: 'ES-CT',
           };
+          if (campaignId && !existingLead?.campaign_id) upsertData.campaign_id = campaignId;
           // Only set status to 'new' if lead doesn't exist or has no advanced status
           if (!existingLead || !PRESERVE_STATUSES.includes(existingLead.status)) {
             upsertData.status = existingLead?.status || 'new';
@@ -1729,6 +1751,253 @@ app.post('/api-proxy/*', async (req, res) => {
     console.error('[api-proxy] Error calling Gemini API:', err?.message || err);
     res.status(502).json({ error: { message: `Proxy error: ${err?.message || 'unknown'}` } });
   }
+});
+
+// ============================================================
+// -- FULL CRM ENDPOINTS --
+// ============================================================
+
+// GET /api/crm/campaigns — list all campaigns with stats
+app.get('/api/crm/campaigns', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const tenantSlug = req.query.tenant_slug || 'default';
+  try {
+    const [{ data: camps }, { data: stats }] = await Promise.all([
+      supabase.from('campaigns').select('*').eq('tenant_slug', tenantSlug).order('created_at', { ascending: false }),
+      supabase.rpc('get_campaign_stats', { p_tenant_slug: tenantSlug }),
+    ]);
+    const statsMap = {};
+    for (const s of (stats || [])) statsMap[s.campaign_id] = s;
+    const campaigns = (camps || []).map(c => ({
+      ...c,
+      lead_count: Number(statsMap[c.id]?.lead_count || 0),
+      open_count: Number(statsMap[c.id]?.open_count || 0),
+      sent_count: Number(statsMap[c.id]?.sent_count || 0),
+    }));
+    res.json({ campaigns });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/crm/lead/:id — full lead detail with interactions, notes, centerData, mongoProfile
+app.get('/api/crm/lead/:id', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const { id } = req.params;
+  try {
+    const [{ data: lead }, { data: interactions }, { data: notes }] = await Promise.all([
+      supabase.from('leads').select('*').eq('id', id).single(),
+      supabase.from('lead_interactions').select('*').eq('lead_id', id).order('created_at', { ascending: false }),
+      supabase.from('crm_notes').select('*').eq('lead_id', id).order('created_at', { ascending: false }),
+    ]);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    let centerData = null;
+    let mongoProfile = null;
+    const codi = lead.codi_centre_ref;
+    if (codi) {
+      const [{ data: cd }, mp] = await Promise.all([
+        supabase.from('cat_education_centers')
+          .select('codi_centre,denominacio_completa,nom_naturalesa,nom_titularitat,adreca,nom_municipi,nom_comarca,codi_postal,telefon,email_centre,ai_opportunity_score,ai_custom_pitch,ai_reason_similarity,web_url')
+          .eq('codi_centre', codi).single(),
+        fetchMongoProfiles([codi]),
+      ]);
+      centerData = cd || null;
+      mongoProfile = mp[codi] || null;
+    }
+    res.json({ lead, interactions: interactions || [], notes: notes || [], centerData, mongoProfile });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PATCH /api/crm/lead/:id — update lead status/tags/metadata
+app.patch('/api/crm/lead/:id', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const { id } = req.params;
+  const VALID_STATUSES = ['new', 'qualified', 'proposal_sent', 'closed', 'lost'];
+  const patch = {};
+  if (req.body.status) {
+    if (!VALID_STATUSES.includes(req.body.status)) return res.status(400).json({ error: 'Invalid status' });
+    patch.status = req.body.status;
+  }
+  if (req.body.tags !== undefined) patch.tags = req.body.tags;
+  if (req.body.metadata_json !== undefined) patch.metadata_json = req.body.metadata_json;
+  if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'No fields to update' });
+  try {
+    const { data: lead } = await supabase.from('leads').update(patch).eq('id', id).select().single();
+    res.json({ lead });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/crm/lead/:id/note — add a manual note
+app.post('/api/crm/lead/:id/note', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const { id } = req.params;
+  const { content, created_by } = req.body;
+  if (!content?.trim()) return res.status(400).json({ error: 'Content required' });
+  try {
+    const [{ data: note }] = await Promise.all([
+      supabase.from('crm_notes').insert({ lead_id: id, content: content.trim(), created_by: created_by || 'admin' }).select().single(),
+      supabase.from('lead_interactions').insert({ lead_id: id, interaction_type: 'note', content_summary: content.trim().slice(0, 200) }),
+    ]);
+    res.json({ note });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ============================================================
+// -- INSTITUTION IMPORT ENDPOINTS --
+// ============================================================
+
+const { parse: csvParse } = require('csv-parse/sync');
+
+// Helper: generate deterministic codi_centre for non-Catalan centers
+function generateCodi(pais, email, name) {
+  const base = email || name || 'unknown';
+  return `${pais}-${require('crypto').createHash('md5').update(base.toLowerCase().trim()).digest('hex').slice(0, 8)}`;
+}
+
+// Helper: batch-upsert centers into cat_education_centers
+async function batchUpsertCenters(supabase, rows, batchSize = 300) {
+  let imported = 0;
+  const errors = [];
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const { error } = await supabase.from('cat_education_centers')
+      .upsert(batch, { onConflict: 'codi_centre', ignoreDuplicates: false });
+    if (error) { errors.push(error.message); } else { imported += batch.length; }
+  }
+  return { imported, errors };
+}
+
+// POST /api/centers/import/csv — import institutions from CSV text
+app.post('/api/centers/import/csv', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  const { csvData, columnMap, region = 'Desconegut', pais = 'ES' } = req.body;
+  if (!csvData || !columnMap?.name) return res.status(400).json({ error: 'csvData and columnMap.name required' });
+  try {
+    const records = csvParse(csvData, { columns: true, skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const name = rec[columnMap.name]?.trim();
+      if (!name) continue;
+      const email = columnMap.email ? rec[columnMap.email]?.trim()?.toLowerCase() : null;
+      const codi = generateCodi(pais, email, name);
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name,
+        nom_naturalesa: columnMap.type ? rec[columnMap.type]?.trim() : null,
+        adreca: columnMap.address ? rec[columnMap.address]?.trim() : null,
+        nom_municipi: columnMap.municipality ? rec[columnMap.municipality]?.trim() : null,
+        telefon: columnMap.phone ? rec[columnMap.phone]?.trim() : null,
+        email_centre: email || null,
+        region, pais, source: 'csv_import',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import CSV] ${imported}/${rows.length} centres importats de ${region}`);
+    res.json({ imported, total: rows.length, skipped: rows.length - imported, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/centers/import/pais-vasco — import from Euskadi open data
+app.post('/api/centers/import/pais-vasco', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  try {
+    const resp = await fetch('https://opendata.euskadi.eus/contenidos/ds_localizaciones/centros_docentes_no_universit/es_euskadi/adjuntos/dirgennouniv.csv');
+    if (!resp.ok) throw new Error(`Euskadi API responded with ${resp.status}`);
+    const text = await resp.text();
+    const records = csvParse(text, { columns: true, delimiter: ';', skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const name = (rec['NOMBRE'] || rec['nombre'] || rec['Nombre'] || '').trim();
+      if (!name) continue;
+      const email = (rec['EMAIL'] || rec['email'] || rec['Email'] || '').trim().toLowerCase() || null;
+      const codi = generateCodi('ES-PV', email, name);
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name,
+        nom_naturalesa: rec['TIPO'] || rec['tipo'] || rec['Tipo'] || null,
+        nom_municipi: rec['MUNICIPIO'] || rec['municipio'] || null,
+        telefon: rec['TELEFONO'] || rec['telefono'] || null,
+        email_centre: email || null,
+        region: 'País Vasco', pais: 'ES-PV', source: 'euskadi_open_data',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import PV] ${imported}/${rows.length} centres importats del País Vasco`);
+    res.json({ imported, total: rows.length, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/centers/import/navarra — import from Navarra open data
+app.post('/api/centers/import/navarra', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  try {
+    const resp = await fetch('https://datosabiertos.navarra.es/es/datastore/dump/39c2c8af-80b5-472a-b017-1ac196fafa59?format=csv&bom=True');
+    if (!resp.ok) throw new Error(`Navarra API responded with ${resp.status}`);
+    const text = await resp.text();
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const name = (rec['DENOMINACION'] || rec['denominacion'] || '').trim();
+      if (!name) continue;
+      const email = (rec['CORREO_ELECTRONICO'] || rec['correo_electronico'] || '').trim().toLowerCase() || null;
+      const codi = generateCodi('ES-NC', email, name);
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name,
+        nom_naturalesa: rec['TIPO_CENTRO'] || rec['tipo_centro'] || null,
+        nom_municipi: rec['MUNICIPIO'] || rec['municipio'] || rec['LOCALIDAD'] || null,
+        telefon: rec['TELEFONO'] || rec['telefono'] || null,
+        email_centre: email || null,
+        region: 'Navarra', pais: 'ES-NC', source: 'navarra_open_data',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import NAV] ${imported}/${rows.length} centres importats de Navarra`);
+    res.json({ imported, total: rows.length, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/centers/import/madrid — import from Comunidad de Madrid open data
+app.post('/api/centers/import/madrid', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  try {
+    const resp = await fetch('https://datos.comunidad.madrid/catalogo/dataset/c750856d-3166-4dac-8e80-d1b824c968b5/resource/28d60557-1d73-4281-ab08-6cfd3b2f5f83/download/centros_educativos.csv');
+    if (!resp.ok) throw new Error(`Madrid API responded with ${resp.status}`);
+    const text = await resp.text();
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter: ';', skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const name = Object.values(rec).find((v, i) => i === 0 && v?.trim()) || '';
+      if (!name || typeof name !== 'string') continue;
+      // Madrid CSV field names vary — try common patterns
+      const keys = Object.keys(rec);
+      const getField = (...patterns) => {
+        const k = keys.find(k => patterns.some(p => k.toLowerCase().includes(p)));
+        return k ? rec[k]?.trim() : null;
+      };
+      const email = getField('correo', 'email', 'mail')?.toLowerCase() || null;
+      const codi = generateCodi('ES-MD', email, name.trim());
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name.trim(),
+        nom_naturalesa: getField('tipo', 'tipo_centro', 'naturaleza') || null,
+        nom_municipi: getField('municipio', 'localidad', 'ciudad') || null,
+        adreca: getField('direccion', 'domicilio', 'calle') || null,
+        email_centre: email || null,
+        region: 'Madrid', pais: 'ES-MD', source: 'madrid_open_data',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import MAD] ${imported}/${rows.length} centres importats de Madrid`);
+    res.json({ imported, total: rows.length, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Health check (Cloud Run / load balancers)
