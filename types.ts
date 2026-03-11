@@ -51,6 +51,8 @@ export interface CatEducationCenterFull {
   ai_enriched_at: string | null;
   ai_enriched_by_ref: string | null;
   web_url: string | null;
+  region?: string | null;
+  pais?: string | null;
 }
 
 export type ProductType = 'LMS' | 'AUDIT' | 'VISION' | 'DEEP_AUDIT';

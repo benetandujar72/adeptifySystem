@@ -8,7 +8,7 @@ import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useLanguage } from '../LanguageContext';
-import { fetchAllCentersForMap } from '../services/educationCentersService';
+import { fetchAllCentersForMap, fetchCentersForList } from '../services/educationCentersService';
 import type { CatEducationCenterFull } from '../types';
 
 // -- Leaflet icon fix for Vite --
@@ -115,6 +115,13 @@ const CenterMapExplorer: React.FC = () => {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [emailSendProgress, setEmailSendProgress] = useState<{ sent: number; total: number; errors: string[]; aiPersonalized?: number; mongoEnriched?: number; leadsCreated?: number } | null>(null);
 
+  // List view state (for imported centers without coordinates)
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const [listCenters, setListCenters] = useState<CatEducationCenterFull[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [listRegion, setListRegion] = useState('ES-MD');
+  const [listSearch, setListSearch] = useState('');
+
   // Load centers on mount
   useEffect(() => {
     let alive = true;
@@ -128,6 +135,15 @@ const CenterMapExplorer: React.FC = () => {
     })();
     return () => { alive = false; };
   }, []);
+
+  // Load list centers when switching to list view or changing region
+  useEffect(() => {
+    if (viewMode !== 'list') return;
+    setListLoading(true);
+    fetchCentersForList(listRegion === 'ALL' ? undefined : listRegion)
+      .then(setListCenters)
+      .finally(() => setListLoading(false));
+  }, [viewMode, listRegion]);
 
   // Derive filter options from data
   const filterOptions = useMemo(() => {
@@ -152,7 +168,7 @@ const CenterMapExplorer: React.FC = () => {
     };
   }, [centers, filters.comarca]);
 
-  // Filtered centers
+  // Filtered centers (map)
   const filteredCenters = useMemo(() => {
     return centers.filter((c) => {
       if (filters.naturalesa.length > 0 && !filters.naturalesa.includes(c.nom_naturalesa || '')) return false;
@@ -169,6 +185,21 @@ const CenterMapExplorer: React.FC = () => {
       return true;
     });
   }, [centers, filters]);
+
+  // Filtered list centers (search)
+  const filteredListCenters = useMemo(() =>
+    listCenters.filter(c =>
+      !listSearch || [c.denominacio_completa, c.nom_municipi, c.email_centre]
+        .some(f => f?.toLowerCase().includes(listSearch.toLowerCase()))
+    ), [listCenters, listSearch]);
+
+  // All centers (map + list) for lookup
+  const allCentersMap = useMemo(() => {
+    const m = new Map<string, CatEducationCenterFull>();
+    for (const c of centers) m.set(c.codi_centre, c);
+    for (const c of listCenters) m.set(c.codi_centre, c);
+    return m;
+  }, [centers, listCenters]);
 
   // Marker icon based on selection state and naturalesa
   const getIcon = useCallback(
@@ -211,7 +242,7 @@ const CenterMapExplorer: React.FC = () => {
     [filteredCenters],
   );
 
-  // Select all visible
+  // Select all visible (map)
   const selectAllVisible = useCallback(() => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -219,6 +250,15 @@ const CenterMapExplorer: React.FC = () => {
       return next;
     });
   }, [filteredCenters]);
+
+  // Select all visible (list)
+  const selectAllListVisible = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      filteredListCenters.forEach((c) => next.add(c.codi_centre));
+      return next;
+    });
+  }, [filteredListCenters]);
 
   // Clear selection
   const clearSelection = useCallback(() => setSelected(new Set()), []);
@@ -263,18 +303,20 @@ const CenterMapExplorer: React.FC = () => {
 
   // Open email modal
   const openEmailModal = useCallback(() => {
-    const centersWithEmails = centers
+    const allC = [...centers, ...listCenters];
+    const centersWithEmails = allC
       .filter(c => selected.has(c.codi_centre) && c.email_centre)
       .map(c => c.codi_centre);
     setEmailChecked(new Set(centersWithEmails));
     setEmailSubject("Proposta de col·laboració - Adeptify");
     setShowEmailModal(true);
     setEmailSendProgress(null);
-  }, [centers, selected]);
+  }, [centers, listCenters, selected]);
 
   // Send bulk emails
   const sendBulkEmails = useCallback(async () => {
-    const recipients = centers
+    const allC = [...centers, ...listCenters];
+    const recipients = allC
       .filter(c => emailChecked.has(c.codi_centre) && c.email_centre)
       .map(c => ({
         email: c.email_centre!, centerName: c.denominacio_completa, codi: c.codi_centre,
@@ -290,6 +332,8 @@ const CenterMapExplorer: React.FC = () => {
         ai_opportunity_score: c.ai_opportunity_score,
         ai_reason_similarity: c.ai_reason_similarity,
         ai_custom_pitch: c.ai_custom_pitch,
+        pais: c.pais,
+        region: c.region,
       }));
     if (recipients.length === 0) return;
 
@@ -308,7 +352,7 @@ const CenterMapExplorer: React.FC = () => {
     } finally {
       setSendingEmails(false);
     }
-  }, [centers, emailChecked, emailSubject]);
+  }, [centers, listCenters, emailChecked, emailSubject, campaignName]);
 
   // Toggle email recipient
   const toggleEmailChecked = useCallback((codi: string) => {
@@ -416,8 +460,140 @@ const CenterMapExplorer: React.FC = () => {
         </div>
       )}
 
+      {/* View mode tabs */}
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => setViewMode('map')}
+          className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${viewMode === 'map' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+        >
+          Mapa — Catalunya
+        </button>
+        <button
+          onClick={() => setViewMode('list')}
+          className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+        >
+          Llista — Madrid / Euskadi / Navarra
+        </button>
+      </div>
+
+      {/* LIST VIEW */}
+      {viewMode === 'list' && (
+        <div className="space-y-4">
+          {/* List controls */}
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={listRegion}
+              onChange={e => setListRegion(e.target.value)}
+              className="p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
+            >
+              <option value="ES-MD">Madrid</option>
+              <option value="ES-PV">País Vasco</option>
+              <option value="ES-NC">Navarra</option>
+              <option value="ALL">Totes les regions importades</option>
+            </select>
+            <input
+              type="text"
+              value={listSearch}
+              onChange={e => setListSearch(e.target.value)}
+              placeholder="Cercar per nom, municipi o email..."
+              className="flex-1 min-w-[200px] p-2 bg-white border border-slate-200 rounded-xl text-xs"
+            />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              {filteredListCenters.length} centres · {selected.size} seleccionats
+            </span>
+            <button
+              onClick={selectAllListVisible}
+              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-100 transition-all"
+            >
+              Seleccionar tots ({filteredListCenters.length})
+            </button>
+            <button
+              onClick={clearSelection}
+              className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+            >
+              Netejar
+            </button>
+            {selected.size > 0 && (
+              <button
+                onClick={openEmailModal}
+                disabled={[...selected].filter(id => allCentersMap.get(id)?.email_centre).length === 0}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-40"
+              >
+                Enviar Email ({[...selected].filter(id => allCentersMap.get(id)?.email_centre).length})
+              </button>
+            )}
+          </div>
+
+          {listLoading ? (
+            <div className="flex items-center gap-3 py-8 justify-center">
+              <div className="w-6 h-6 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-slate-500">Carregant centres importats...</span>
+            </div>
+          ) : filteredListCenters.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="text-slate-400 text-sm mb-2">No hi ha centres importats per a aquesta regió.</p>
+              <p className="text-slate-400 text-xs">Usa el CRM → Importar Centres per afegir centres de Madrid, Euskadi o Navarra.</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden">
+              <div className="overflow-x-auto max-h-[60vh] overflow-y-auto">
+                <table className="w-full text-left">
+                  <thead className="sticky top-0 bg-white border-b border-slate-100">
+                    <tr>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest w-8"></th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Nom</th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Tipus</th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Municipi</th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Email</th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Telèfon</th>
+                      <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Regió</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredListCenters.map(c => (
+                      <tr
+                        key={c.codi_centre}
+                        className={`border-b border-slate-50 cursor-pointer transition-colors ${selected.has(c.codi_centre) ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
+                        onClick={() => toggleSelection(c.codi_centre)}
+                      >
+                        <td className="py-2 px-3">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(c.codi_centre)}
+                            onChange={() => toggleSelection(c.codi_centre)}
+                            onClick={e => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600"
+                          />
+                        </td>
+                        <td className="py-2 px-3 text-xs font-bold text-slate-900 max-w-[260px]">
+                          <span className="truncate block">{c.denominacio_completa}</span>
+                        </td>
+                        <td className="py-2 px-3 text-xs text-slate-600">{c.nom_naturalesa || '—'}</td>
+                        <td className="py-2 px-3 text-xs text-slate-600">{c.nom_municipi || '—'}</td>
+                        <td className="py-2 px-3 text-xs text-slate-600">{c.email_centre || <span className="text-slate-300">—</span>}</td>
+                        <td className="py-2 px-3 text-xs text-slate-600">{c.telefon || '—'}</td>
+                        <td className="py-2 px-3">
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            c.pais === 'ES-MD' ? 'bg-orange-100 text-orange-700' :
+                            c.pais === 'ES-PV' ? 'bg-green-100 text-green-700' :
+                            c.pais === 'ES-NC' ? 'bg-blue-100 text-blue-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {c.pais === 'ES-MD' ? 'Madrid' : c.pais === 'ES-PV' ? 'Euskadi' : c.pais === 'ES-NC' ? 'Navarra' : (c.pais || c.region || '?')}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main layout: sidebar + map */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6" style={{ minHeight: '70vh' }}>
+      {viewMode === 'map' && <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6" style={{ minHeight: '70vh' }}>
         {/* Sidebar Filters */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-6 space-y-5 overflow-y-auto" style={{ maxHeight: '75vh' }}>
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.centerMapFilter}</h3>
@@ -607,6 +783,7 @@ const CenterMapExplorer: React.FC = () => {
           </MapContainer>
         </div>
       </div>
+      }
 
       {/* Selected centers drawer */}
       {selected.size > 0 && (
@@ -618,10 +795,10 @@ const CenterMapExplorer: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={openEmailModal}
-                disabled={centers.filter(c => selected.has(c.codi_centre) && c.email_centre).length === 0}
+                disabled={[...selected].filter(id => allCentersMap.get(id)?.email_centre).length === 0}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-40"
               >
-                {(t as any).centerMapSendEmail || 'Enviar Email'} ({centers.filter(c => selected.has(c.codi_centre) && c.email_centre).length})
+                {(t as any).centerMapSendEmail || 'Enviar Email'} ({[...selected].filter(id => allCentersMap.get(id)?.email_centre).length})
               </button>
               <button
                 onClick={exportCsv}
@@ -653,20 +830,21 @@ const CenterMapExplorer: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {centers
-                  .filter((c) => selected.has(c.codi_centre))
+                {[...selected]
+                  .map(id => allCentersMap.get(id))
+                  .filter(Boolean)
                   .map((c) => (
-                    <tr key={c.codi_centre} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                      <td className="py-2 px-3 text-xs text-slate-500 font-mono">{c.codi_centre}</td>
-                      <td className="py-2 px-3 text-xs font-bold text-slate-900">{c.denominacio_completa}</td>
-                      <td className="py-2 px-3 text-xs text-slate-600">{c.nom_naturalesa || '-'}</td>
-                      <td className="py-2 px-3 text-xs text-slate-600">{c.nom_municipi || '-'}</td>
-                      <td className="py-2 px-3 text-xs text-slate-600">{c.nom_comarca || '-'}</td>
-                      <td className="py-2 px-3 text-xs text-slate-600">{c.telefon || '-'}</td>
-                      <td className="py-2 px-3 text-xs text-slate-600">{c.email_centre || '-'}</td>
+                    <tr key={c!.codi_centre} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                      <td className="py-2 px-3 text-xs text-slate-500 font-mono">{c!.codi_centre}</td>
+                      <td className="py-2 px-3 text-xs font-bold text-slate-900">{c!.denominacio_completa}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600">{c!.nom_naturalesa || '-'}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600">{c!.nom_municipi || '-'}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600">{c!.nom_comarca || (c!.region || '-')}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600">{c!.telefon || '-'}</td>
+                      <td className="py-2 px-3 text-xs text-slate-600">{c!.email_centre || '-'}</td>
                       <td className="py-2 px-3">
                         <button
-                          onClick={() => toggleSelection(c.codi_centre)}
+                          onClick={() => toggleSelection(c!.codi_centre)}
                           className="text-red-400 hover:text-red-600 transition-colors"
                           title="Desseleccionar"
                         >
@@ -749,16 +927,16 @@ const CenterMapExplorer: React.FC = () => {
                   {(t as any).centerMapEmailRecipients || 'Destinataris'} ({emailChecked.size})
                 </label>
                 <div className="max-h-[200px] overflow-y-auto border border-slate-200 rounded-xl">
-                  {centers.filter(c => selected.has(c.codi_centre)).map(c => (
-                    <label key={c.codi_centre} className={`flex items-center gap-3 px-4 py-2 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!c.email_centre ? 'opacity-40' : ''}`}>
-                      <input type="checkbox" checked={emailChecked.has(c.codi_centre)} disabled={!c.email_centre}
-                        onChange={() => c.email_centre && toggleEmailChecked(c.codi_centre)}
+                  {[...selected].map(id => allCentersMap.get(id)).filter(Boolean).map(c => (
+                    <label key={c!.codi_centre} className={`flex items-center gap-3 px-4 py-2 border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${!c!.email_centre ? 'opacity-40' : ''}`}>
+                      <input type="checkbox" checked={emailChecked.has(c!.codi_centre)} disabled={!c!.email_centre}
+                        onChange={() => c!.email_centre && toggleEmailChecked(c!.codi_centre)}
                         className="w-4 h-4 rounded border-slate-300 text-indigo-600" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-900 truncate">{c.denominacio_completa}</p>
-                        <p className="text-[10px] text-slate-500">{c.email_centre || ((t as any).centerMapEmailNoEmail || 'sense email')}</p>
+                        <p className="text-xs font-bold text-slate-900 truncate">{c!.denominacio_completa}</p>
+                        <p className="text-[10px] text-slate-500">{c!.email_centre || ((t as any).centerMapEmailNoEmail || 'sense email')}</p>
                       </div>
-                      <span className="text-[10px] text-slate-400">{c.nom_municipi}</span>
+                      <span className="text-[10px] text-slate-400">{c!.nom_municipi || c!.region}</span>
                     </label>
                   ))}
                 </div>

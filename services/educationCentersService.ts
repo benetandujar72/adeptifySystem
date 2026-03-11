@@ -79,7 +79,30 @@ const MAP_COLUMNS = [
   'danp', 'dans', 'muse', 'musp', 'muss', 'tegm', 'tegs', 'estr', 'adults',
   'ai_opportunity_score', 'ai_reason_similarity', 'ai_custom_pitch',
   'ai_enriched_at', 'ai_enriched_by_ref', 'web_url',
+  'region', 'pais',
 ].join(', ');
+
+export async function fetchCentersForList(pais?: string): Promise<CatEducationCenterFull[]> {
+  if (!supabase) return [];
+  const allRows: CatEducationCenterFull[] = [];
+  const PAGE_SIZE = 1000;
+  let from = 0;
+
+  while (true) {
+    let q = supabase
+      .from('cat_education_centers')
+      .select(MAP_COLUMNS)
+      .is('coordenades_geo_y', null);
+    if (pais) q = (q as any).eq('pais', pais);
+    const { data, error } = await (q as any).range(from, from + PAGE_SIZE - 1);
+
+    if (error || !data) break;
+    allRows.push(...(data as unknown as CatEducationCenterFull[]));
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
+}
 
 export async function fetchAllCentersForMap(): Promise<CatEducationCenterFull[]> {
   if (!supabase) return [];
