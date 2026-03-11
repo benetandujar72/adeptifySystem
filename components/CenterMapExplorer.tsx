@@ -489,6 +489,8 @@ const CenterMapExplorer: React.FC = () => {
               <option value="ES-MD">Madrid</option>
               <option value="ES-PV">País Vasco</option>
               <option value="ES-NC">Navarra</option>
+              <option value="ES-VC">Comunitat Valenciana</option>
+              <option value="ES-AN">Andalucía</option>
               <option value="ALL">Totes les regions importades</option>
             </select>
             <input
@@ -577,9 +579,11 @@ const CenterMapExplorer: React.FC = () => {
                             c.pais === 'ES-MD' ? 'bg-orange-100 text-orange-700' :
                             c.pais === 'ES-PV' ? 'bg-green-100 text-green-700' :
                             c.pais === 'ES-NC' ? 'bg-blue-100 text-blue-700' :
+                            c.pais === 'ES-VC' ? 'bg-yellow-100 text-yellow-700' :
+                            c.pais === 'ES-AN' ? 'bg-rose-100 text-rose-700' :
                             'bg-slate-100 text-slate-600'
                           }`}>
-                            {c.pais === 'ES-MD' ? 'Madrid' : c.pais === 'ES-PV' ? 'Euskadi' : c.pais === 'ES-NC' ? 'Navarra' : (c.pais || c.region || '?')}
+                            {c.pais === 'ES-MD' ? 'Madrid' : c.pais === 'ES-PV' ? 'Euskadi' : c.pais === 'ES-NC' ? 'Navarra' : c.pais === 'ES-VC' ? 'Valencia' : c.pais === 'ES-AN' ? 'Andalucía' : (c.pais || c.region || '?')}
                           </span>
                         </td>
                       </tr>

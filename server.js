@@ -2400,6 +2400,80 @@ app.post('/api/centers/import/madrid', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// POST /api/centers/import/valencia — import from Comunitat Valenciana open data
+app.post('/api/centers/import/valencia', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  try {
+    const resp = await fetch('https://dadesobertes.gva.es/dataset/68eb1d94-76d3-4305-8507-e1aab7717d0e/resource/1aa53c3a-4639-41aa-ac85-d58254c428c0/download/centros-docentes-de-la-comunitat-valenciana.csv');
+    if (!resp.ok) throw new Error(`GVA API responded with ${resp.status}`);
+    const text = await resp.text();
+    // Try semicolon first, fallback to comma
+    const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const keys = Object.keys(rec);
+      const getField = (...patterns) => {
+        const k = keys.find(k => patterns.some(p => k.toLowerCase().includes(p)));
+        return k ? (rec[k]?.trim() || null) : null;
+      };
+      const name = (getField('deno', 'nombre', 'nom', 'centro') || Object.values(rec)[0] || '').trim();
+      if (!name) continue;
+      const email = getField('correo', 'email', 'mail')?.toLowerCase() || null;
+      const codi = generateCodi('ES-VC', email, name);
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name,
+        nom_naturalesa: getField('tipo', 'tipologia', 'naturalesa') || null,
+        nom_municipi: getField('municipio', 'municipi', 'localidad', 'localitat') || null,
+        adreca: getField('direccion', 'domicilio', 'adresa', 'calle') || null,
+        codi_postal: getField('postal', 'cp', 'cod_post') || null,
+        telefon: getField('telefon', 'telefono') || null,
+        email_centre: email || null,
+        region: 'Comunitat Valenciana', pais: 'ES-VC', source: 'gva_open_data',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import VC] ${imported}/${rows.length} centres importats de la Comunitat Valenciana`);
+    res.json({ imported, total: rows.length, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/centers/import/andalucia — import from Junta de Andalucía open data
+app.post('/api/centers/import/andalucia', async (req, res) => {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return res.status(503).json({ error: 'DB not configured' });
+  try {
+    const resp = await fetch('https://gdc-pdpopendata-ckan.paas.junta-andalucia.es/datosabiertos/portal/dataset/e039df22-4b82-4d0d-9884-0ab5952e24e4/resource/b5924e81-0b53-4418-9d93-b1f39ba1ef65/download/da_centros.csv');
+    if (!resp.ok) throw new Error(`Andalucía API responded with ${resp.status}`);
+    const text = await resp.text();
+    const delimiter = text.split('\n')[0].includes(';') ? ';' : ',';
+    const records = csvParse(text.replace(/^\uFEFF/, ''), { columns: true, delimiter, skip_empty_lines: true, relax_quotes: true, trim: true });
+    const rows = [];
+    for (const rec of records) {
+      const name = (rec['D_DENOMINA'] || rec['d_denomina'] || '').trim();
+      if (!name) continue;
+      const email = (rec['Correo_e'] || rec['correo_e'] || rec['CORREO_E'] || '').trim().toLowerCase() || null;
+      const codi = generateCodi('ES-AN', email, name);
+      rows.push({
+        codi_centre: codi,
+        denominacio_completa: name,
+        nom_naturalesa: rec['D_TIPO'] || rec['d_tipo'] || null,
+        nom_municipi: rec['D_MUNICIPIO'] || rec['D_LOCALIDAD'] || rec['d_municipio'] || null,
+        adreca: rec['D_DOMICILIO'] || rec['d_domicilio'] || null,
+        codi_postal: rec['C_POSTAL'] || rec['c_postal'] || null,
+        telefon: rec['N_TELEFONO'] || rec['n_telefono'] || null,
+        email_centre: email || null,
+        region: 'Andalucía', pais: 'ES-AN', source: 'andalucia_open_data',
+      });
+    }
+    const { imported, errors } = await batchUpsertCenters(supabase, rows);
+    console.log(`[Import AN] ${imported}/${rows.length} centres importats d'Andalucía`);
+    res.json({ imported, total: rows.length, errors });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // Health check (Cloud Run / load balancers)
 app.get('/healthz', (_req, res) => res.status(200).json({ ok: true }));
 app.get('/health', (_req, res) => res.status(200).json({ ok: true }));

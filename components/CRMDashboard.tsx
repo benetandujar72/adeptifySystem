@@ -94,7 +94,7 @@ const CRMDashboard: React.FC = () => {
   const [savingNote, setSavingNote] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [importTab, setImportTab] = useState<'csv' | 'pais-vasco' | 'navarra' | 'madrid'>('csv');
+  const [importTab, setImportTab] = useState<'csv' | 'pais-vasco' | 'navarra' | 'madrid' | 'valencia' | 'andalucia'>('csv');
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [csvText, setCsvText] = useState('');
@@ -667,12 +667,12 @@ const CRMDashboard: React.FC = () => {
             </div>
 
             {/* Tab bar */}
-            <div className="flex border-b border-slate-100 px-2">
-              {(['csv', 'pais-vasco', 'navarra', 'madrid'] as const).map(t => (
+            <div className="flex flex-wrap border-b border-slate-100 px-2">
+              {(['csv', 'pais-vasco', 'navarra', 'madrid', 'valencia', 'andalucia'] as const).map(t => (
                 <button key={t} onClick={() => { setImportTab(t); setImportResult(null); }}
-                  className={`px-4 py-3 text-[10px] font-black uppercase tracking-wider transition-all
+                  className={`px-3 py-3 text-[10px] font-black uppercase tracking-wider transition-all
                     ${importTab === t ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
-                  {t === 'csv' ? 'CSV Universal' : t === 'pais-vasco' ? 'País Vasco' : t === 'navarra' ? 'Navarra' : 'Madrid'}
+                  {t === 'csv' ? 'CSV' : t === 'pais-vasco' ? 'Euskadi' : t === 'navarra' ? 'Navarra' : t === 'madrid' ? 'Madrid' : t === 'valencia' ? 'Valencia' : 'Andalucía'}
                 </button>
               ))}
             </div>
@@ -758,6 +758,20 @@ const CRMDashboard: React.FC = () => {
                       <p className="text-slate-400">Font: datos.comunidad.madrid</p>
                     </div>
                   )}
+                  {importTab === 'valencia' && (
+                    <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-600 space-y-1">
+                      <p className="font-bold">Font: Dades Obertes GVA (Comunitat Valenciana)</p>
+                      <p>~3.500 centres docents. Inclou nom, municipi, tipus i email de contacte.</p>
+                      <p className="text-slate-400">Font: dadesobertes.gva.es</p>
+                    </div>
+                  )}
+                  {importTab === 'andalucia' && (
+                    <div className="bg-slate-50 rounded-xl p-4 text-xs text-slate-600 space-y-1">
+                      <p className="font-bold">Font: Dades Obertes Junta de Andalucía</p>
+                      <p>~10.000 centres docents no universitaris. Inclou nom, municipi, telèfon i email.</p>
+                      <p className="text-slate-400">Font: juntadeandalucia.es/datosabiertos</p>
+                    </div>
+                  )}
                   <button
                     onClick={() => handleApiImport(importTab)}
                     disabled={importLoading}
@@ -765,7 +779,7 @@ const CRMDashboard: React.FC = () => {
                   >
                     {importLoading
                       ? 'Descarregant i important dades...'
-                      : `Importar des de ${importTab === 'pais-vasco' ? 'País Vasco' : importTab === 'navarra' ? 'Navarra' : 'Madrid'}`}
+                      : `Importar des de ${importTab === 'pais-vasco' ? 'País Vasco / Euskadi' : importTab === 'navarra' ? 'Navarra' : importTab === 'madrid' ? 'Madrid' : importTab === 'valencia' ? 'Comunitat Valenciana' : 'Andalucía'}`}
                   </button>
                   {importLoading && (
                     <p className="text-center text-xs text-slate-400">Pot trigar uns segons. No tanquis aquesta finestra.</p>
