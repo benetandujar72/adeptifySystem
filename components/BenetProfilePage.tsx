@@ -7,9 +7,9 @@ type Props = {
 const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
   const stats = useMemo(
     () => [
-      { label: 'Años de experiencia', value: '+20' },
-      { label: 'Centros acompañados', value: '+80' },
-      { label: 'Personas impactadas', value: '+5.000' },
+      { label: 'Years of experience', value: '+20' },
+      { label: 'Centres supported', value: '+80' },
+      { label: 'People impacted', value: '+5,000' },
     ],
     []
   );
@@ -18,23 +18,23 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
     () => [
       {
         id: 1,
-        title: 'I Congreso Internacional Virtual de Educación',
+        title: '1st International Virtual Congress on Education',
         org: 'ISEP',
-        desc: 'Ponente y formador en aprendizaje para la vida y competencias clave.',
+        desc: 'Speaker and trainer on lifelong learning and key competencies.',
         img: '/benet/benet-isep.svg',
       },
       {
         id: 2,
-        title: 'Jornadas de nuevas tendencias en educación',
+        title: 'Workshops on new trends in education',
         org: 'ISEP',
-        desc: 'Talleres sobre innovación, TDAH y acompañamiento a docentes y familias.',
+        desc: 'Workshops on innovation, ADHD and support for teachers and families.',
         img: '/benet/benet-taller-1.svg',
       },
       {
         id: 3,
-        title: 'Seminarios y jornadas en centros educativos',
-        org: 'Centros y entidades diversas',
-        desc: 'Sesiones sobre uso pedagógico de redes sociales, liderazgo y coaching educativo.',
+        title: 'Seminars and workshops in educational centres',
+        org: 'Various centres and organisations',
+        desc: 'Sessions on the pedagogical use of social media, leadership and educational coaching.',
         img: '/benet/benet-evento-1.svg',
       },
     ],
@@ -50,7 +50,7 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
             onClick={onBack}
             className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 hover:text-indigo-700 transition"
           >
-            ← Volver
+            ← Back
           </button>
         </div>
 
@@ -58,7 +58,7 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-full text-[10px] font-black uppercase tracking-[0.25em] text-slate-600">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Consultoría educativa · Coaching · Soluciones llave en mano
+              Educational consulting · Coaching · Turnkey solutions
             </div>
 
             <div className="space-y-3">
@@ -66,12 +66,12 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
                 Benet Andújar Guardado
               </h1>
               <p className="text-balance text-sm md:text-base font-bold text-indigo-700">
-                Consultor educativo, coach y arquitecto de relaciones entre personas, centros y tecnología.
+                Educational consultant, coach and architect of relationships between people, centres and technology.
               </p>
               <p className="max-w-xl text-sm md:text-base leading-relaxed text-slate-600 font-medium">
-                Licenciado en matemáticas, coach certificado y Google Trainer Certified con más de 20 años de experiencia
-                acompañando a centros, equipos directivos, docentes, familias y adolescentes en procesos de cambio
-                educativo, siempre con un enfoque humano y un cuidado exquisito del match con cada persona.
+                Mathematics graduate, certified coach and Google Certified Trainer with over 20 years of experience
+                supporting centres, management teams, teachers, families and young people through processes of
+                educational change, always with a human approach and exquisite attention to match with each person.
               </p>
             </div>
 
@@ -80,13 +80,13 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
                 href="#servicios"
                 className="inline-flex items-center justify-center bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg"
               >
-                Ver cómo puede ayudarte
+                See how it can help you
               </a>
               <a
                 href="#contacto"
                 className="inline-flex items-center justify-center bg-white text-slate-900 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all"
               >
-                Proponer una colaboración
+                Propose a collaboration
               </a>
             </div>
 
@@ -108,15 +108,15 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
             <div className="relative overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
               <img
                 src="/benet/benet-main.svg"
-                alt="Benet Andújar en conferencia"
+                alt="Benet Andújar at a conference"
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/70 to-transparent p-4">
-                <p className="text-xs md:text-sm font-black text-slate-900">
-                  “La tecnología tiene sentido cuando libera tiempo para cuidar a las personas.”
+                <p className=”text-xs md:text-sm font-black text-slate-900”>
+                  “Technology makes sense when it frees up time to care for people.”
                 </p>
-                <p className="text-[11px] md:text-sm text-slate-500 font-medium">
-                  Coaching, liderazgo educativo y soluciones digitales al servicio del vínculo.
+                <p className=”text-[11px] md:text-sm text-slate-500 font-medium”>
+                  Coaching, educational leadership and digital solutions in service of human connection.
                 </p>
               </div>
             </div>
@@ -126,81 +126,81 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
         <section id="enfoque" className="grid gap-8 md:grid-cols-2 md:items-start mb-16 md:mb-20">
           <div className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">
-              Enfoque humano y match con las personas
+              Human approach and genuine match with people
             </h2>
             <p className="text-sm md:text-base leading-relaxed text-slate-600 font-medium">
-              Su trabajo parte de la escucha activa y de una mirada integral a la persona: historia, emociones, contexto y
-              objetivos se tienen en cuenta para diseñar procesos de acompañamiento realmente personalizados y sostenibles.
+              His work is grounded in active listening and a holistic view of the person: history, emotions, context and
+              goals are all considered when designing truly personalised and sustainable support processes.
             </p>
             <p className="text-sm md:text-base leading-relaxed text-slate-600 font-medium">
-              Cada intervención busca generar un match auténtico entre las necesidades de alumnos, familias, docentes o
-              equipos directivos y las soluciones propuestas, ya sean procesos de coaching, formaciones o automatizaciones
-              digitales.
+              Every intervention seeks to create an authentic match between the needs of students, families, teachers or
+              management teams and the proposed solutions, whether those are coaching processes, training programmes or
+              digital automations.
             </p>
 
             <ul className="mt-2 space-y-2 text-sm md:text-base text-slate-700 font-medium">
               <li className="flex gap-3">
                 <span className="mt-2 h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                Acompañamiento cuidadoso del vínculo y de la seguridad emocional en cada proceso.
+                Careful support of emotional safety and relationship-building in every process.
               </li>
               <li className="flex gap-3">
                 <span className="mt-2 h-2 w-2 rounded-full bg-indigo-500 shrink-0" />
-                Itinerarios personalizados que respetan el ritmo y las fortalezas de cada persona o equipo.
+                Personalised pathways that respect the pace and strengths of each person or team.
               </li>
               <li className="flex gap-3">
                 <span className="mt-2 h-2 w-2 rounded-full bg-slate-900 shrink-0" />
-                Tecnología y automatización entendidas como herramientas al servicio de la relación humana.
+                Technology and automation understood as tools in service of human connection.
               </li>
             </ul>
           </div>
 
           <div className="bg-white border border-slate-100 rounded-2xl p-8 shadow-[0_20px_40px_rgba(0,0,0,0.06)]">
             <h3 className="text-sm md:text-base font-black text-indigo-700 tracking-tight">
-              Cómo trabaja el match con centros y personas
+              How the match with centres and people works
             </h3>
             <ol className="mt-4 space-y-3 text-sm text-slate-600 font-medium">
               <li>
-                <span className="font-black text-slate-900">1. Escucha y diagnóstico compartido.</span> Entrevistas,
-                observación y diálogo con los agentes clave del centro para entender cultura, necesidades y puntos de dolor.
+                <span className="font-black text-slate-900">1. Listening and shared diagnosis.</span> Interviews,
+                observation and dialogue with key stakeholders at the centre to understand culture, needs and pain points.
               </li>
               <li>
-                <span className="font-black text-slate-900">2. Diseño a medida.</span> Propuestas de acompañamiento,
-                formaciones y soluciones digitales alineadas con la identidad del centro, no plantillas genéricas.
+                <span className="font-black text-slate-900">2. Tailored design.</span> Support proposals,
+                training programmes and digital solutions aligned with the centre's identity — not generic templates.
               </li>
               <li>
-                <span className="font-black text-slate-900">3. Acompañamiento cercano.</span> Seguimiento, ajustes y
-                coevaluación con los equipos para asegurar impacto real en las personas y en la organización.
+                <span className="font-black text-slate-900">3. Close-up support.</span> Follow-up, adjustments and
+                co-evaluation with teams to ensure real impact on people and the organisation.
               </li>
             </ol>
           </div>
         </section>
 
         <section id="servicios" className="space-y-6 mb-16 md:mb-20">
-          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">Qué ofrece</h2>
+          <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">What he offers</h2>
           <div className="grid gap-6 md:grid-cols-3">
             <div className="bg-white border border-slate-100 rounded-2xl p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h3 className="mb-2 text-sm md:text-base font-black text-slate-900 tracking-tight">
-                Consultoría educativa integral
+                Comprehensive educational consulting
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                Acompañamiento a equipos directivos y claustros en liderazgo, transformación de centro, convivencia y
-                bienestar de la comunidad educativa.
+                Support for management teams and staff in leadership, centre transformation, coexistence and
+                wellbeing of the educational community.
               </p>
             </div>
             <div className="bg-white border border-slate-100 rounded-2xl p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
-              <h3 className="mb-2 text-sm md:text-base font-black text-slate-900 tracking-tight">Coaching y formación</h3>
+              <h3 className="mb-2 text-sm md:text-base font-black text-slate-900 tracking-tight">Coaching and training</h3>
               <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                Programas de coaching educativo, sesiones para familias y adolescentes, y formación al profesorado sobre
-                metodologías activas, redes sociales y competencias socioemocionales.
+                Educational coaching programmes, sessions for families and teenagers, and teacher training on
+                active learning methodologies, social media and socio-emotional competencies.
               </p>
             </div>
             <div className="bg-white border border-slate-100 rounded-2xl p-7 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
               <h3 className="mb-2 text-sm md:text-base font-black text-slate-900 tracking-tight">
-                Soluciones digitales llave en mano
+                Turnkey digital solutions
               </h3>
               <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                Diseño funcional y acompañamiento en la implantación de automatizaciones y herramientas digitales
-                personalizadas para liberar tiempo y poner el foco en las personas.
+                Functional design and support in the implementation of personalised digital automations and tools
+                to free up time and keep the focus on people.
               </p>
             </div>
           </div>
@@ -208,9 +208,9 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
 
         <section id="eventos" className="space-y-6 mb-16 md:mb-20">
           <div>
-            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">Congresos, jornadas y eventos</h2>
+            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">Congresses, workshops and events</h2>
             <p className="mt-3 text-slate-500 font-medium leading-relaxed max-w-2xl">
-              Una selección de momentos en los que ha compartido experiencia con la comunidad educativa.
+              A selection of moments in which he has shared experience with the educational community.
             </p>
           </div>
 
@@ -243,10 +243,10 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
           className="bg-white border border-slate-100 rounded-2xl p-10 md:p-12 shadow-[0_20px_40px_rgba(0,0,0,0.06)] flex flex-col md:flex-row items-start md:items-center justify-between gap-10"
         >
           <div className="max-w-xl">
-            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">¿Hablamos?</h2>
+            <h2 className="text-2xl md:text-3xl font-serif text-slate-900 italic">Shall we talk?</h2>
             <p className="mt-3 text-slate-500 font-medium leading-relaxed">
-              Si quieres explorar una colaboración, organizar una formación o diseñar una solución digital a medida para tu
-              centro, puedes contactar con Benet directamente.
+              If you want to explore a collaboration, organise a training programme or design a tailored digital solution
+              for your centre, you can contact Benet directly.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -254,7 +254,7 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
               href="mailto:benet.andujar@insbitacola.cat"
               className="bg-slate-900 text-white px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] hover:bg-indigo-600 transition-all shadow-lg text-center"
             >
-              Escribir email
+              Send email
             </a>
             <a
               href="https://es.linkedin.com/in/bandujar"
@@ -262,7 +262,7 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
               rel="noopener noreferrer"
               className="bg-white text-slate-900 px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-[0.22em] border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-center"
             >
-              Ver LinkedIn
+              View LinkedIn
             </a>
           </div>
         </section>

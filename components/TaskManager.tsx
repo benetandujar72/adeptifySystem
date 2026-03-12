@@ -7,8 +7,8 @@ import { useLanguage } from '../LanguageContext';
 const TaskManager: React.FC = () => {
   const { language, t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([
-    { id: '1', title: 'Revisar informes trimestrals', assignee: 'Marta G.', deadline: '2023-11-30', status: 'pendent' },
-    { id: '2', title: 'Enviar circular famílies', assignee: 'Joan P.', deadline: '2023-11-25', status: 'en_proces' },
+    { id: '1', title: 'Review quarterly reports', assignee: 'Marta G.', deadline: '2023-11-30', status: 'pendent' },
+    { id: '2', title: 'Send family newsletter', assignee: 'Joan P.', deadline: '2023-11-25', status: 'en_proces' },
   ]);
   const [newTask, setNewTask] = useState({ title: '', assignee: '', deadline: '' });
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);

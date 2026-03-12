@@ -27,15 +27,15 @@ interface GeocodeResult { geocoded_municipalities: number; updated_centers: numb
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
-  new:           { label: 'Nou Lead',         cls: 'bg-slate-100 text-slate-600' },
-  qualified:     { label: 'Qualificat',        cls: 'bg-blue-100 text-blue-700' },
-  proposal_sent: { label: 'Proposta Enviada',  cls: 'bg-indigo-100 text-indigo-700' },
-  closed:        { label: 'Tancat',            cls: 'bg-green-100 text-green-700' },
-  lost:          { label: 'Perdut',            cls: 'bg-red-100 text-red-600' },
+  new:           { label: 'New Lead',         cls: 'bg-slate-100 text-slate-600' },
+  qualified:     { label: 'Qualified',         cls: 'bg-blue-100 text-blue-700' },
+  proposal_sent: { label: 'Proposal Sent',     cls: 'bg-indigo-100 text-indigo-700' },
+  closed:        { label: 'Closed',            cls: 'bg-green-100 text-green-700' },
+  lost:          { label: 'Lost',              cls: 'bg-red-100 text-red-600' },
 };
 const SOURCE_LABELS: Record<string, string> = {
-  bulk_email_map: 'Mapa', manual: 'Manual', web: 'Web',
-  csv_import: 'CSV', euskadi_open_data: 'País Vasco',
+  bulk_email_map: 'Map', manual: 'Manual', web: 'Web',
+  csv_import: 'CSV', euskadi_open_data: 'Basque Country',
   navarra_open_data: 'Navarra', madrid_open_data: 'Madrid',
   url_scraping: 'URL',
 };
@@ -50,14 +50,14 @@ const TIMELINE_COLORS: Record<string, string> = {
 const PAGE_SIZE = 50;
 const CSV_FIELDS = ['name', 'email', 'phone', 'address', 'municipality', 'type', 'region'];
 const CSV_FIELD_LABELS: Record<string, string> = {
-  name: 'Nom *', email: 'Email', phone: 'Telèfon', address: 'Adreça',
-  municipality: 'Municipi', type: 'Tipus', region: 'Regió',
+  name: 'Name *', email: 'Email', phone: 'Phone', address: 'Address',
+  municipality: 'Municipality', type: 'Type', region: 'Region',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('ca') : '—';
+const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-GB') : '—';
 const fmtDateTime = (d: string) =>
-  new Date(d).toLocaleDateString('ca') + ' ' + new Date(d).toLocaleTimeString('ca', { hour: '2-digit', minute: '2-digit' });
+  new Date(d).toLocaleDateString('en-GB') + ' ' + new Date(d).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const c = STATUS_CONFIG[status] || STATUS_CONFIG.new;

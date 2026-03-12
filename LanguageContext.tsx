@@ -14,11 +14,11 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [language, setLanguage] = useState<Language>(() => {
     try {
       const saved = (localStorage.getItem('adeptify_language') || '').trim() as Language;
-      if (saved === 'ca' || saved === 'es' || saved === 'eu') return saved;
+      if (saved === 'ca' || saved === 'es' || saved === 'eu' || saved === 'en') return saved;
     } catch {
       // ignore
     }
-    return 'eu';
+    return 'en';
   });
 
   React.useEffect(() => {

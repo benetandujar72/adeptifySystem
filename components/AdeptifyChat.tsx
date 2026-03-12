@@ -35,8 +35,8 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
   };
 
   /**
-   * Helper para formatear texto Markdown a HTML básico de forma segura.
-   * Maneja negritas (**), listas (*), y saltos de línea.
+   * Helper to safely format Markdown text to basic HTML.
+   * Handles bold (**), lists (*), and line breaks.
    */
   const formatMessage = (text: string) => {
     let formatted = text
@@ -63,7 +63,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
         ? "Parlem d'ajudar l'escola."
         : language === 'eu'
           ? "Ikastetxeari laguntzeaz hitz egin dezagun."
-          : "Hablemos de ayudar al colegio.";
+          : language === 'en'
+            ? "Let's talk about helping the school."
+            : "Hablemos de ayudar al colegio.";
     }
 
     return `
@@ -134,7 +136,9 @@ const AdeptifyChat: React.FC<AdeptifyChatProps> = ({ centerId = 'general' }) => 
           ? "Ho sento, em pots repetir?"
           : language === 'eu'
             ? "Barkatu, errepika dezakezu?"
-            : "Lo siento, ¿me puedes repetir?"), 
+            : language === 'en'
+              ? "Sorry, can you repeat that?"
+              : "Lo siento, ¿me puedes repetir?"), 
         timestamp: new Date().toISOString() 
       };
       setMessages(prev => [...prev, modelMsg]);

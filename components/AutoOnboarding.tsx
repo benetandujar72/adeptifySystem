@@ -12,7 +12,7 @@ const AutoOnboarding: React.FC = () => {
   const handleMigrate = async () => {
     if (!rawData) return;
     setIsProcessing(true);
-    setStatus('Processant dades...');
+    setStatus('Processing data...');
     try {
       const resp = await fetch('/api/automation/migrate-data', {
         method: 'POST',
@@ -21,9 +21,9 @@ const AutoOnboarding: React.FC = () => {
       });
       const data = await resp.json();
       setMigrationResult(data);
-      setStatus('Migració completada.');
+      setStatus('Migration completed.');
     } catch (err) {
-      setStatus('Error en la migració.');
+      setStatus('Migration error.');
     } finally {
       setIsProcessing(false);
     }
@@ -37,18 +37,18 @@ const AutoOnboarding: React.FC = () => {
         </div>
         <div>
           <h2 className="text-3xl font-bold text-slate-900">{t.onboardingTitle || "Auto-Onboarding"}</h2>
-          <p className="text-slate-500 text-sm">{t.onboardingDesc || "Organització automàtica de dades"}</p>
+          <p className="text-slate-500 text-sm">{t.onboardingDesc || "Automatic data organisation"}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="space-y-6">
-          <textarea className="w-full h-80 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl outline-none" placeholder="Enganxa dades aquí..." value={rawData} onChange={(e) => setRawData(e.target.value)} />
-          <button onClick={handleMigrate} disabled={isProcessing} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest">{isProcessing ? 'Processant...' : (t.onboardingProcessBtn || "Estructurar Dades")}</button>
+          <textarea className="w-full h-80 p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl outline-none" placeholder="Paste data here..." value={rawData} onChange={(e) => setRawData(e.target.value)} />
+          <button onClick={handleMigrate} disabled={isProcessing} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest">{isProcessing ? 'Processing...' : (t.onboardingProcessBtn || "Structure Data")}</button>
           <p className="text-center text-xs font-bold text-indigo-600">{status}</p>
         </div>
         <div className="bg-slate-900 rounded-[32px] p-8 text-white shadow-inner overflow-auto min-h-[400px]">
-          <h3 className="text-xs font-black uppercase text-indigo-400 mb-6">Previsualització IA</h3>
+          <h3 className="text-xs font-black uppercase text-indigo-400 mb-6">AI Preview</h3>
           {migrationResult?.mapped_staff?.map((s: any, i: number) => (
             <div key={i} className="p-3 mb-2 bg-white/5 rounded-lg text-xs border border-white/5 flex justify-between">
               <span className="font-bold">{s.full_name}</span>

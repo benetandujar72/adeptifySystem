@@ -850,17 +850,81 @@ function buildTemplatePersonalizedIntroEu(c, mongoProfile) {
   </div>`;
 }
 
+// -- English personalized intro builder --
+function buildTemplatePersonalizedIntroEn(c, mongoProfile) {
+  const name = c.centerName || 'your school';
+  const type = (c.nom_naturalesa || '').toLowerCase();
+  const municipi = c.nom_municipi || '';
+  const comarca = c.nom_comarca || c.region || '';
+  const studies = getStudyLabels(c);
+
+  let opening = '';
+  if (type.includes('públic') || type.includes('public') || type.includes('público')) {
+    opening = `We know that managing a public school like <strong>${name}</strong> means doing a lot with limited resources, tight schedules and constantly changing regulations. Every hour your team spends on repetitive administrative tasks is an hour less for students.`;
+  } else if (type.includes('concertat') || type.includes('concertado') || type.includes('concert')) {
+    opening = `At <strong>${name}</strong>, as a semi-independent school, we understand that you need to balance administrative demands with your educational project's own identity. Maintaining pedagogical excellence while managing scattered processes is a daily challenge.`;
+  } else if (type.includes('privat') || type.includes('privado') || type.includes('priv')) {
+    opening = `At <strong>${name}</strong>, excellence and differentiation are part of your DNA. We know you're looking for tools that match your project &mdash; not generic solutions you'd have to adapt to.`;
+  } else {
+    opening = `At <strong>${name}</strong>, every day you face educational challenges that deserve a tailored response. We know your team's time is limited, and that generic tools often create more friction than they solve.`;
+  }
+
+  let studyLine = '';
+  if (studies.length > 0) {
+    const studyStr = studies.join(', ');
+    if (studies.length >= 3) {
+      studyLine = `With such a diverse offering as <strong>${studyStr}</strong>, the complexity of coordination, data tracking and management is considerable &mdash; and we know no standard tool covers this full reality.`;
+    } else {
+      studyLine = `With an offering in <strong>${studyStr}</strong>, we understand the specific coordination and tracking challenges this entails.`;
+    }
+  }
+
+  let locationLine = '';
+  if (municipi && comarca) {
+    locationLine = `We work with schools in <strong>${comarca}</strong> and know the educational landscape of ${municipi}.`;
+  } else if (comarca) {
+    locationLine = `We know the educational landscape of schools in <strong>${comarca}</strong>.`;
+  }
+
+  let aiLine = c.ai_custom_pitch || '';
+  let mongoLine = '';
+  if (mongoProfile) {
+    const needs = mongoProfile.needs;
+    const profile = mongoProfile.profile;
+    if (needs?.dolor_principal) mongoLine = needs.dolor_principal;
+    else if (needs?.necesidades_principales?.length) mongoLine = needs.necesidades_principales[0];
+    if (profile?.tecnologia_uso && !profile.tecnologia_uso.includes('no pot ser avaluat')) {
+      const techSnippet = profile.tecnologia_uso.length > 200 ? profile.tecnologia_uso.substring(0, 200) + '...' : profile.tecnologia_uso;
+      mongoLine = mongoLine ? `${mongoLine} Additionally, ${techSnippet.charAt(0).toLowerCase()}${techSnippet.slice(1)}` : techSnippet;
+    }
+  }
+
+  return `
+  <div style="padding:40px 40px 24px;">
+    <h1 style="font-size:22px;color:#1a1a2e;margin:0 0 20px;line-height:1.3;font-weight:700;">${opening}</h1>
+    ${studyLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${studyLine}</p>` : ''}
+    ${locationLine ? `<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 12px;">${locationLine}</p>` : ''}
+    ${mongoLine ? `<p style="font-size:14px;color:#2E75B6;line-height:1.7;margin:0 0 12px;border-left:3px solid #2E75B6;padding-left:12px;"><strong>We detected:</strong> ${mongoLine}</p>` : ''}
+    ${aiLine ? `<p style="font-size:14px;color:#673DE6;line-height:1.7;margin:0 0 12px;font-style:italic;border-left:3px solid #673DE6;padding-left:12px;">${aiLine}</p>` : ''}
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0;">
+      That's why what we propose is not adding yet another app. <strong>What we propose is defining the right solution for your specific context.</strong>
+    </p>
+  </div>`;
+}
+
 // -- AI batch intro generator for Tier 3 (centers with lead data) --
 async function generateAIIntros(centersWithLeads, lang = 'ca') {
   const BATCH_SIZE = 10;
   const results = {};
-  const langLabel = lang === 'eu' ? 'EUSKERA (BASQUE)' : lang === 'es' ? 'CASTELLANO' : 'CATALÀ';
-  const expertCtx = lang === 'eu'
-    ? 'hezkuntza-sektoreko komunikazio-aditu bat zara Euskal Herrian'
-    : lang === 'es'
-      ? 'eres un experto en comunicación para el sector educativo en España'
-      : 'ets un expert en comunicació per al sector educatiu a Catalunya';
-  const returnLabel = lang === 'eu' ? 'sarrera-paragrafoa' : lang === 'es' ? 'párrafo introductorio' : 'paràgraf introductori';
+  const langLabel = lang === 'en' ? 'ENGLISH' : lang === 'eu' ? 'EUSKERA (BASQUE)' : lang === 'es' ? 'CASTELLANO' : 'CATALÀ';
+  const expertCtx = lang === 'en'
+    ? 'you are an expert in communication for the educational sector'
+    : lang === 'eu'
+      ? 'hezkuntza-sektoreko komunikazio-aditu bat zara Euskal Herrian'
+      : lang === 'es'
+        ? 'eres un experto en comunicación para el sector educativo en España'
+        : 'ets un expert en comunicació per al sector educatiu a Catalunya';
+  const returnLabel = lang === 'en' ? 'introductory paragraph' : lang === 'eu' ? 'sarrera-paragrafoa' : lang === 'es' ? 'párrafo introductorio' : 'paràgraf introductori';
 
   for (let i = 0; i < centersWithLeads.length; i += BATCH_SIZE) {
     const batch = centersWithLeads.slice(i, i + BATCH_SIZE);
@@ -1165,6 +1229,128 @@ function buildBulkEmailHtmlEu(introHtml) {
 </body></html>`;
 }
 
+// -- Build full HTML email in English --
+function buildBulkEmailHtmlEn(introHtml) {
+  const BASE = 'https://consultor.adeptify.es';
+  const sc = (name) => `${BASE}/screenshots/${name}`;
+  const numCircle = (n) => `<div style="width:32px;height:32px;border-radius:50%;background:#673DE6;color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;margin-right:12px;flex-shrink:0;">${n}</div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Arial,Helvetica,sans-serif;color:#333;">
+<div style="max-width:680px;margin:0 auto;background:#ffffff;">
+
+  <!-- HEADER -->
+  <div style="background:#1a1a2e;padding:32px 40px;text-align:center;">
+    <img src="cid:adeptify-logo" alt="Adeptify" style="height:48px;margin-bottom:8px;" />
+    <p style="color:#a0a0c0;font-size:12px;margin:0;letter-spacing:1px;">Consulting and bespoke digital solutions for educational institutions</p>
+  </div>
+
+  <!-- PERSONALIZED INTRO -->
+  ${introHtml}
+
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- PAIN POINTS -->
+  <div style="padding:32px 40px;">
+    <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 24px;font-weight:700;">Do any of these situations sound familiar?</h2>
+    <div style="display:flex;align-items:flex-start;margin-bottom:20px;">
+      ${numCircle(1)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Incidents, internal requests or important follow-ups arrive through too many channels, making it hard to stay in control.</p>
+    </div>
+    <div style="display:flex;align-items:flex-start;margin-bottom:20px;">
+      ${numCircle(2)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">There is data, forms, spreadsheets and useful documents &mdash; but they don't work as a coherent system, which makes decision-making harder.</p>
+    </div>
+    <div style="display:flex;align-items:flex-start;margin-bottom:0;">
+      ${numCircle(3)}
+      <p style="font-size:14px;color:#555;line-height:1.6;margin:0;">Key processes rely too heavily on specific individuals, temporary fixes, or manual effort that is no longer sustainable.</p>
+    </div>
+  </div>
+
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- METHODOLOGY -->
+  <div style="padding:32px 40px;">
+    <h2 style="font-size:16px;color:#673DE6;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px;font-weight:700;">What does Adeptify do when it identifies this reality?</h2>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">It doesn't offer a closed catalogue. It listens, analyses and defines the best response for the school. Then it builds and fine-tunes it until it fits the daily routine.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <tr>
+        <td style="width:33%;padding:16px;background:#f7f5ff;border-radius:12px 0 0 12px;vertical-align:top;border-right:2px solid #fff;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">1.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Analyse</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Understand before deciding. Processes, roles, goals, constraints and real opportunities.</p>
+        </td>
+        <td style="width:33%;padding:16px;background:#f7f5ff;vertical-align:top;border-right:2px solid #fff;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">2.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Define</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Design the right response. Workflows, data, automations and user experience.</p>
+        </td>
+        <td style="width:33%;padding:16px;background:#f7f5ff;border-radius:0 12px 12px 0;vertical-align:top;">
+          <p style="font-size:28px;color:#673DE6;margin:0 0 4px;font-weight:800;">3.</p>
+          <p style="font-size:13px;font-weight:700;color:#1a1a2e;margin:0 0 6px;">Build &amp; deploy</p>
+          <p style="font-size:12px;color:#777;margin:0;line-height:1.5;">Develop, test, train and support until the solution truly works.</p>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- CASE STUDIES -->
+  <div style="padding:32px 40px;">
+    <p style="font-size:13px;color:#999;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;font-weight:700;">The apps already built are not the product. They are proof of the model.</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 28px;">Some schools needed to solve IT operations. Others, tutorial tracking, assessment, communication or data management. The solutions built so far demonstrate one capability: <strong>adapting technology to singular needs.</strong></p>
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Real case 1</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Centralising incidents and technical follow-up</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">When a school needs order, traceability and fast response in its IT operations.</p>
+      <div style="text-align:center;"><img src="${sc('media__1772879559317.png')}" alt="Dashboard" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" /></div>
+    </div>
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;margin-bottom:20px;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Real case 2</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Scaling tutorials, interviews and family communication</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">When rigorous tutorial tracking needs to be sustained without losing quality or clarity.</p>
+      <div style="text-align:center;">
+        <img src="${sc('media__1772879594564.png')}" alt="Schedules" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
+        <img src="${sc('media__1772879618029.png')}" alt="Imports" style="max-width:48%;height:auto;border-radius:8px;border:1px solid #e0e0e0;display:inline-block;margin:4px;" />
+      </div>
+    </div>
+    <div style="background:#f9f9fc;border:1px solid #e8e8f0;border-radius:12px;padding:24px;">
+      <p style="font-size:11px;color:#673DE6;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;font-weight:700;">Real case 3</p>
+      <h3 style="font-size:16px;color:#1a1a2e;margin:0 0 8px;font-weight:700;">Turning data and assessment into actionable insight</h3>
+      <p style="font-size:13px;color:#777;margin:0 0 16px;line-height:1.5;">When the leadership or pedagogy team needs a clearer picture of what's happening in order to make better-informed decisions.</p>
+      <div style="text-align:center;"><img src="${sc('media__1772879694256.png')}" alt="AI Analysis" style="max-width:100%;height:auto;border-radius:8px;border:1px solid #e0e0e0;" /></div>
+    </div>
+  </div>
+
+  <div style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8e8f0;margin:0;" /></div>
+
+  <!-- CTA -->
+  <div style="padding:32px 40px;text-align:center;">
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">If while reading this email two or three processes came to mind that drain your team's time and energy every day, there is likely already a <strong>clear opportunity for improvement</strong>.</p>
+    <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Adeptify can help you analyse them, prioritise them and turn them into a realistic, useful and achievable solution for your school.</p>
+    <a href="${BASE}" style="display:inline-block;background:#673DE6;color:#ffffff;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:0.5px;">Let's talk in 20 minutes</a>
+    <p style="font-size:12px;color:#999;margin:16px 0 0;">You can also reply directly to this email or write to us at <a href="mailto:hola@adeptify.es" style="color:#673DE6;text-decoration:none;">hola@adeptify.es</a></p>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#1a1a2e;padding:28px 40px;text-align:center;">
+    <p style="color:#a0a0c0;font-size:12px;margin:0 0 4px;font-weight:600;">Adeptify Systems</p>
+    <p style="color:#777;font-size:11px;margin:0 0 4px;">
+      <a href="https://adeptify.es" style="color:#a0a0c0;text-decoration:none;">adeptify.es</a> &middot;
+      <a href="${BASE}" style="color:#a0a0c0;text-decoration:none;">consultor.adeptify.es</a>
+    </p>
+    <p style="color:#777;font-size:11px;margin:0 0 12px;">hola@adeptify.es &middot; Tel: 690831770 &middot; C. Independ&egrave;ncia 3, Local 2, Cerdanyola del Vall&egrave;s, 08290 Barcelona</p>
+    <p style="color:#555;font-size:9px;margin:0;line-height:1.4;text-align:justify;">
+      This message and its attachments are intended exclusively for its recipient and may contain confidential information. In accordance with Regulation (EU) 2016/679 (GDPR), we inform you that your personal data will only be used to maintain the business, technical or commercial relationship with the institution itself, and will not be used for other entities. You may exercise your rights of access, rectification, cancellation and objection by writing to hola@adeptify.es or consulting our privacy policy at adeptify.es.
+    </p>
+  </div>
+
+</div>
+</body></html>`;
+}
+
 // -- Build full HTML email with personalized intro + static body --
 function buildBulkEmailHtml(introHtml) {
   const BASE = 'https://consultor.adeptify.es';
@@ -1302,7 +1488,7 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
   });
 
   // Pre-generate brochure PDFs for all languages in use
-  const BROCHURE_FILENAMES = { ca: 'Adeptify_Informacio_General.pdf', es: 'Adeptify_Informacion_General.pdf', eu: 'Adeptify_Informazio_Orokorra.pdf' };
+  const BROCHURE_FILENAMES = { ca: 'Adeptify_Informacio_General.pdf', es: 'Adeptify_Informacion_General.pdf', eu: 'Adeptify_Informazio_Orokorra.pdf', en: 'Adeptify_General_Information.pdf' };
   const brochureByLang = {};
   const langsNeeded = [...new Set(recipients.map(r => detectEmailLang(r.pais)))];
   for (const lang of langsNeeded) {
@@ -1384,7 +1570,7 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
   if (tier3.length > 0) {
     console.log(`[BulkEmail] Generating AI intros for ${tier3.length} Tier 3 centers...`);
     try {
-      const tier3ByLang = { ca: [], es: [], eu: [] };
+      const tier3ByLang = { ca: [], es: [], eu: [], en: [] };
       for (const r of tier3) {
         const lang = detectEmailLang(r.pais);
         (tier3ByLang[lang] || tier3ByLang.ca).push({ codi: r.codi, centerData: r, leadData: leadsByEmail[r.email], mongoProfile: mongoProfiles[r.codi] || null });
@@ -1459,11 +1645,13 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
       let introHtml;
       if (aiIntros[r.codi]) {
         // Tier 3: AI-generated intro wrapped in styled HTML
-        const closingLine = emailLang === 'eu'
-          ? `Horregatik, ez dugu beste aplikazio bat gehitzen proposatzen. <strong>Zuen testuinguru zehatzarentzako egokia den irtenbidea definitzea proposatzen dugu.</strong>`
-          : emailLang === 'es'
-            ? `Por eso, lo que proponemos no es a&ntilde;adir otra app. <strong>Lo que proponemos es definir la soluci&oacute;n adecuada para vuestro contexto.</strong>`
-            : `Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong>`;
+        const closingLine = emailLang === 'en'
+          ? `That's why what we propose is not adding yet another app. <strong>What we propose is defining the right solution for your specific context.</strong>`
+          : emailLang === 'eu'
+            ? `Horregatik, ez dugu beste aplikazio bat gehitzen proposatzen. <strong>Zuen testuinguru zehatzarentzako egokia den irtenbidea definitzea proposatzen dugu.</strong>`
+            : emailLang === 'es'
+              ? `Por eso, lo que proponemos no es a&ntilde;adir otra app. <strong>Lo que proponemos es definir la soluci&oacute;n adecuada para vuestro contexto.</strong>`
+              : `Per aix&ograve;, el que proposem no &eacute;s afegir una altra app. <strong>El que proposem &eacute;s definir la soluci&oacute; adequada per al vostre context.</strong>`;
         introHtml = `
         <div style="padding:40px 40px 24px;">
           <h1 style="font-size:20px;color:#1a1a2e;margin:0 0 16px;line-height:1.3;font-weight:700;">${r.centerName || 'El vostre centre'}</h1>
@@ -1472,19 +1660,23 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
         </div>`;
       } else {
         // Tier 1 or 2: template-based intro (enriched with MongoDB, language-aware)
-        introHtml = emailLang === 'es'
-          ? buildTemplatePersonalizedIntroEs(r, mongoProfile)
-          : emailLang === 'eu'
-            ? buildTemplatePersonalizedIntroEu(r, mongoProfile)
-            : buildTemplatePersonalizedIntro(r, mongoProfile);
+        introHtml = emailLang === 'en'
+          ? buildTemplatePersonalizedIntroEn(r, mongoProfile)
+          : emailLang === 'es'
+            ? buildTemplatePersonalizedIntroEs(r, mongoProfile)
+            : emailLang === 'eu'
+              ? buildTemplatePersonalizedIntroEu(r, mongoProfile)
+              : buildTemplatePersonalizedIntro(r, mongoProfile);
       }
 
       // D) Build full HTML with tracking pixel (language-aware)
-      let html = emailLang === 'es'
-        ? buildBulkEmailHtmlEs(introHtml)
-        : emailLang === 'eu'
-          ? buildBulkEmailHtmlEu(introHtml)
-          : buildBulkEmailHtml(introHtml);
+      let html = emailLang === 'en'
+        ? buildBulkEmailHtmlEn(introHtml)
+        : emailLang === 'es'
+          ? buildBulkEmailHtmlEs(introHtml)
+          : emailLang === 'eu'
+            ? buildBulkEmailHtmlEu(introHtml)
+            : buildBulkEmailHtml(introHtml);
       const trackPixel = `<img src="https://consultor.adeptify.es/api/crm/track/${interactionId}.png" width="1" height="1" style="display:block;" alt="" />`;
       html = html.replace('</body>', `${trackPixel}</body>`);
 
