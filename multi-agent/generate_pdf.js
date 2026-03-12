@@ -435,17 +435,110 @@ async function generatePdfBuffer(docData, datosCliente) {
   });
 }
 
+// Multilingual content for brochure PDF
+const BROCHURE_CONTENT = {
+  ca: {
+    title: 'Adeptify Systems — Serveis',
+    claim: 'Ens adaptem a la teva realitat. Com un camaleó digital, cada solució és única.',
+    heading: 'Consultoria Estratègica en Intel·ligència Artificial',
+    intro: 'A Adeptify, ens especialitzem en transformació digital per a centres educatius i institucions. ' +
+      'Combinem IA avançada, automatització de processos i consultoria estratègica per generar impacte real.',
+    servicesTitle: 'Els Nostres Serveis',
+    services: [
+      { name: 'GESTIÓ DE GUÀRDIES', desc: 'Automatització total del quadrant de substitucions diàries mitjançant IA. Redueix el temps de gestió un 90%.' },
+      { name: 'ASSISTATUT v3.1', desc: "Control d'assistència intel·ligent per a 7 classes simultànies amb anàlisi predictiu d'absentisme." },
+      { name: 'ROYAL MATH', desc: "Plataforma gamificada d'aprenentatge matemàtic amb itineraris personalitzats adaptats al ritme de cada alumne." },
+      { name: 'qViC v2.0', desc: 'Sistema de gestió de qualitat educativa certificat i automatitzat per facilitar auditories i millora contínua.' },
+    ],
+    moto: "És la tecnologia qui s'adapta al client i no viceversa",
+    motoBody: "Adeptify desenvolupa solucions completament a mida i personalitzades. Provem el vostre ecosistema educatiu amb un enfocament totalment individualitzat.",
+    whyTitle: 'Per Què Adeptify?',
+    values: [
+      'IA aplicada específicament al sector educatiu',
+      "Més de 15 anys d'experiència en transformació digital",
+      'Resultats mesurables: ROI clar des del primer trimestre',
+      'Acompanyament integral: consultoria + desenvolupament + formació',
+      'Compliment normatiu: RGPD, LOPD, ISO 27001',
+    ],
+    ctaTitle: 'Vol veure com ho fem?',
+    ctaBody: 'Agenda una sessió de consultoria estratègica personalitzada.',
+    privacy: "Aquest missatge i els seus arxius adjunts poden contenir informació confidencial. D'acord amb el RGPD, l'informem que les seves dades personals només es faran servir per a mantenir la relació empresarial amb la pròpia institució i de manera única, i no es faran servir per altres entitats.",
+    pageLabel: (i, n) => `Pàgina ${i + 1} de ${n}`,
+    filename: 'Adeptify_Informacio_General.pdf',
+  },
+  es: {
+    title: 'Adeptify Systems — Servicios',
+    claim: 'Nos adaptamos a tu realidad. Como un camaleón digital, cada solución es única.',
+    heading: 'Consultoría Estratégica en Inteligencia Artificial',
+    intro: 'En Adeptify, nos especializamos en transformación digital para centros educativos e instituciones. ' +
+      'Combinamos IA avanzada, automatización de procesos y consultoría estratégica para generar impacto real.',
+    servicesTitle: 'Nuestros Servicios',
+    services: [
+      { name: 'GESTIÓN DE GUARDIAS', desc: 'Automatización total del cuadrante de sustituciones diarias mediante IA. Reduce el tiempo de gestión un 90%.' },
+      { name: 'ASSISTATUT v3.1', desc: 'Control de asistencia inteligente para 7 clases simultáneas con análisis predictivo de absentismo.' },
+      { name: 'ROYAL MATH', desc: 'Plataforma gamificada de aprendizaje matemático con itinerarios personalizados adaptados al ritmo de cada alumno.' },
+      { name: 'qViC v2.0', desc: 'Sistema de gestión de calidad educativa certificado y automatizado para facilitar auditorías y mejora continua.' },
+    ],
+    moto: 'Es la tecnología quien se adapta al cliente, no al revés',
+    motoBody: 'Adeptify desarrolla soluciones completamente a medida y personalizadas. Abordamos tu ecosistema educativo con un enfoque totalmente individualizado.',
+    whyTitle: '¿Por qué Adeptify?',
+    values: [
+      'IA aplicada específicamente al sector educativo',
+      'Más de 15 años de experiencia en transformación digital',
+      'Resultados medibles: ROI claro desde el primer trimestre',
+      'Acompañamiento integral: consultoría + desarrollo + formación',
+      'Cumplimiento normativo: RGPD, LOPDGDD, ISO 27001',
+    ],
+    ctaTitle: '¿Quieres ver cómo lo hacemos?',
+    ctaBody: 'Agenda una sesión de consultoría estratégica personalizada.',
+    privacy: 'Este mensaje y sus archivos adjuntos pueden contener información confidencial. De acuerdo con el RGPD, le informamos de que sus datos personales únicamente se utilizarán para mantener la relación empresarial con la propia institución y no se cederán a terceros.',
+    pageLabel: (i, n) => `Página ${i + 1} de ${n}`,
+    filename: 'Adeptify_Informacion_General.pdf',
+  },
+  eu: {
+    title: 'Adeptify Systems — Zerbitzuak',
+    claim: 'Zure errealitatearen arabera moldatzen gara. Kamaleoi digital bat bezala, soluzio bakoitza bakarra da.',
+    heading: 'Adimen Artifizialeko Aholkularitza Estrategikoa',
+    intro: 'Adeptifyn, hezkuntza zentroen eta erakundeen eraldaketa digitalean espezializatzen gara. ' +
+      'IA aurreratua, prozesuen automatizazioa eta aholkularitza estrategikoa konbinatzen ditugu benetako eragina sortzeko.',
+    servicesTitle: 'Gure Zerbitzuak',
+    services: [
+      { name: 'GUARDIAREN KUDEAKETA', desc: 'Eguneroko ordezko koadrantea IA bidez erabat automatizatzea. Kudeaketa denbora %90 murrizten du.' },
+      { name: 'ASSISTATUT v3.1', desc: '7 aldi bereko klasetarako presentzia-kontrol adimentsua absentismoaren analisi prediktiboaren bidez.' },
+      { name: 'ROYAL MATH', desc: 'Ikasle bakoitzaren erritmora egokitutako ibilbide pertsonalizatuekin matematika ikasteko plataforma gamifikatua.' },
+      { name: 'qViC v2.0', desc: 'Auditoriak eta etengabeko hobekuntza errazteko hezkuntza-kalitatearen kudeaketa sistema ziurtatu eta automatizatua.' },
+    ],
+    moto: 'Teknologia da bezeroaren beharretara moldatzen dena, ez alderantziz',
+    motoBody: 'Adeptifyk guztiz pertsonalizatutako eta egokitutako soluzioak garatzen ditu. Zure hezkuntza ekosistema ikuspegi guztiz indibidualizatuarekin lantzen dugu.',
+    whyTitle: 'Zergatik Adeptify?',
+    values: [
+      'Hezkuntza sektorera bereziki aplikatutako IA',
+      'Eraldaketa digitalean 15 urte baino gehiagoko esperientzia',
+      'Neurgarriak diren emaitzak: lehen hiruhilekotik ROI argia',
+      'Laguntza integrala: aholkularitza + garapena + prestakuntza',
+      'Arauzko betetzea: ERREOE, DATUAK, ISO 27001',
+    ],
+    ctaTitle: 'Nola egiten dugun ikusi nahi al duzu?',
+    ctaBody: 'Antolatu aholkularitza estrategiko saio pertsonalizatu bat.',
+    privacy: 'Mezu honek eta bere eranskinak informazio konfidentziala eduki dezakete. EBEren arabera, jakinarazten dizugu zure datu pertsonalak erakundearekin negozio-harremana mantentzeko soilik erabiliko direla eta ez zaizkiela hirugarrenei lagako.',
+    pageLabel: (i, n) => `${i + 1}. orrialdea ${n}etik`,
+    filename: 'Adeptify_Informazio_Orokorra.pdf',
+  },
+};
+
 /**
  * generateBrochurePdfBuffer — generic Adeptify services brochure for email attachment
+ * @param {string} lang — 'ca' | 'es' | 'eu' (default 'ca')
  * @returns {Promise<Buffer>}
  */
-async function generateBrochurePdfBuffer() {
+async function generateBrochurePdfBuffer(lang = 'ca') {
+  const T = BROCHURE_CONTENT[lang] || BROCHURE_CONTENT.ca;
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       bufferPages: true,
-      info: { Title: 'Adeptify Systems — Serveis', Author: 'Adeptify Systems' },
+      info: { Title: T.title, Author: 'Adeptify Systems' },
     });
 
     const chunks = [];
@@ -465,7 +558,7 @@ async function generateBrochurePdfBuffer() {
         .text('Adeptify Systems', { align: 'center' });
       doc.moveDown(0.2);
       doc.fontSize(11).font('Helvetica-Oblique').fillColor(COL.secondary)
-        .text(S.marca.claim, { align: 'center' });
+        .text(T.claim, { align: 'center' });
       doc.moveDown(1);
 
       // Divider
@@ -475,30 +568,19 @@ async function generateBrochurePdfBuffer() {
 
       // Intro
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.purple)
-        .text('Consultoria Estratègica en Intel·ligència Artificial', MARGIN, doc.y, { width: CW, align: 'center' });
+        .text(T.heading, MARGIN, doc.y, { width: CW, align: 'center' });
       doc.moveDown(0.8);
 
       doc.fontSize(10).font('Helvetica').fillColor(COL.body)
-        .text(
-          'A Adeptify, ens especialitzem en transformació digital per a centres educatius i institucions. ' +
-          'Combinem IA avançada, automatització de processos i consultoria estratègica per generar impacte real.',
-          MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 3 }
-        );
+        .text(T.intro, MARGIN, doc.y, { width: CW, align: 'justify', lineGap: 3 });
       doc.moveDown(1);
 
       // Services
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.meteorite)
-        .text('Els Nostres Serveis', MARGIN);
+        .text(T.servicesTitle, MARGIN);
       doc.moveDown(0.5);
 
-      const services = [
-        { name: 'GESTIÓ DE GUÀRDIES', desc: 'Automatització total del quadrant de substitucions diàries mitjançant IA. Redueix el temps de gestió un 90%.' },
-        { name: 'ASSISTATUT v3.1', desc: "Control d'assistència intel·ligent per a 7 classes simultànies amb anàlisi predictiu d'absentisme." },
-        { name: 'ROYAL MATH', desc: "Plataforma gamificada d'aprenentatge matemàtic amb itineraris personalitzats adaptats al ritme de cada alumne." },
-        { name: 'qViC v2.0', desc: 'Sistema de gestió de qualitat educativa certificat i automatitzat per facilitar auditories i millora contínua.' },
-      ];
-
-      for (const svc of services) {
+      for (const svc of T.services) {
         ensureSpace(doc, 60);
         doc.rect(MARGIN, doc.y, CW, 0.5).fill(COL.border);
         doc.moveDown(0.3);
@@ -515,10 +597,10 @@ async function generateBrochurePdfBuffer() {
       doc.rect(MARGIN, doc.y, CW, 2).fill(COL.purple);
       doc.moveDown(1);
       doc.fontSize(15).font('Helvetica-Bold').fillColor(COL.purple)
-        .text("És la tecnologia qui s'adapta al client i no viceversa", MARGIN, doc.y, { width: CW, align: 'center' });
+        .text(T.moto, MARGIN, doc.y, { width: CW, align: 'center' });
       doc.moveDown(0.5);
       doc.fontSize(10).font('Helvetica').fillColor(COL.body)
-        .text("Adeptify desenvolupa solucions completament a mida i personalitzades. Provem el vostre ecosistema educatiu amb un enfocament totalment individualitzat.", MARGIN, doc.y, { width: CW, align: 'center' });
+        .text(T.motoBody, MARGIN, doc.y, { width: CW, align: 'center' });
       doc.moveDown(1);
 
       try {
@@ -538,17 +620,10 @@ async function generateBrochurePdfBuffer() {
 
       // Value proposition
       doc.fontSize(14).font('Helvetica-Bold').fillColor(COL.meteorite)
-        .text('Per Què Adeptify?', MARGIN);
+        .text(T.whyTitle, MARGIN);
       doc.moveDown(0.5);
 
-      const values = [
-        'IA aplicada específicament al sector educatiu',
-        'Més de 15 anys d\'experiència en transformació digital',
-        'Resultats mesurables: ROI clar des del primer trimestre',
-        'Acompanyament integral: consultoria + desenvolupament + formació',
-        'Compliment normatiu: RGPD, LOPD, ISO 27001',
-      ];
-      for (const v of values) bulletItem(doc, v);
+      for (const v of T.values) bulletItem(doc, v);
 
       doc.moveDown(1.5);
 
@@ -557,17 +632,16 @@ async function generateBrochurePdfBuffer() {
       const ctaY = doc.y;
       doc.rect(MARGIN, ctaY, CW, 75).fill(COL.meteorite);
       doc.fontSize(13).font('Helvetica-Bold').fillColor(COL.white)
-        .text('Vol veure com ho fem?', MARGIN + 20, ctaY + 10, { width: CW - 40 });
+        .text(T.ctaTitle, MARGIN + 20, ctaY + 10, { width: CW - 40 });
       doc.fontSize(10).font('Helvetica-Bold').fillColor('#fff')
         .text('consultor.adeptify.es', MARGIN + 20, ctaY + 28, { width: CW - 40, link: 'https://consultor.adeptify.es/', underline: true });
       doc.fontSize(9).font('Helvetica').fillColor('#D4CCFF')
-        .text('Agenda una sessió de consultoria estratègica personalitzada.', MARGIN + 20, ctaY + 44, { width: CW - 40 });
+        .text(T.ctaBody, MARGIN + 20, ctaY + 44, { width: CW - 40 });
       doc.fontSize(9).font('Helvetica').fillColor(COL.white)
-        .text('hola@adeptify.es  ·  Tel: 690831770  ·  C. Independència 3, Local 2, 08290 Cerdanyola del Vallès', MARGIN + 20, ctaY + 58, { width: CW - 40 });
+        .text('hola@adeptify.es  ·  Tel: 690831770  ·  C. Independencia 3, Local 2, 08290 Cerdanyola del Valles', MARGIN + 20, ctaY + 58, { width: CW - 40 });
 
       // Footer
       const range = doc.bufferedPageRange();
-      const privacy = "Aquest missatge i els seus arxius adjunts poden contenir informació confidencial. D'acord amb el RGPD, l'informem que les seves dades personals només es faran servir per a mantenir la relació empresarial amb la pròpia institució i de manera única, i no es faran servir per altres entitats.";
       for (let i = 0; i < range.count; i++) {
         doc.switchToPage(i);
         doc.save();
@@ -576,13 +650,13 @@ async function generateBrochurePdfBuffer() {
           .strokeColor(COL.border).lineWidth(0.5).stroke();
 
         doc.fontSize(6).font('Helvetica').fillColor(COL.secondary)
-          .text(privacy, MARGIN, PH - 45, { width: CW - 65, align: 'justify' });
+          .text(T.privacy, MARGIN, PH - 45, { width: CW - 65, align: 'justify' });
 
         doc.fontSize(7).font('Helvetica-Bold').fillColor(COL.meteorite)
-          .text(`Pàgina ${i + 1} de ${range.count}`, PW - MARGIN - 60, PH - 40, { width: 60, align: 'right' });
+          .text(T.pageLabel(i, range.count), PW - MARGIN - 60, PH - 40, { width: 60, align: 'right' });
 
         doc.fontSize(7).font('Helvetica').fillColor(COL.secondary)
-          .text('Adeptify Systems | hola@adeptify.es | Tel: 690831770 | C. Independència 3, Local 2, 08290 Cerdanyola del Vallès, Barcelona',
+          .text('Adeptify Systems | hola@adeptify.es | Tel: 690831770 | C. Independencia 3, Local 2, 08290 Cerdanyola del Valles, Barcelona',
             MARGIN, PH - 20, { width: CW, align: 'center' });
 
         doc.restore();

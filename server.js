@@ -1301,13 +1301,17 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
 
-  // Generate brochure PDF
-  let brochureAttachment = null;
-  try {
-    const brochureBuf = await generateBrochurePdfBuffer();
-    brochureAttachment = { filename: 'Adeptify_Informacio_General.pdf', content: brochureBuf.toString('base64'), encoding: 'base64' };
-    console.log(`[BulkEmail] Brochure PDF generated: ${Math.round(brochureBuf.length / 1024)} KB`);
-  } catch (e) { console.warn('[BulkEmail] Brochure PDF failed:', e.message); }
+  // Pre-generate brochure PDFs for all languages in use
+  const BROCHURE_FILENAMES = { ca: 'Adeptify_Informacio_General.pdf', es: 'Adeptify_Informacion_General.pdf', eu: 'Adeptify_Informazio_Orokorra.pdf' };
+  const brochureByLang = {};
+  const langsNeeded = [...new Set(recipients.map(r => detectEmailLang(r.pais)))];
+  for (const lang of langsNeeded) {
+    try {
+      const buf = await generateBrochurePdfBuffer(lang);
+      brochureByLang[lang] = { filename: BROCHURE_FILENAMES[lang] || 'Adeptify_Informacion_General.pdf', content: buf.toString('base64'), encoding: 'base64' };
+      console.log(`[BulkEmail] Brochure PDF (${lang}) generated: ${Math.round(buf.length / 1024)} KB`);
+    } catch (e) { console.warn(`[BulkEmail] Brochure PDF (${lang}) failed:`, e.message); }
+  }
 
   // Read logo for CID
   let logoCid = null;
@@ -1486,6 +1490,7 @@ app.post('/api/centers/send-bulk-email', async (req, res) => {
 
       const attachments = [];
       if (logoCid) attachments.push(logoCid);
+      const brochureAttachment = brochureByLang[emailLang] || brochureByLang['ca'] || null;
       if (brochureAttachment) attachments.push(brochureAttachment);
       await transporter.sendMail({ from: '"Adeptify" <hola@adeptify.es>', to: r.email, subject, html, attachments });
       sent++;
