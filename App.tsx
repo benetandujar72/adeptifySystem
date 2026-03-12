@@ -196,7 +196,7 @@ const AppContent: React.FC = () => {
           </div>
           <div className="flex items-center gap-6">
             <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-              {['ca', 'es', 'eu'].map(l => (
+              {['en', 'ca', 'es', 'eu'].map(l => (
                 <button key={l} onClick={() => setLanguage(l as any)} className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === l ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{l.toUpperCase()}</button>
               ))}
             </div>
@@ -216,7 +216,7 @@ const AppContent: React.FC = () => {
         <header className="fixed top-0 w-full p-6 md:p-8 flex justify-between items-center z-50 glass border-b border-slate-100">
           <div className="flex items-center gap-4 cursor-pointer hover:opacity-70 transition-opacity"><div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg"><div className="w-3 h-3 bg-indigo-500 rounded-sm" /></div><span className="text-[10px] md:text-xs font-black uppercase tracking-[0.3em] text-slate-900 leading-none">{t.appTitle}</span></div>
           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-            {['ca', 'es', 'eu'].map(l => (
+            {['en', 'ca', 'es', 'eu'].map(l => (
               <button key={l} onClick={() => setLanguage(l as any)} className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === l ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{l.toUpperCase()}</button>
             ))}
           </div>
@@ -236,7 +236,7 @@ const AppContent: React.FC = () => {
 
         <div className="flex items-center gap-3 md:gap-6">
           <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
-            {['ca', 'es', 'eu'].map(l => (
+            {['en', 'ca', 'es', 'eu'].map(l => (
               <button key={l} onClick={() => setLanguage(l as any)} className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all ${language === l ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{l.toUpperCase()}</button>
             ))}
           </div>
