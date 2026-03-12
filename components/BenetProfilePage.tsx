@@ -112,10 +112,10 @@ const BenetProfilePage: React.FC<Props> = ({ onBack }) => {
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white via-white/70 to-transparent p-4">
-                <p className=”text-xs md:text-sm font-black text-slate-900”>
+                <p className="text-xs md:text-sm font-black text-slate-900">
                   &ldquo;Technology makes sense when it frees up time to care for people.&rdquo;
                 </p>
-                <p className=”text-[11px] md:text-sm text-slate-500 font-medium”>
+                <p className="text-[11px] md:text-sm text-slate-500 font-medium">
                   Coaching, educational leadership and digital solutions in service of human connection.
                 </p>
               </div>
