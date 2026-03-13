@@ -553,6 +553,232 @@ Retorna EXACTAMENT aquest JSON:
   }
 });
 
+// -- Fuzzy-VIKOR multi-criteria center matching --
+app.post('/api/matching/vikor', async (req, res) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase admin not configured");
+
+    const { referenceCenterCode, radiusKm = 30, v = 0.5 } = req.body;
+    if (!referenceCenterCode) return res.status(400).json({ error: "referenceCenterCode required" });
+
+    // 1. Fetch reference center
+    const { data: refCenter, error: refErr } = await supabase
+      .from('cat_education_centers')
+      .select('*')
+      .eq('codi_centre', referenceCenterCode)
+      .single();
+    if (refErr || !refCenter) return res.status(404).json({ error: "Reference center not found" });
+    if (!refCenter.coordenades_geo_y || !refCenter.coordenades_geo_x) {
+      return res.status(400).json({ error: "Reference center has no coordinates" });
+    }
+
+    // 2. Fetch all centers (with coords) — will be filtered client-side by distance
+    const { data: allCenters, error: centersErr } = await supabase
+      .from('cat_education_centers')
+      .select('*')
+      .not('coordenades_geo_y', 'is', null)
+      .not('coordenades_geo_x', 'is', null)
+      .neq('codi_centre', referenceCenterCode);
+    if (centersErr) throw centersErr;
+
+    // 3. Haversine filter by radius
+    const toRad = (d) => d * Math.PI / 180;
+    const haversine = (lat1, lon1, lat2, lon2) => {
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+
+    const candidates = (allCenters || [])
+      .map(c => ({ ...c, _distance: haversine(refCenter.coordenades_geo_y, refCenter.coordenades_geo_x, c.coordenades_geo_y, c.coordenades_geo_x) }))
+      .filter(c => c._distance <= radiusKm)
+      .sort((a, b) => a._distance - b._distance)
+      .slice(0, 100); // cap at 100
+
+    if (candidates.length === 0) return res.json({ results: [], count: 0 });
+
+    // 4. Fetch engagement data for candidates (lead interactions, open/click counts)
+    const codiCentres = candidates.map(c => c.codi_centre);
+    const { data: leads } = await supabase
+      .from('leads')
+      .select('codi_centre_ref, open_count, click_count')
+      .in('codi_centre_ref', codiCentres);
+
+    const engagementData = {};
+    for (const l of (leads || [])) {
+      if (!l.codi_centre_ref) continue;
+      const prev = engagementData[l.codi_centre_ref] || 0;
+      engagementData[l.codi_centre_ref] = prev + (l.open_count || 0) + (l.click_count || 0);
+    }
+
+    // 5. Study fields for overlap calculation
+    const STUDY_FIELDS = [
+      'einf1c','einf2c','epri','eso','batx','aa01','cfpm','ppas',
+      'aa03','cfps','ee','ife','pfi','pa01','cfam','pa02','cfas',
+      'esdi','escm','escs','adr','crbc','idi','dane','danp','dans',
+      'muse','musp','muss','tegm','tegs','estr','adults'
+    ];
+
+    // 6. Inline VIKOR computation (mirrors fuzzyVikor.ts logic)
+    const crisp = (x) => [x, x, x];
+    const defuzzCOA = (t) => (t[0] + t[1] + t[2]) / 3;
+    const tfnAdd = (a, b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]];
+    const tfnSub = (a, b) => [a[0]-b[2], a[1]-b[1], a[2]-b[0]];
+    const tfnMul = (a, b) => [a[0]*b[0], a[1]*b[1], a[2]*b[2]];
+    const tfnDiv = (a, b) => {
+      const bl = Math.max(b[0], 1e-10), bm = Math.max(b[1], 1e-10), bu = Math.max(b[2], 1e-10);
+      return [a[0]/bu, a[1]/bm, a[2]/bl];
+    };
+    const crispToTFN = (val, spread=0.1) => [Math.max(0, val-spread), val, Math.min(1, val+spread)];
+
+    const normType = (s) => {
+      if (!s) return 'unknown';
+      const l = s.toLowerCase();
+      if (l.includes('públic') || l.includes('public')) return 'public';
+      if (l.includes('concertat') || l.includes('concert')) return 'concerted';
+      if (l.includes('privat') || l.includes('priv')) return 'private';
+      return l;
+    };
+    const typeSimScore = (a, b) => {
+      const na = normType(a), nb = normType(b);
+      if (na === nb) return 1.0;
+      const key = [na,nb].sort().join('-');
+      return {'concerted-public':0.6,'concerted-private':0.7,'private-public':0.4}[key] ?? 0.5;
+    };
+    const studyOverlap = (ref, cand) => {
+      let shared=0, total=0;
+      for (const f of STUDY_FIELDS) {
+        const rv = !!ref[f], cv = !!cand[f];
+        if (rv||cv) { total++; if (rv&&cv) shared++; }
+      }
+      return total > 0 ? shared/total : 0;
+    };
+
+    const maxDist = Math.max(...candidates.map(c => c._distance), 1);
+
+    const criteria = [
+      { id:'proximity',      type:'cost',    weight:[0.15,0.20,0.25] },
+      { id:'type_match',     type:'benefit', weight:[0.10,0.15,0.20] },
+      { id:'study_overlap',  type:'benefit', weight:[0.15,0.20,0.25] },
+      { id:'digital_maturity',type:'benefit',weight:[0.05,0.10,0.15] },
+      { id:'engagement',     type:'benefit', weight:[0.10,0.15,0.20] },
+      { id:'ai_opportunity', type:'benefit', weight:[0.10,0.15,0.20] },
+    ];
+
+    // Build decision matrix
+    const matrix = candidates.map(c => {
+      const eng = engagementData[c.codi_centre] || 0;
+      const vals = {
+        proximity: Math.min(c._distance / maxDist, 1.0),
+        type_match: typeSimScore(refCenter.nom_naturalesa, c.nom_naturalesa),
+        study_overlap: studyOverlap(refCenter, c),
+        digital_maturity: 0.5,
+        engagement: Math.min(eng / 10, 1.0),
+        ai_opportunity: (c.ai_opportunity_score ?? 5) / 10,
+      };
+      const fuzzyCrit = {};
+      for (const [k, val] of Object.entries(vals)) fuzzyCrit[k] = crispToTFN(val);
+      return { alternativeId: c.codi_centre, criteria: fuzzyCrit, _crispVals: vals };
+    });
+
+    // Ideal positive/negative
+    const fStar = {}, fMinus = {};
+    for (const crit of criteria) {
+      const values = matrix.map(m => m.criteria[crit.id]);
+      if (crit.type === 'benefit') {
+        fStar[crit.id] = values.reduce((b,v) => defuzzCOA(v)>defuzzCOA(b)?v:b);
+        fMinus[crit.id] = values.reduce((w,v) => defuzzCOA(v)<defuzzCOA(w)?v:w);
+      } else {
+        fStar[crit.id] = values.reduce((b,v) => defuzzCOA(v)<defuzzCOA(b)?v:b);
+        fMinus[crit.id] = values.reduce((w,v) => defuzzCOA(v)>defuzzCOA(w)?v:w);
+      }
+    }
+
+    // S_j (L1) and R_j (L∞ Chebyshev)
+    const sVals = [], rVals = [];
+    for (const alt of matrix) {
+      let S = [0,0,0], Rmax = -Infinity;
+      for (const crit of criteria) {
+        const val = alt.criteria[crit.id];
+        const star = fStar[crit.id], minus = fMinus[crit.id];
+        const range = defuzzCOA(star) - defuzzCOA(minus);
+        let d;
+        if (Math.abs(range) < 1e-10) { d = crisp(0); }
+        else if (crit.type === 'benefit') {
+          d = tfnDiv(tfnSub(star, val), [Math.abs(range),Math.abs(range),Math.abs(range)]);
+        } else {
+          d = tfnDiv(tfnSub(val, star), [Math.abs(range),Math.abs(range),Math.abs(range)]);
+        }
+        const wd = tfnMul(crit.weight, d);
+        S = tfnAdd(S, wd);
+        const wdCrisp = defuzzCOA(wd);
+        if (wdCrisp > Rmax) Rmax = wdCrisp;
+      }
+      alt._S = defuzzCOA(S);
+      alt._R = Rmax;
+      sVals.push(alt._S);
+      rVals.push(alt._R);
+    }
+
+    // Q_j
+    const sStar_ = Math.min(...sVals), sMinus_ = Math.max(...sVals);
+    const rStar_ = Math.min(...rVals), rMinus_ = Math.max(...rVals);
+    const sRange = sMinus_ - sStar_, rRange = rMinus_ - rStar_;
+
+    for (const alt of matrix) {
+      const qS = sRange > 1e-10 ? v * (alt._S - sStar_) / sRange : 0;
+      const qR = rRange > 1e-10 ? (1-v) * (alt._R - rStar_) / rRange : 0;
+      alt._Q = qS + qR;
+    }
+
+    matrix.sort((a, b) => a._Q - b._Q);
+    const qMin = matrix[0]._Q, qMax = matrix[matrix.length-1]._Q, qRng = qMax - qMin;
+
+    const results = matrix.map((m, i) => {
+      const c = candidates.find(cc => cc.codi_centre === m.alternativeId);
+      const normQ = qRng > 1e-10 ? (m._Q - qMin) / qRng : 0;
+      return {
+        codi_centre: m.alternativeId,
+        denominacio_completa: c?.denominacio_completa,
+        nom_naturalesa: c?.nom_naturalesa,
+        nom_municipi: c?.nom_municipi,
+        nom_comarca: c?.nom_comarca,
+        distance_km: Math.round((c?._distance ?? 0) * 100) / 100,
+        vikor_S: Math.round(m._S * 10000) / 10000,
+        vikor_R: Math.round(m._R * 10000) / 10000,
+        vikor_Q: Math.round(m._Q * 10000) / 10000,
+        vikor_rank: i + 1,
+        opportunity_score: Math.round((1 - normQ) * 9 + 1),
+        criteria_values: m._crispVals,
+      };
+    });
+
+    // 7. Persist VIKOR scores to center table
+    const now = new Date().toISOString();
+    const upserts = results.slice(0, 50).map(r => ({
+      codi_centre: r.codi_centre,
+      ai_opportunity_score: r.opportunity_score,
+      ai_reason_similarity: `VIKOR Q=${r.vikor_Q} S=${r.vikor_S} R=${r.vikor_R} (rank #${r.vikor_rank})`,
+      ai_enriched_at: now,
+      ai_enriched_by_ref: referenceCenterCode,
+      vikor_s: r.vikor_S,
+      vikor_r: r.vikor_R,
+      vikor_q: r.vikor_Q,
+      vikor_rank: r.vikor_rank,
+      vikor_computed_at: now,
+    }));
+    await supabase.from('cat_education_centers').upsert(upserts, { onConflict: 'codi_centre', ignoreDuplicates: false });
+
+    res.json({ results, count: results.length, reference: { codi_centre: refCenter.codi_centre, denominacio_completa: refCenter.denominacio_completa } });
+  } catch (e) {
+    console.error("[VIKOR Matching Error]", e);
+    res.status(500).json({ error: e.message || "Error in VIKOR matching" });
+  }
+});
+
 // -- Refresh education centers from Generalitat API --
 app.post('/api/admin/centers/refresh', async (req, res) => {
   try {

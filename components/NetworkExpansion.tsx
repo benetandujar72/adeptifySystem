@@ -47,6 +47,10 @@ const NetworkExpansion: React.FC = () => {
   const [savingEnrichment, setSavingEnrichment] = useState(false);
   const [enrichmentSaved, setEnrichmentSaved] = useState(false);
 
+  // VIKOR matching
+  const [vikorData, setVikorData] = useState<Record<string, any>>({});
+  const [isVikorRunning, setIsVikorRunning] = useState(false);
+
   // Task 2: Institution outreach modal
   const [outreachCenter, setOutreachCenter] = useState<CenterWithDistance | null>(null);
   const [showOutreachModal, setShowOutreachModal] = useState(false);
@@ -185,6 +189,35 @@ const NetworkExpansion: React.FC = () => {
       setIsEnriching(false);
     }
   }, [referenceCenter, selectedForProposal, nearbyCenters]);
+
+  // Fuzzy-VIKOR multi-criteria ranking
+  const runVikorRanking = useCallback(async () => {
+    if (!referenceCenter) return;
+    setIsVikorRunning(true);
+    try {
+      const resp = await fetch('/api/matching/vikor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referenceCenterCode: referenceCenter.codi_centre,
+          radiusKm,
+          v: 0.5,
+        }),
+      });
+      const data = await resp.json();
+      if (data?.results) {
+        const vikorMap: Record<string, any> = {};
+        for (const r of data.results) {
+          vikorMap[r.codi_centre] = r;
+        }
+        setVikorData(vikorMap);
+      }
+    } catch (err) {
+      console.error('[VIKOR Ranking]', err);
+    } finally {
+      setIsVikorRunning(false);
+    }
+  }, [referenceCenter, radiusKm]);
 
   // Save AI enrichment to DB
   const saveEnrichmentToDB = useCallback(async () => {
@@ -414,6 +447,11 @@ const NetworkExpansion: React.FC = () => {
                           )}
                         </p>
                       </div>
+                      {vikorData[c.codi_centre] && (
+                        <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg" title={`VIKOR Q=${vikorData[c.codi_centre].vikor_Q}`}>
+                          #{vikorData[c.codi_centre].vikor_rank}
+                        </span>
+                      )}
                       {aiData[c.codi_centre] && (
                         <span className="text-[9px] font-black text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-lg">
                           {aiData[c.codi_centre].opportunity_score}/10
@@ -426,6 +464,10 @@ const NetworkExpansion: React.FC = () => {
 
               {/* Actions */}
               <div className="border-t border-slate-100 pt-4 space-y-2">
+                <button onClick={runVikorRanking} disabled={isVikorRunning}
+                  className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-40">
+                  {isVikorRunning ? 'Calculant VIKOR...' : `Ranking VIKOR (${nearbyCenters.length} centres)`}
+                </button>
                 <button onClick={enrichWithAI} disabled={isEnriching || selectedForProposal.size === 0}
                   className="w-full py-3 bg-cyan-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-cyan-700 transition-all disabled:opacity-40">
                   {isEnriching ? ((t as any).expansionEnrichingAI || 'Analitzant...') : `${(t as any).expansionEnrichAI || 'Enriquir amb IA'} (${selectedForProposal.size})`}
@@ -511,6 +553,12 @@ const NetworkExpansion: React.FC = () => {
                       <p className="text-xs font-bold text-cyan-600 mt-1">{c._distance.toFixed(1)} km</p>
                       {c.telefon && <p className="text-xs mt-1">Tel: {c.telefon}</p>}
                       {c.email_centre && <p className="text-xs">Email: {c.email_centre}</p>}
+                      {vikorData[c.codi_centre] && (
+                        <div className="mt-2 p-2 bg-indigo-50 rounded text-[10px]">
+                          <p className="font-bold text-indigo-800">VIKOR #{vikorData[c.codi_centre].vikor_rank} — Score: {vikorData[c.codi_centre].opportunity_score}/10</p>
+                          <p className="text-indigo-600">Q={vikorData[c.codi_centre].vikor_Q} S={vikorData[c.codi_centre].vikor_S} R={vikorData[c.codi_centre].vikor_R}</p>
+                        </div>
+                      )}
                       {aiData[c.codi_centre] && (
                         <div className="mt-2 p-2 bg-cyan-50 rounded text-[10px]">
                           <p className="font-bold text-cyan-800">Score: {aiData[c.codi_centre].opportunity_score}/10</p>
@@ -536,6 +584,55 @@ const NetworkExpansion: React.FC = () => {
           </MapContainer>
         </div>
       </div>
+
+      {/* VIKOR Results Panel */}
+      {Object.keys(vikorData).length > 0 && (
+        <div className="mt-6 bg-white rounded-3xl border border-slate-100 shadow-xl p-6">
+          <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-1">
+            Ranking Fuzzy-VIKOR — {Object.keys(vikorData).length} centres
+          </h3>
+          <p className="text-[10px] text-slate-400 mb-4">Multi-criteria: proximitat, tipologia, estudis, engagement, oportunitat AI. Distància Chebyshev (L&#8734;) per regret individual.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="py-2 px-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">#</th>
+                  <th className="py-2 px-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Centre</th>
+                  <th className="py-2 px-3 text-left font-black text-slate-400 uppercase tracking-widest text-[9px]">Municipi</th>
+                  <th className="py-2 px-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">Dist.</th>
+                  <th className="py-2 px-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">S<sub>j</sub></th>
+                  <th className="py-2 px-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">R<sub>j</sub></th>
+                  <th className="py-2 px-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">Q<sub>j</sub></th>
+                  <th className="py-2 px-3 text-right font-black text-slate-400 uppercase tracking-widest text-[9px]">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(vikorData)
+                  .sort((a: any, b: any) => a.vikor_rank - b.vikor_rank)
+                  .slice(0, 30)
+                  .map((r: any) => (
+                    <tr key={r.codi_centre} className="border-b border-slate-50 hover:bg-indigo-50/50 transition-colors">
+                      <td className="py-2 px-3 font-black text-indigo-600">{r.vikor_rank}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900 max-w-[200px] truncate">{r.denominacio_completa}</td>
+                      <td className="py-2 px-3 text-slate-500">{r.nom_municipi}</td>
+                      <td className="py-2 px-3 text-right text-slate-500">{r.distance_km} km</td>
+                      <td className="py-2 px-3 text-right font-mono text-slate-600">{r.vikor_S}</td>
+                      <td className="py-2 px-3 text-right font-mono text-slate-600">{r.vikor_R}</td>
+                      <td className="py-2 px-3 text-right font-mono text-indigo-700 font-bold">{r.vikor_Q}</td>
+                      <td className="py-2 px-3 text-right">
+                        <span className={`font-black px-2 py-0.5 rounded-lg text-[10px] ${
+                          r.opportunity_score >= 8 ? 'bg-green-100 text-green-700' :
+                          r.opportunity_score >= 5 ? 'bg-amber-100 text-amber-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>{r.opportunity_score}/10</span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* AI Results Panel */}
       {Object.keys(aiData).length > 0 && (

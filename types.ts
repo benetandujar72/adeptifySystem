@@ -50,6 +50,11 @@ export interface CatEducationCenterFull {
   ai_custom_pitch: string | null;
   ai_enriched_at: string | null;
   ai_enriched_by_ref: string | null;
+  vikor_s: number | null;
+  vikor_r: number | null;
+  vikor_q: number | null;
+  vikor_rank: number | null;
+  vikor_computed_at: string | null;
   web_url: string | null;
   region?: string | null;
   pais?: string | null;

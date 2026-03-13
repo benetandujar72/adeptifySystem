@@ -43,6 +43,10 @@ export interface UnifiedClient {
   ai_opportunity_score: number | null;
   ai_custom_pitch: string | null;
   ai_reason_similarity: string | null;
+  vikor_s: number | null;
+  vikor_r: number | null;
+  vikor_q: number | null;
+  vikor_rank: number | null;
   // Aggregates
   interaction_count: number;
   consultation_count: number;
@@ -194,6 +198,7 @@ export const unifiedClientService = {
           center_phone: null, center_email: null, center_web: null,
           center_lon: null, center_lat: null,
           ai_opportunity_score: null, ai_custom_pitch: null, ai_reason_similarity: null,
+          vikor_s: null, vikor_r: null, vikor_q: null, vikor_rank: null,
           interaction_count: 0, consultation_count: 0, last_interaction_at: null,
           display_name: lead.company_name || lead.email,
         };
@@ -312,6 +317,10 @@ export const unifiedClientService = {
         ai_opportunity_score: null,
         ai_custom_pitch: null,
         ai_reason_similarity: null,
+        vikor_s: null,
+        vikor_r: null,
+        vikor_q: null,
+        vikor_rank: null,
         interaction_count: 0,
         consultation_count: 0,
         last_interaction_at: null,
