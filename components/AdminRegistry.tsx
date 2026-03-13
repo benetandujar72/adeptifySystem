@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { consultationService } from '../services/consultationService';
 import { marketingService, MarketingLead, MarketingStats, MarketingAlert } from '../services/marketingService';
+import { unifiedClientService, UnifiedClient } from '../services/unifiedClientService';
 import { supabase } from '../services/supabaseClient';
 import { Consultation, ChatMessage, ProposalData } from '../types';
 import { useLanguage } from '../LanguageContext';
@@ -35,6 +36,12 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   const [customLoadingKey, setCustomLoadingKey] = useState<string | null>(null);
   const [centerInsightError, setCenterInsightError] = useState<string | null>(null);
   const [, setAiTotalsVersion] = useState(0);
+
+  // Unified Clients State
+  const [unifiedClients, setUnifiedClients] = useState<UnifiedClient[]>([]);
+  const [selectedUnifiedClient, setSelectedUnifiedClient] = useState<UnifiedClient | null>(null);
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [clientStatusFilter, setClientStatusFilter] = useState<string>('all');
 
   // Marketing State
   const [marketingLeads, setMarketingLeads] = useState<MarketingLead[]>([]);
@@ -93,10 +100,17 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
     try {
       setDbMode(supabase ? 'cloud' : 'local');
       const scopeTenant = adminScope === 'all' ? undefined : tenantSlug;
-      const data = await consultationService.getAll(scopeTenant);
+      const [data, clients] = await Promise.all([
+        consultationService.getAll(scopeTenant),
+        unifiedClientService.fetchActiveClients(scopeTenant),
+      ]);
       setConsultations(data);
+      setUnifiedClients(clients);
       if (data.length > 0 && !selectedClient) {
         setSelectedClient(data[0]);
+      }
+      if (clients.length > 0 && !selectedUnifiedClient) {
+        setSelectedUnifiedClient(clients[0]);
       }
     } catch (e) {
       console.error("Error carregant dades d'administració");
@@ -216,6 +230,42 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
   }, [selectedClient, activeTab]);
 
   const totalInvestment = consultations.reduce((acc, c) => acc + (c.proposal?.totalInitial || 0), 0);
+
+  // Filtered unified clients for the Clients tab
+  const filteredClients = useMemo(() => {
+    let list = unifiedClients;
+    if (clientStatusFilter !== 'all') {
+      list = list.filter(c => c.lead_status === clientStatusFilter);
+    }
+    if (clientSearchQuery.trim()) {
+      const q = clientSearchQuery.trim().toLowerCase();
+      list = list.filter(c =>
+        c.display_name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.center_municipi?.toLowerCase().includes(q) ||
+        c.company_name?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [unifiedClients, clientStatusFilter, clientSearchQuery]);
+
+  const statusColors: Record<string, string> = {
+    new: 'bg-blue-100 text-blue-700',
+    qualified: 'bg-amber-100 text-amber-700',
+    proposal_sent: 'bg-purple-100 text-purple-700',
+    closed: 'bg-emerald-100 text-emerald-700',
+    lost: 'bg-red-100 text-red-700',
+    converted: 'bg-teal-100 text-teal-700',
+  };
+
+  const statusLabels: Record<string, string> = {
+    new: language === 'ca' ? 'Nou' : language === 'eu' ? 'Berria' : language === 'en' ? 'New' : 'Nuevo',
+    qualified: language === 'ca' ? 'Qualificat' : language === 'eu' ? 'Kalifikatua' : language === 'en' ? 'Qualified' : 'Cualificado',
+    proposal_sent: language === 'ca' ? 'Proposta' : language === 'eu' ? 'Proposamena' : language === 'en' ? 'Proposal' : 'Propuesta',
+    closed: language === 'ca' ? 'Tancat' : language === 'eu' ? 'Itxia' : language === 'en' ? 'Closed' : 'Cerrado',
+    lost: language === 'ca' ? 'Perdut' : language === 'eu' ? 'Galdua' : language === 'en' ? 'Lost' : 'Perdido',
+    converted: language === 'ca' ? 'Convertit' : language === 'eu' ? 'Bihurtua' : language === 'en' ? 'Converted' : 'Convertido',
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh] animate-in fade-in duration-700">
@@ -363,31 +413,95 @@ const AdminRegistry: React.FC<AdminRegistryProps> = ({ tenantSlug, adminScope = 
           </div>
         )}
 
-        {/* TAB 2: CLIENTS */}
+        {/* TAB 2: CLIENTS (Unified — leads + centers + consultations) */}
         {activeTab === 'clients' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left: client list */}
             <div className="lg:col-span-4 space-y-3 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-              {consultations.map(c => (
+              {/* Search & filter bar */}
+              <div className="space-y-2 mb-4">
+                <input
+                  type="text"
+                  value={clientSearchQuery}
+                  onChange={e => setClientSearchQuery(e.target.value)}
+                  placeholder={language === 'ca' ? 'Cercar client...' : language === 'eu' ? 'Bilatu bezeroa...' : language === 'en' ? 'Search client...' : 'Buscar cliente...'}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                />
+                <select
+                  value={clientStatusFilter}
+                  onChange={e => setClientStatusFilter(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500 focus:outline-none focus:border-indigo-400"
+                >
+                  <option value="all">{language === 'ca' ? 'Tots els estats' : language === 'eu' ? 'Egoera guztiak' : language === 'en' ? 'All statuses' : 'Todos los estados'}</option>
+                  {Object.entries(statusLabels).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Summary */}
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+                {filteredClients.length} {language === 'ca' ? 'clients' : language === 'eu' ? 'bezero' : language === 'en' ? 'clients' : 'clientes'}
+              </p>
+
+              {filteredClients.length === 0 && !isLoading && (
+                <div className="p-8 text-center text-slate-300 text-sm italic">
+                  {language === 'ca' ? 'No hi ha clients amb activitat' : language === 'eu' ? 'Ez dago bezerorik jarduerarekin' : language === 'en' ? 'No clients with activity' : 'No hay clientes con actividad'}
+                </div>
+              )}
+
+              {filteredClients.map(uc => (
                 <button
-                  key={c.id}
+                  key={uc.lead_id}
                   onClick={() => {
-                    setSelectedClient(c);
-                    navigateAdmin(`/admin/clients/${encodeURIComponent(getClientKey(c))}`);
+                    setSelectedUnifiedClient(uc);
+                    navigateAdmin(`/admin/clients/${encodeURIComponent(uc.lead_id)}`);
                   }}
-                  className={`w-full text-left p-6 rounded-3xl border-2 transition-all ${selectedClient?.id === c.id
+                  className={`w-full text-left p-5 rounded-3xl border-2 transition-all ${selectedUnifiedClient?.lead_id === uc.lead_id
                     ? 'bg-slate-900 border-slate-900 text-white shadow-xl scale-[1.02]'
                     : 'bg-white border-slate-100 hover:border-indigo-200 text-slate-800'
                     }`}
                 >
-                  <h4 className="font-black text-sm uppercase truncate mb-1">{c.centerName}</h4>
-                  <p className="text-[10px] text-slate-400 font-medium truncate">{c.contactEmail}</p>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h4 className="font-black text-sm uppercase truncate flex-1">{uc.display_name}</h4>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${statusColors[uc.lead_status] || 'bg-slate-100 text-slate-500'}`}>
+                      {statusLabels[uc.lead_status] || uc.lead_status}
+                    </span>
+                  </div>
+                  <p className={`text-[10px] font-medium truncate ${selectedUnifiedClient?.lead_id === uc.lead_id ? 'text-slate-400' : 'text-slate-400'}`}>
+                    {uc.email}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2">
+                    {uc.center_municipi && (
+                      <span className={`text-[9px] ${selectedUnifiedClient?.lead_id === uc.lead_id ? 'text-indigo-300' : 'text-indigo-400'}`}>
+                        {uc.center_municipi}
+                      </span>
+                    )}
+                    {uc.interaction_count > 0 && (
+                      <span className={`text-[9px] ${selectedUnifiedClient?.lead_id === uc.lead_id ? 'text-slate-400' : 'text-slate-400'}`}>
+                        {uc.interaction_count} {language === 'ca' ? 'interact.' : language === 'en' ? 'interact.' : 'interac.'}
+                      </span>
+                    )}
+                    {uc.ai_opportunity_score != null && (
+                      <span className={`text-[9px] font-bold ${uc.ai_opportunity_score >= 7 ? 'text-emerald-500' : uc.ai_opportunity_score >= 4 ? 'text-amber-500' : 'text-slate-400'}`}>
+                        AI: {uc.ai_opportunity_score}/10
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
 
+            {/* Right: client profile */}
             <div className="lg:col-span-8">
-              {selectedClient ? (
-                <AdminClientProfile tenantSlug={tenantSlug} centerName={selectedClient.centerName} consultations={consultations} />
+              {selectedUnifiedClient ? (
+                <AdminClientProfile
+                  tenantSlug={tenantSlug}
+                  centerName={selectedUnifiedClient.center_name || selectedUnifiedClient.company_name || selectedUnifiedClient.email}
+                  leadId={selectedUnifiedClient.lead_id}
+                  codiCentre={selectedUnifiedClient.codi_centre_ref || undefined}
+                  consultations={consultations}
+                />
               ) : (
                 <div className="h-64 flex items-center justify-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-100 text-slate-300 italic text-sm">
                   {t.adminSelectClient}

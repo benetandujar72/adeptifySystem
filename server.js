@@ -412,14 +412,47 @@ TEXTO OBTENIDO DEL SCRAPER INICIAL: ${text}
       const supabase = getSupabaseAdmin();
       if (supabase && result.company_name) {
         const contactEmail = result.contact_email || `contacto@${new URL(url).hostname.replace('www.', '')}`;
-        const { data } = await supabase.from('leads').upsert({
+
+        // Try to match this lead to an existing education center by email or name
+        let codiCentreRef = null;
+        try {
+          // First try by email
+          const { data: emailMatch } = await supabase
+            .from('cat_education_centers')
+            .select('codi_centre')
+            .ilike('email_centre', contactEmail)
+            .limit(1)
+            .maybeSingle();
+          if (emailMatch) {
+            codiCentreRef = emailMatch.codi_centre;
+          } else {
+            // Fallback: try by company name (ilike for fuzzy matching)
+            const { data: nameMatch } = await supabase
+              .from('cat_education_centers')
+              .select('codi_centre')
+              .ilike('denominacio_completa', `%${result.company_name}%`)
+              .limit(1)
+              .maybeSingle();
+            if (nameMatch) codiCentreRef = nameMatch.codi_centre;
+          }
+        } catch (matchErr) {
+          console.warn("[Capture] Center matching failed (non-critical):", matchErr.message);
+        }
+
+        const leadRow = {
           tenant_slug: req.body.tenantSlug || 'default',
           email: contactEmail,
           company_name: result.company_name,
           source: url,
           ai_needs_analysis: result,
           status: 'new'
-        }, { onConflict: 'tenant_slug,email' }).select().single();
+        };
+        if (codiCentreRef) leadRow.codi_centre_ref = codiCentreRef;
+
+        const { data } = await supabase.from('leads').upsert(
+          leadRow,
+          { onConflict: 'tenant_slug,email' }
+        ).select().single();
         dbLead = data;
       }
     } catch (dbErr) {

@@ -666,7 +666,21 @@ const CRMDashboard: React.FC = () => {
                   {detail.lead.campaign_id && (
                     <p>Campanya: {campaigns.find(c => c.id === detail.lead.campaign_id)?.name || detail.lead.campaign_id.slice(0, 8)}</p>
                   )}
-                  {detail.lead.codi_centre_ref && <p>Codi centre: {detail.lead.codi_centre_ref}</p>}
+                  {detail.lead.codi_centre_ref && (
+                    <p>
+                      Codi centre: {detail.lead.codi_centre_ref}
+                      {' · '}
+                      <button
+                        onClick={() => {
+                          window.history.pushState({}, '', `/admin/clients/${encodeURIComponent(detail.lead.id)}`);
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }}
+                        className="text-indigo-500 hover:text-indigo-700 underline font-bold"
+                      >
+                        Veure perfil client
+                      </button>
+                    </p>
+                  )}
                 </div>
               </div>
             )}
