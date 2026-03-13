@@ -17,8 +17,9 @@ ALTER TABLE public.cat_education_centers
 CREATE INDEX IF NOT EXISTS idx_centers_vikor_q
   ON public.cat_education_centers(vikor_q) WHERE vikor_q IS NOT NULL;
 
--- Update the unified clients view to include VIKOR scores
-CREATE OR REPLACE VIEW public.v_unified_clients AS
+-- Drop and recreate the unified clients view (adding new columns requires DROP)
+DROP VIEW IF EXISTS public.v_unified_clients;
+CREATE VIEW public.v_unified_clients AS
 SELECT
   l.id                 AS lead_id,
   l.tenant_slug,
